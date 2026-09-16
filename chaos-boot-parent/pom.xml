@@ -19,7 +19,8 @@
         - 依赖版本：继承 chaos-dependencies（Spring Boot / Spring Cloud / 三方库 / 全部 chaos 模块），依赖无需写版本；
         - 编译：Java 21、UTF-8、-parameters（Spring MVC 参数名、@ConfigurationProperties 构造绑定依赖它）；
         - 测试：surefire 运行 *Test，failsafe 运行 *IT（已绑定 integration-test/verify）；
-        - 打包：spring-boot-maven-plugin 预置 repackage，应用模块只需声明插件坐标即可生成可执行 jar。
+        - 打包：spring-boot-maven-plugin 预置 repackage，应用模块只需声明插件坐标即可生成可执行 jar；
+          jar 的 MANIFEST 带 Implementation-Version，banner 与 /actuator/info 才拿得到应用版本。
 
         与框架内部构建的关系：本 POM 不继承 chaos-parent，不会把框架自身的发布、API 兼容、覆盖率等治理插件带进业务应用。
         无法使用 parent 的项目（已有公司级 parent），改为在 dependencyManagement 中 import chaos-dependencies。
@@ -98,6 +99,19 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <!--
+                                    往 MANIFEST 写 Implementation-Title / Implementation-Version：
+                                    Spring Boot 的 ${application.version} / ${application.formatted-version}
+                                    （框架 banner 与 Spring Boot 自带 banner 都用）只认这个条目，
+                                    maven-jar-plugin 默认不写，于是 banner 上应用版本那一段是空的。
+                                -->
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

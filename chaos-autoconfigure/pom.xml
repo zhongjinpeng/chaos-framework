@@ -341,6 +341,31 @@
                     <include>com/michael/chaos/banner.txt</include>
                 </includes>
             </resource>
+            <!--
+                同一份 banner 再放一份到 classpath 根：Spring Boot 在没有配置
+                spring.banner.location 时固定去找 classpath:banner.txt
+                （SpringApplicationBannerPrinter 的 DEFAULT_BANNER_LOCATION），
+                所以放在这里就等于"业务方什么都不配也能拿到框架 banner"。
+
+                业务方要用自己的：放 src/main/resources/banner.txt 即可覆盖——
+                可执行 jar 的 BOOT-INF/classes 排在 BOOT-INF/lib 之前，IDE/exploded 运行时
+                target/classes 也排在依赖 jar 之前，因此应用自己那份总是先被找到；
+                显式写 spring.banner.location 同样优先。一个都不要就用
+                spring.main.banner-mode=off。
+
+                这里不做成运行期改默认值（EnvironmentPostProcessor 需要 spring.factories，
+                本仓库禁用），而 banner 在 SpringApplication#run 里于容器刷新之前就已打印，
+                自动装配那时还没跑，也来不及改。
+                源文件只有一份（com/michael/chaos/banner.txt），两处内容不会漂移，
+                由 ChaosBannerTest 断言。
+            -->
+            <resource>
+                <directory>${basedir}/src/main/resources/com/michael/chaos</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>banner.txt</include>
+                </includes>
+            </resource>
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
                 <filtering>false</filtering>

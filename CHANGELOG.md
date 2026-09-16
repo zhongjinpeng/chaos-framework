@@ -161,6 +161,9 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
   新增依赖方向规则 10：场景 starter 只能聚合能力 starter，能力 starter 不得依赖场景 starter。
 - **build**：新增 `chaos-boot-parent`，业务应用推荐 parent（继承 `chaos-dependencies`；Java 21、`-parameters`、资源占位符过滤、
   surefire / failsafe、spring-boot `repackage` 预置），不携带框架自身的发布治理插件。
+  jar 的 MANIFEST 开启 `addDefaultImplementationEntries`：Spring Boot 的 `${application.version}`
+  （banner 与 `/actuator/info` 都用它）只认 `Implementation-Version`，而 `maven-jar-plugin` 默认不写，
+  不开的表现是 banner 上应用版本那一段是空的。
 - **config**：`additional-spring-configuration-metadata.json` 为 token 类型、存储类型、租户 / 数据权限缺失策略、限流维度、JWS 算法、
   可信代理网段、生产 profile 等提供 IDE 可选值提示；补齐 `chaos.production-safety.*`、`chaos.audit.enabled` 与授权服务器验证码 / 授权同意配置的元数据说明。
 - **docs**：新增自动生成的 `configuration-reference.md`（`scripts/generate-configuration-reference.py`，CI 校验是否最新）；
@@ -199,9 +202,15 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
   运行期才知道的值（hostname、Pod 名、可用区）注册 `ChaosStartupIdentifierContributor` Bean；
   同名 key 以配置为准，这样线上改标识不必改代码重新发布。贡献者抛异常只记 debug 日志、不影响启动，
   值按与其他配置相同的规则脱敏。注意中文 key 必须写成 `"[中文]"`，否则 Spring 宽松绑定会剥掉这些字符。
-- **autoconfigure**：内置带框架版本号的 banner（`classpath:com/michael/chaos/banner.txt`），
-  版本号由 Maven 资源过滤在框架构建期烧入，显示的一定是实际引入的框架版本；三个 archetype 生成的项目默认启用，
-  删掉 `spring.banner.location` 即回到 Spring Boot 默认 banner。
+- **autoconfigure**：内置带框架版本号的 banner，**零配置生效**。版本号由 Maven 资源过滤在框架构建期烧入，
+  显示的一定是实际引入的框架版本。同一份 banner 被打包到两个位置：`classpath:banner.txt`
+  （Spring Boot 未配置 `spring.banner.location` 时的默认查找位置，因此引入任一 starter 即生效）
+  与 `classpath:com/michael/chaos/banner.txt`（要显式引用时用）。
+  覆盖方式按优先级：放自己的 `src/main/resources/banner.txt`（应用资源在 classpath 上先于依赖 jar，
+  可执行 jar 里 `BOOT-INF/classes` 先于 `BOOT-INF/lib`）、写 `spring.banner.location`、
+  或 `spring.main.banner-mode=off` 全关。
+  不做成运行期改默认值：banner 在 `SpringApplication#run` 里于容器刷新之前就已打印，
+  自动装配那时还没跑，而能赶在它之前的 `EnvironmentPostProcessor` 需要 `spring.factories`（本仓库禁用）。
 
 ### Fixed（1.0 易用性：启动诊断）
 

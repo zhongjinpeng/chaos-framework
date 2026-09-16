@@ -8,7 +8,9 @@
 - **编译**：Java 21、UTF-8、`-parameters`（Spring MVC 参数名解析、构造器绑定依赖它）。
 - **资源过滤**：`application*.yml/properties` 支持 `@project.version@` 形式的占位符（与 Spring Boot parent 一致）。
 - **测试**：surefire 运行 `*Test`，failsafe 运行 `*IT`（已绑定 `integration-test` / `verify`）。
-- **打包**：`spring-boot-maven-plugin` 预置 `repackage`，应用模块声明插件坐标即可生成可执行 jar。
+- **打包**：`spring-boot-maven-plugin` 预置 `repackage`，应用模块声明插件坐标即可生成可执行 jar；
+  jar 的 `MANIFEST.MF` 带 `Implementation-Title` / `Implementation-Version`（`addDefaultImplementationEntries`），
+  否则 banner 与 Spring Boot 的 `${application.version}` 取不到应用版本。
 
 ## 使用方式
 

@@ -96,16 +96,40 @@ ChaosStartupIdentifierContributor deploymentIdentifiers(Environment environment)
 
 ### 框架 banner
 
-`chaos-autoconfigure` 内置了一个带框架版本号的 banner，脚手架生成的项目默认已启用：
+`chaos-autoconfigure` 内置了一个带框架版本号的 banner，**引入任一 starter 即生效，不需要配置**：
 
-```yaml
-spring:
-  banner:
-    location: classpath:com/michael/chaos/banner.txt
+```
+       __
+   ___/ /  ___ ____  ___
+  / __/ _ \/ _ `/ _ \/ _ \
+  \__/_//_/\_,_/\___/___/
+
+ :: Chaos Framework ::   (v1.0.0)
+ :: Spring Boot ::       (v3.5.16)
+ :: 应用 ::              demo-service  (v1.0.0-SNAPSHOT)
+ :: profile ::           dev
 ```
 
-版本号在框架构建期由 Maven 资源过滤烧入，因此 banner 显示的一定是实际引入的框架版本。
-不需要时删掉这行即可回到 Spring Boot 默认 banner，或放自己的 `src/main/resources/banner.txt` 覆盖。
+版本号在框架构建期由 Maven 资源过滤烧入，因此显示的一定是**实际引入的**框架版本，
+而不是某处手写的数字。
+
+要换成自己的，按优先级从高到低有三条路：
+
+| 想要 | 怎么做 |
+| --- | --- |
+| 用自己的 banner | 放 `src/main/resources/banner.txt`。应用自己的资源在 classpath 上排在依赖 jar 之前（可执行 jar 里 `BOOT-INF/classes` 先于 `BOOT-INF/lib`），因此它天然覆盖框架那份 |
+| 指定任意位置 | `spring.banner.location=classpath:my/banner.txt`；写 `classpath:com/michael/chaos/banner.txt` 则是显式要框架那份（应用同时有自己的 `banner.txt` 时也照用框架的） |
+| 一个都不要 | `spring.main.banner-mode=off` |
+
+实现上，框架把同一份 banner 同时打包到 `classpath:banner.txt`（Spring Boot 未配置
+`spring.banner.location` 时的默认查找位置）和 `classpath:com/michael/chaos/banner.txt`（显式引用用）。
+不是在运行期改默认值：banner 在 `SpringApplication#run` 里于容器刷新之前就已打印，那时自动装配还没跑，
+而能赶在它之前的 `EnvironmentPostProcessor` 需要 `spring.factories`（本仓库禁用）。
+
+应用版本那一行（`${application.formatted-version}`）读的是 jar 的 `MANIFEST.MF` 里的
+`Implementation-Version`。`maven-jar-plugin` 默认不写这个条目，所以 `chaos-boot-parent` 替业务方开了
+`addDefaultImplementationEntries`；用自己公司级 parent（只 import BOM）的项目要自己配上，
+否则那一段是空的。
 
 ## 2. `/actuator/chaos` 端点
 
