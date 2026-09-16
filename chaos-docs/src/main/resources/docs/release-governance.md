@@ -87,6 +87,38 @@ API 兼容检查使用 `japicmp-maven-plugin`，绑定在 `chaos-release` profil
 - pom 打包模块（聚合 pom、starter）自动跳过（`skipPomModules=true`）。
 - `-Dchaos.api.check.skip=true` 仍可临时跳过检查，但只应用于排查插件问题，不作为大版本发布的常规手段。
 
+### 防止门禁空转
+
+japicmp 被跳过时**不输出任何内容**，发布日志和真跑过一遍长得一模一样。发布到 Maven Central 不可撤销，
+所以 `chaos-release` profile 在 `validate` 阶段用 enforcer 拦住两种空转：
+
+| 情况 | 结果 |
+| --- | --- |
+| `revision != 1.0.0` 但 `chaos.api.check.skip` 仍为 `true` | 构建立即失败，提示改哪两个属性 |
+| `chaos.release.compareVersion` 与 `revision` 相同 | 构建立即失败（拿自己和自己比，永远零差异通过） |
+
+enforcer 管不到第三种：基线制品在仓库中不存在时 `ignoreMissingOldVersion=true` 会让检查静默消失。
+发布验证跑完后用脚本确认检查真的执行过：
+
+```bash
+./mvnw -B -Pchaos-release -Dchaos.api.check.skip=false \
+       -Dchaos.release.compareVersion=1.0.0 -Dgpg.skip=true verify
+scripts/verify-api-compatibility.sh 1.0.0
+```
+
+脚本统计有多少个发布模块产出了兼容性报告：一个都没有直接失败并列出常见原因；有模块缺报告时列出来，
+其中本就该存在于基线版本里的模块需要人工确认（说明它的基线没解析到，检查被跳过了）。
+
+> **本地基线可能是陈旧的同名制品。** 内部迭代期间 `1.0.0` 这个版本号被复用过多次，
+> `~/.m2` 里可能留着几个月前的 `chaos-*-1.0.0.jar`，与实际发布的 1.0.0 内容不同。
+> 拿它当基线会得到错误结论（多报或漏报）。在本地做发布验证前先清掉：
+>
+> ```bash
+> rm -rf ~/.m2/repository/com/michael
+> ```
+>
+> CI 从 Maven Central 解析基线，没有这个问题。
+
 规则：
 
 - `PATCH` 版本不得破坏二进制兼容。

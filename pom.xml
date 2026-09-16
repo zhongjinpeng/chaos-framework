@@ -472,6 +472,35 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <!--
+                                    防止 API 兼容门禁静默空转。japicmp 被跳过时不输出任何内容，
+                                    发布日志里看不出区别，但发布到 Central 不可撤销 —— 必须在构建一开始就拦住。
+                                -->
+                                <id>enforce-api-compatibility-gate</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <evaluateBeanshell>
+                                            <!-- 1.0.0 是首发版本，没有基线，允许 skip；此后任何版本都必须真正执行检查。 -->
+                                            <condition>"1.0.0".equals("${revision}") || !Boolean.parseBoolean("${chaos.api.check.skip}")</condition>
+                                            <message>发布 ${revision} 时 chaos.api.check.skip 仍为 true：API 兼容检查不会执行。
+请在 pom.xml 中把 chaos.api.check.skip 改为 false，并把 chaos.release.compareVersion 设为上一个已发布版本。
+只有排查 japicmp 插件自身问题时才用 -Dchaos.api.check.skip=true 临时跳过。</message>
+                                        </evaluateBeanshell>
+                                        <evaluateBeanshell>
+                                            <!-- 基线与当前版本相同时 japicmp 拿自己和自己比，零差异直接通过，同样是空转。 -->
+                                            <condition>Boolean.parseBoolean("${chaos.api.check.skip}") || !"${chaos.release.compareVersion}".equals("${revision}")</condition>
+                                            <message>chaos.release.compareVersion 与当前 revision 都是 ${revision}：
+japicmp 会拿该版本和自己对比，永远零差异通过，等于没有检查。
+请把 chaos.release.compareVersion 设为上一个已发布版本。</message>
+                                        </evaluateBeanshell>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <!-- 发布到 Maven Central 前校验 chaos-dependencies 中的元数据不是 CHANGE-ME 占位值。 -->
                                 <id>enforce-release-metadata</id>
                                 <phase>deploy</phase>

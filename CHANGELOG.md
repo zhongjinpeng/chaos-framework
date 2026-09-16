@@ -289,3 +289,8 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 - **ci**：CI 拆分为 structure / build / integration-test / python / smoke 五个 job，增加并发取消、失败报告上传；
   新增 CodeQL 与 Dependabot；新增 `chaos-coverage`（JaCoCo）profile。
 - **release**：`chaos-release` profile 绑定 japicmp API 兼容检查（基线缺失时跳过）、Maven Central Portal 发布插件和发布元数据校验。
+- **release**：防止 API 兼容门禁空转。japicmp 被跳过时不输出任何内容，发布日志与真跑过一遍无法区分，
+  而发布到 Central 不可撤销。`chaos-release` profile 在 `validate` 阶段用 enforcer 拦住两种情况：
+  `revision != 1.0.0` 却仍 `chaos.api.check.skip=true`、`chaos.release.compareVersion` 与 `revision` 相同
+  （拿自己和自己比永远零差异通过）。基线制品缺失导致的静默跳过 enforcer 管不到，由新增的
+  `scripts/verify-api-compatibility.sh` 在发布验证后统计实际产出的兼容性报告数量来兜底。

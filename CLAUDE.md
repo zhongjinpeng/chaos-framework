@@ -24,6 +24,9 @@ Chaos is a Java 21 multi-module Maven framework built on Spring Boot 3.5 and Spr
 # Release governance checks
 ./mvnw -B -Pchaos-release -Dgpg.skip=true -DskipTests validate
 
+# Confirm the japicmp API gate actually ran (it is silent when skipped); run after a -Pchaos-release verify
+scripts/verify-api-compatibility.sh <previous released version>
+
 # Structure governance (CI enforces this)
 scripts/verify-structure.sh
 
