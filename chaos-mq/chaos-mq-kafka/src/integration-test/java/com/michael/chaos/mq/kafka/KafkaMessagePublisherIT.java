@@ -10,8 +10,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -49,6 +53,10 @@ class KafkaMessagePublisherIT {
     void shouldPublishTraceHeadersToKafka() {
         TraceContext.start("", "", TRACEPARENT, "vendor=state", "tenant=acme", "tenant-a", "user-1", "kafka-it");
         Map<String, Object> producerProperties = KafkaTestUtils.producerProps(KAFKA.getBootstrapServers());
+        // KafkaTestUtils.producerProps 默认给的是 IntegerSerializer（那个 helper 是为 KafkaTemplate<Integer, String>
+        // 设计的），而 KafkaMessagePublisher 用 messageId（String）作分区 key，必须显式覆盖。
+        producerProperties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerProperties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         KafkaTemplate<String, Object> kafkaTemplate = new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(producerProperties));
         KafkaMessagePublisher publisher = new KafkaMessagePublisher(kafkaTemplate);
         String topic = "chaos.trace.it";
@@ -68,6 +76,9 @@ class KafkaMessagePublisherIT {
                 "chaos-trace-it",
                 "true"
         );
+        // 消费端同理：默认 IntegerDeserializer 会让 record.key() 解不出 "message-1"。
+        consumerProperties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        consumerProperties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         try (var consumer = new DefaultKafkaConsumerFactory<String, Object>(consumerProperties).createConsumer()) {
             consumer.subscribe(List.of(topic));
 
