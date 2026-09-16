@@ -73,7 +73,7 @@
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
         <oauth2-oidc-sdk.version>11.23.1</oauth2-oidc-sdk.version>
 
-        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
