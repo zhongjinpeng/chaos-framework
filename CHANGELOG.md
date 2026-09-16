@@ -194,6 +194,14 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 - **diagnostics**：Servlet 应用类路径中存在 chaos-gateway 时启动即失败并说明应移除哪个 starter（`chaos.diagnostics.web-stack-check.enabled`）。
 - **mq**：JDBC outbox 缺表时启动输出带方言建表脚本路径的 WARN（`chaos.diagnostics.outbox-schema-check.enabled`）。
 - **autoconfigure**：`chaos-autoconfigure` 新增对 `chaos-core` 的 compile 依赖（纯 Java、无三方依赖）。
+- **diagnostics**：启动报告抬头支持自定义标识（版本号、构建号、实例、机房），渲染成抬头下的一行「标识」，
+  同时出现在 `/actuator/chaos` 响应里。静态值配 `chaos.diagnostics.startup-report.identifiers`，
+  运行期才知道的值（hostname、Pod 名、可用区）注册 `ChaosStartupIdentifierContributor` Bean；
+  同名 key 以配置为准，这样线上改标识不必改代码重新发布。贡献者抛异常只记 debug 日志、不影响启动，
+  值按与其他配置相同的规则脱敏。注意中文 key 必须写成 `"[中文]"`，否则 Spring 宽松绑定会剥掉这些字符。
+- **autoconfigure**：内置带框架版本号的 banner（`classpath:com/michael/chaos/banner.txt`），
+  版本号由 Maven 资源过滤在框架构建期烧入，显示的一定是实际引入的框架版本；三个 archetype 生成的项目默认启用，
+  删掉 `spring.banner.location` 即回到 Spring Boot 默认 banner。
 
 ### Fixed（1.0 易用性：启动诊断）
 

@@ -31,6 +31,12 @@ public final class ChaosStartupReportRenderer {
                 .append(" | profile ").append(report.activeProfiles().isEmpty() ? "[default]" : report.activeProfiles())
                 .append(" | 生产模式 ").append(report.productionMode() ? "是" : "否")
                 .append(" | fail-fast ").append(report.failFast() ? "开" : "关");
+        if (!report.identifiers().isEmpty()) {
+            // 自定义标识另起一行：数量由使用方决定，塞进首行会把本来就长的报告头挤成一大坨。
+            builder.append("\n  标识  ").append(report.identifiers().entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.joining(" | ")));
+        }
 
         List<Feature> enabled = report.enabledFeatures();
         builder.append("\n  已启用（").append(enabled.size()).append("）");

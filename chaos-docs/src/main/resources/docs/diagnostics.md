@@ -44,8 +44,68 @@ Chaos 启动报告 | 应用 example-gateway | profile [default] | 生产模式 �
 | --- | --- | --- |
 | `chaos.diagnostics.startup-report.enabled` | `true` | 是否输出启动报告 |
 | `chaos.diagnostics.startup-report.level` | `info` | `info` 或 `debug`；设为 `debug` 后只在 `logging.level.com.michael.chaos.StartupReport=debug` 时可见 |
+| `chaos.diagnostics.startup-report.identifiers` | 空 | 追加到报告抬头的自定义标识，见下节 |
 
 日志 logger 名固定为 `com.michael.chaos.StartupReport`，可以单独调整级别或输出目标。
+
+### 自定义启动标识
+
+报告抬头默认只有应用名、profile、生产模式和 fail-fast。排查线上问题时通常还要知道是哪个版本、哪个实例、哪个机房，
+这些信息可以追加成抬头下的一行「标识」：
+
+```text
+Chaos 启动报告 | 应用 example-gateway | profile [prod] | 生产模式 是 | fail-fast 开
+  标识  版本=1.4.2 | 构建号=3871 | 实例=gateway-7d9f6c | 可用区=cn-hangzhou-b
+  已启用（4）
+```
+
+构建期就确定的静态值写配置：
+
+```yaml
+chaos:
+  diagnostics:
+    startup-report:
+      identifiers:
+        "[版本]": "@project.version@"     # Maven 资源过滤注入
+        "[构建号]": "${BUILD_NUMBER:}"    # CI 环境变量
+        region: cn-hangzhou
+```
+
+> 中文等非「小写字母 / 数字 / 短横线」的 key **必须**写成 `"[中文]"`。Spring Boot 的宽松绑定会把不认识的
+> 字符从属性名里剥掉，直接写 `版本:` 会让整段 map 退化成一个字符串，启动时报
+> `No converter found ... to type java.util.Map`。纯英文小写 key（如 `region`）不需要方括号。
+
+只有运行期才知道的值（容器 hostname、Pod 名、可用区、灰度标签）注册 `ChaosStartupIdentifierContributor` Bean：
+
+```java
+@Bean
+ChaosStartupIdentifierContributor deploymentIdentifiers(Environment environment) {
+    return () -> Map.of(
+            "实例", System.getenv().getOrDefault("HOSTNAME", "unknown"),
+            "可用区", environment.getProperty("cloud.zone", "unknown"));
+}
+```
+
+规则：
+
+- 可以注册多个贡献者，按 Bean 顺序合并；同名 key **以配置为准**。这样线上临时要把某个标识改掉
+  （比如把机房标成"灰度"）只需改配置，不必改代码重新发布。
+- 贡献者抛异常只记 debug 日志，不影响启动，其余标识照常输出——标识是辅助信息，不该成为启动的新失败点。
+- 值经过与其他配置相同的脱敏：键名含 `password` / `secret` / `token` 等字样时只显示掩码。
+- 标识同时出现在启动日志和 `/actuator/chaos` 响应里，两处内容一致。
+
+### 框架 banner
+
+`chaos-autoconfigure` 内置了一个带框架版本号的 banner，脚手架生成的项目默认已启用：
+
+```yaml
+spring:
+  banner:
+    location: classpath:com/michael/chaos/banner.txt
+```
+
+版本号在框架构建期由 Maven 资源过滤烧入，因此 banner 显示的一定是实际引入的框架版本。
+不需要时删掉这行即可回到 Spring Boot 默认 banner，或放自己的 `src/main/resources/banner.txt` 覆盖。
 
 ## 2. `/actuator/chaos` 端点
 

@@ -325,4 +325,41 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <!--
+                banner.txt 需要把框架版本号烧进制品：运行期没有可靠途径拿到它
+                （EnvironmentPostProcessor 需要 spring.factories，本仓库禁用）。
+                只过滤这一个文件，避免误伤 AutoConfiguration.imports 与配置元数据。
+                分隔符用 @：banner 里的 ${...} 是 Spring 运行期占位符，不能被 Maven 提前替换。
+            -->
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>com/michael/chaos/banner.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>com/michael/chaos/banner.txt</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <delimiters>
+                        <delimiter>@</delimiter>
+                    </delimiters>
+                    <useDefaultDelimiters>false</useDefaultDelimiters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -5,6 +5,9 @@
 spring:
   application:
     name: ${artifactId}
+  # 框架 banner（含框架版本号）；不需要时删掉本行，或放自己的 src/main/resources/banner.txt
+  banner:
+    location: classpath:com/michael/chaos/banner.txt
 
 server:
   port: 9000

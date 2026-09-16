@@ -5,6 +5,7 @@ import com.michael.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Feature;
 import com.michael.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Finding;
 import com.michael.chaos.autoconfigure.support.ProductionSafety;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,20 +35,43 @@ public class ChaosFeatureReporter {
 
     private final List<ChaosDiagnosticRule> rules;
 
+    private final Map<String, String> configuredIdentifiers;
+
+    private final List<ChaosStartupIdentifierContributor> identifierContributors;
+
+    /**
+     * 创建报告构建器，不带自定义启动标识。
+     */
+    public ChaosFeatureReporter(
+            ConfigurableListableBeanFactory beanFactory,
+            Environment environment,
+            List<ChaosDiagnosticRule> rules) {
+        this(beanFactory, environment, rules, Map.of(), List.of());
+    }
+
     /**
      * 创建报告构建器。
      *
      * @param beanFactory Bean 工厂
      * @param environment Spring 环境
      * @param rules 诊断规则（内置规则 + 业务自定义规则）
+     * @param configuredIdentifiers 配置中声明的静态启动标识
+     * @param identifierContributors 运行期动态标识贡献者
      */
     public ChaosFeatureReporter(
             ConfigurableListableBeanFactory beanFactory,
             Environment environment,
-            List<ChaosDiagnosticRule> rules) {
+            List<ChaosDiagnosticRule> rules,
+            Map<String, String> configuredIdentifiers,
+            List<ChaosStartupIdentifierContributor> identifierContributors) {
         this.beanFactory = beanFactory;
         this.environment = environment;
         this.rules = List.copyOf(rules);
+        // 不用 Map.copyOf：YAML 里写 "机房:" 不给值会绑定成 null value，copyOf 会直接 NPE 让应用起不来。
+        this.configuredIdentifiers = configuredIdentifiers == null
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(configuredIdentifiers));
+        this.identifierContributors = identifierContributors == null ? List.of() : List.copyOf(identifierContributors);
     }
 
     /**
@@ -95,8 +119,39 @@ public class ChaosFeatureReporter {
                 List.of(environment.getActiveProfiles()),
                 productionMode,
                 ProductionSafety.isFailFast(environment),
+                identifiers(),
                 features,
                 findings);
+    }
+
+    /**
+     * 合并启动标识：先按 Bean 顺序收集贡献者，再用配置覆盖同名 key。
+     *
+     * <p>配置优先是刻意的——线上临时要改某个标识（比如把机房标成"灰度"）应该能靠配置完成，不必改代码重新发布。</p>
+     */
+    private Map<String, String> identifiers() {
+        Map<String, String> merged = new LinkedHashMap<>();
+        for (ChaosStartupIdentifierContributor contributor : identifierContributors) {
+            try {
+                Map<String, String> contributed = contributor.identifiers();
+                if (contributed != null) {
+                    contributed.forEach((key, value) -> put(merged, key, value));
+                }
+            } catch (RuntimeException ex) {
+                // 标识只是辅助信息，贡献者异常不能影响启动或端点可用性。
+                LOGGER.debug("Chaos startup identifier contributor {} failed: {}",
+                        contributor.getClass().getName(), ex.getMessage(), ex);
+            }
+        }
+        configuredIdentifiers.forEach((key, value) -> put(merged, key, value));
+        return merged;
+    }
+
+    private static void put(Map<String, String> target, String key, String value) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        target.put(key, ChaosSettingMasker.mask(key, value == null ? "" : value));
     }
 
     private static Map<String, String> settings(ChaosFeatureCatalog.Entry entry, ChaosDiagnosticContext context) {

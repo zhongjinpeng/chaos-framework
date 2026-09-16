@@ -40,10 +40,17 @@ public class ChaosDiagnosticsAutoConfiguration {
     public ChaosFeatureReporter chaosFeatureReporter(
             ConfigurableListableBeanFactory beanFactory,
             Environment environment,
-            ObjectProvider<ChaosDiagnosticRule> customRules) {
+            ChaosDiagnosticsProperties properties,
+            ObjectProvider<ChaosDiagnosticRule> customRules,
+            ObjectProvider<ChaosStartupIdentifierContributor> identifierContributors) {
         List<ChaosDiagnosticRule> rules = new ArrayList<>(ChaosBuiltInDiagnosticRules.all());
         customRules.orderedStream().forEach(rules::add);
-        return new ChaosFeatureReporter(beanFactory, environment, rules);
+        return new ChaosFeatureReporter(
+                beanFactory,
+                environment,
+                rules,
+                properties.getStartupReport().getIdentifiers(),
+                identifierContributors.orderedStream().toList());
     }
 
     /**

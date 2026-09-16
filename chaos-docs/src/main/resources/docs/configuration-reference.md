@@ -16,7 +16,7 @@ python3 scripts/generate-configuration-reference.py
 
 - [`chaos.audit`](#chaosaudit)（9 项）
 - [`chaos.authorization`](#chaosauthorization)（54 项）
-- [`chaos.diagnostics`](#chaosdiagnostics)（4 项）
+- [`chaos.diagnostics`](#chaosdiagnostics)（5 项）
 - [`chaos.gateway`](#chaosgateway)（40 项）
 - [`chaos.job`](#chaosjob)（4 项）
 - [`chaos.mq`](#chaosmq)（17 项）
@@ -109,6 +109,7 @@ python3 scripts/generate-configuration-reference.py
 | --- | --- | --- | --- | --- | --- |
 | `chaos.diagnostics.outbox-schema-check.enabled` | `Boolean` | `true` | 存在 JDBC outbox 仓储时是否在启动阶段检查 outbox 表是否存在；缺表时输出带建表脚本路径的 WARN，默认开启。 |  | `chaos-autoconfigure` |
 | `chaos.diagnostics.startup-report.enabled` | `Boolean` | `true` | 是否在应用启动完成后输出 Chaos 启动报告（已启用功能、关键配置、诊断提示），默认开启。 |  | `chaos-autoconfigure` |
+| `chaos.diagnostics.startup-report.identifiers` | `Map<String,String>` |  | 追加到启动报告抬头的自定义标识（如版本号、构建号、机房），按声明顺序渲染，默认为空。 中文等非「小写字母/数字/短横线」的 key 必须写成 `"[中文]"`，否则宽松绑定会剥掉这些字符 导致绑定失败。运行期才知道的值（hostname、Pod 名）改用 `ChaosStartupIdentifierContributor` Bean，同名 key 以配置为准。值按与其他配置相同的规则脱敏。详见 docs/diagnostics.md。 |  | `chaos-autoconfigure` |
 | `chaos.diagnostics.startup-report.level` | `ReportLevel` | `info` | 启动报告的日志级别：INFO 或 DEBUG；设为 DEBUG 时只在开启 debug 日志后可见。 |  | `chaos-autoconfigure` |
 | `chaos.diagnostics.web-stack-check.enabled` | `Boolean` | `true` | Servlet 应用的类路径中存在 chaos-gateway（只能运行在 WebFlux 上）时是否阻断启动，默认开启。 同时引入 chaos-web-service-starter 与 chaos-gateway-starter 时 Spring Boot 会选择 Servlet， 网关治理会被静默跳过；开启后启动即失败并说明应该移除哪个 starter。 |  | `chaos-autoconfigure` |
 

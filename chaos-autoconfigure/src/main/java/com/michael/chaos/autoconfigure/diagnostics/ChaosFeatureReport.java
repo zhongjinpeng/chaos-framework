@@ -15,6 +15,7 @@ import java.util.Map;
  * @param activeProfiles 激活的 profile
  * @param productionMode 是否被识别为生产模式
  * @param failFast 生产安全检查是否 fail-fast
+ * @param identifiers 自定义启动标识（已脱敏），来自配置与 {@code ChaosStartupIdentifierContributor}
  * @param features 各功能状态
  * @param findings 诊断提示
  */
@@ -23,6 +24,7 @@ public record ChaosFeatureReport(
         List<String> activeProfiles,
         boolean productionMode,
         boolean failFast,
+        Map<String, String> identifiers,
         List<Feature> features,
         List<Finding> findings) {
 
@@ -31,6 +33,9 @@ public record ChaosFeatureReport(
      */
     public ChaosFeatureReport {
         activeProfiles = List.copyOf(activeProfiles);
+        identifiers = identifiers == null
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(identifiers));
         features = List.copyOf(features);
         findings = List.copyOf(findings);
     }

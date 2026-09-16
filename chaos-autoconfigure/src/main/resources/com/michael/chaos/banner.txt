@@ -1,0 +1,11 @@
+${AnsiColor.BRIGHT_CYAN}
+       __
+   ___/ /  ___ ____  ___
+  / __/ _ \/ _ `/ _ \/ _ \
+  \__/_//_/\_,_/\___/___/
+${AnsiColor.DEFAULT}
+ :: Chaos Framework ::   (v@project.version@)
+ :: Spring Boot ::       (v${spring-boot.version})
+ :: 应用 ::              ${spring.application.name:unnamed} ${application.formatted-version}
+ :: profile ::           ${spring.profiles.active:default}
+

@@ -171,6 +171,53 @@ class ChaosDiagnosticsAutoConfigurationTest {
     }
 
     /**
+     * 配置声明的标识和贡献者 Bean 都要被自动装配接上，并渲染进启动日志。
+     */
+    @Test
+    void shouldWireConfiguredAndContributedIdentifiers(CapturedOutput output) {
+        contextRunner
+                .withPropertyValues(
+                        "chaos.diagnostics.startup-report.identifiers.[机房]=杭州-B",
+                        "chaos.diagnostics.startup-report.identifiers.[发布批次]=2026-09-16.1")
+                .withUserConfiguration(IdentifierContributorConfiguration.class)
+                .run(context -> {
+                    context.publishEvent(new ContextRefreshedEvent(context));
+
+                    ChaosFeatureReport report = context.getBean(ChaosFeatureReporter.class).build();
+
+                    assertThat(report.identifiers())
+                            .containsEntry("机房", "杭州-B")
+                            .containsEntry("发布批次", "2026-09-16.1")
+                            .containsEntry("实例", "order-7d9f");
+                    assertThat(output).contains("标识").contains("实例=order-7d9f");
+                });
+    }
+
+    /**
+     * 同名标识以配置为准：线上改标识不应该需要改代码重新发布。
+     */
+    @Test
+    void configuredIdentifierShouldWinOverContributor() {
+        contextRunner
+                .withPropertyValues("chaos.diagnostics.startup-report.identifiers.[实例]=灰度-1")
+                .withUserConfiguration(IdentifierContributorConfiguration.class)
+                .run(context -> assertThat(context.getBean(ChaosFeatureReporter.class).build().identifiers())
+                        .containsEntry("实例", "灰度-1"));
+    }
+
+    /**
+     * 提供动态标识的贡献者 Bean。
+     */
+    @Configuration(proxyBeanMethods = false)
+    static class IdentifierContributorConfiguration {
+
+        @Bean
+        ChaosStartupIdentifierContributor instanceIdentifier() {
+            return () -> java.util.Map.of("实例", "order-7d9f");
+        }
+    }
+
+    /**
      * 故意把敏感配置写进诊断提示键名，验证输出前会被脱敏。
      */
     @Configuration(proxyBeanMethods = false)
