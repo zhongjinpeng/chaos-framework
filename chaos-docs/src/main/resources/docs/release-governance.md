@@ -63,7 +63,7 @@ pom.xml (chaos-parent)       parent 为 chaos-dependencies，只维护构建插�
 也可以使用 `mvn -Pchaos-release deploy`，效果相同。发布前提：
 
 - `~/.m2/settings.xml` 中配置 `<server><id>central</id>` 的 Portal token。
-- `chaos-dependencies/pom.xml` 中 `chaos.project.url`、`chaos.scm.connection` 的 `CHANGE-ME` 占位值已替换（或通过 `-D` 传入）。
+- `chaos-dependencies/pom.xml` 中 `chaos.project.url`、`chaos.scm.connection`、`chaos.scm.developer-connection` 指向真实仓库（enforcer 在 deploy 阶段校验）。
   `chaos-release` profile 在 `deploy` 阶段用 Enforcer `requireProperty` 拦截占位值。
 - `central-publishing-maven-plugin` 配置为 `autoPublish=false`，上传后需要在 Portal 上人工确认发布。
 - `chaos-examples`、`chaos-architecture-tests`、`chaos-docs` 设置了 `maven.deploy.skip=true`，不会被发布。

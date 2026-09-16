@@ -456,7 +456,7 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <!-- 发布到 Maven Central 前必须替换 chaos-dependencies 中的 CHANGE-ME 元数据占位值。 -->
+                                <!-- 发布到 Maven Central 前校验 chaos-dependencies 中的元数据不是 CHANGE-ME 占位值。 -->
                                 <id>enforce-release-metadata</id>
                                 <phase>deploy</phase>
                                 <goals>
@@ -473,6 +473,11 @@
                                             <property>chaos.scm.connection</property>
                                             <regex>^(?!.*CHANGE-ME).+$</regex>
                                             <regexMessage>发布前必须设置 chaos.scm.connection</regexMessage>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>chaos.scm.developer-connection</property>
+                                            <regex>^(?!.*CHANGE-ME).+$</regex>
+                                            <regexMessage>发布前必须设置 chaos.scm.developer-connection</regexMessage>
                                         </requireProperty>
                                         <requireProperty>
                                             <property>chaos.license.name</property>

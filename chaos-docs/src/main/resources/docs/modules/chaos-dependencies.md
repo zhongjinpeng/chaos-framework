@@ -49,4 +49,6 @@
 ## 发布元数据
 
 Maven Central 要求的 `url`、`licenses`、`scm`、`developers` 定义在本 POM 并被所有模块继承。
-`chaos.project.url`、`chaos.scm.connection` 默认是 `CHANGE-ME` 占位值，正式发布前必须替换，详见 [release-governance.md](../release-governance.md)。
+`chaos.project.url`、`chaos.scm.connection`、`chaos.scm.developer-connection` 指向 GitHub 仓库；
+`connection` 用只读 https、`developerConnection` 用可写 ssh，是 Maven Central 的惯例。
+enforcer 在 `deploy` 阶段校验它们不是占位值，详见 [release-governance.md](../release-governance.md)。

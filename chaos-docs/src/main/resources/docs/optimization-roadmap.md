@@ -25,10 +25,10 @@
 
 | 事项 | 现状 | 备注 |
 | --- | --- | --- |
-| 仓库纳入 Git 与 GitHub | 本地无 `.git` | CI、Dependabot、CodeQL、dependency-review、japicmp 基线全部以此为前提，目前均未真正运行过 |
-| 发布元数据 | `chaos.project.url` / `chaos.scm.connection` 仍是 `CHANGE-ME`，根目录无 LICENSE 文件 | POM 已声明 Apache-2.0 |
+| CI 首次运行 | 仓库已推送到 GitHub，但 Actions 尚未在其上跑过一次 | CI、CodeQL、Dependabot、dependency-review 的实际行为有待首次运行验证 |
 | 覆盖率门槛 | `chaos.coverage.minimum` 为 `0.00` | 建议改为按模块设差异化门槛，优先把 chaos-security-redis、chaos-authorization 卡到 70% 指令 / 55% 分支 |
 | javadoc doclint | 仍为 `none` | 需要先清理注释中的非法 HTML |
+| API 兼容检查暂时关闭 | `chaos.api.check.skip=true` | 1.0.0 是首发版本没有可比基线；**发布 1.0.1 时必须改回 `false` 并把 `compareVersion` 设为上一个已发布版本**，否则 japicmp 会一直空转 |
 | 架构测试断言强度 | `LayerBoundaryArchitectureTest` 仍有约 130 处 `Files.readString(...).contains(...)` | 最空洞的三个网关断言已替换为真实请求测试；彻底方案是引入 ArchUnit 做字节码级依赖检查 |
 
 ### 能力缺口

@@ -45,13 +45,17 @@
          child.scm.url.inherit.append.path="false">
         <url>${chaos.project.url}</url>
         <connection>${chaos.scm.connection}</connection>
-        <developerConnection>${chaos.scm.connection}</developerConnection>
+        <developerConnection>${chaos.scm.developer-connection}</developerConnection>
     </scm>
 
     <properties>
-        <!-- 发布元数据：许可证与 chaos-python 保持一致（Apache-2.0）；仓库地址发布前通过 -D 或修改此处替换 CHANGE-ME 占位值。 -->
-        <chaos.project.url>https://CHANGE-ME/chaos</chaos.project.url>
-        <chaos.scm.connection>scm:git:https://CHANGE-ME/chaos.git</chaos.scm.connection>
+        <!--
+            发布元数据：许可证与 chaos-python 保持一致（Apache-2.0），许可证全文见仓库根目录 LICENSE。
+            connection 用只读 https，developerConnection 用可写 ssh，这是 Maven Central 的惯例。
+        -->
+        <chaos.project.url>https://github.com/zhongjinpeng/chaos-framework</chaos.project.url>
+        <chaos.scm.connection>scm:git:https://github.com/zhongjinpeng/chaos-framework.git</chaos.scm.connection>
+        <chaos.scm.developer-connection>scm:git:ssh://git@github.com/zhongjinpeng/chaos-framework.git</chaos.scm.developer-connection>
         <chaos.license.name>Apache License, Version 2.0</chaos.license.name>
         <chaos.license.url>https://www.apache.org/licenses/LICENSE-2.0.txt</chaos.license.url>
 
