@@ -70,7 +70,7 @@
         <aliyun-oss.version>3.18.3</aliyun-oss.version>
         <rocketmq-spring.version>2.3.3</rocketmq-spring.version>
         <!-- nimbus-jose-jwt 与 oauth2-oidc-sdk 必须成对升级，否则 dependencyConvergence 会失败。 -->
-        <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <oauth2-oidc-sdk.version>11.23.1</oauth2-oidc-sdk.version>
 
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
