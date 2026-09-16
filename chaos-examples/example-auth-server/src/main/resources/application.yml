@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: example-auth-server
+
+server:
+  port: 9000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+# 以下 issuer、{noop} 客户端密钥、临时生成的 JWK 仅用于本地演示。
+# 以 prod/production profile 启动时，生产安全检查会因这些默认值直接阻止启动。
+chaos:
+  authorization:
+    issuer: http://localhost:9000
+    access-token-ttl: 2h
+    refresh-token-ttl: 30d
+    reuse-refresh-tokens: false
+    token:
+      type: jwt
+    client:
+      store-type: memory
+      id: chaos-client
+      secret: "{noop}chaos-secret"
+      scopes:
+        - read
+        - write
+    jwk:
+      key-id: example-auth-key
+    kickout:
+      enabled: false
+      scope: device
+      session-registry-type: memory
+    grant:
+      default-password-enabled: true
+      default-sms-enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: redis-token
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+chaos:
+  authorization:
+    token:
+      type: redis
+      redis-key-prefix: chaos:example:authorization
+    kickout:
+      enabled: true
+      scope: global
+      session-registry-type: redis
+      redis-key-prefix: chaos:example:authorization:kickout

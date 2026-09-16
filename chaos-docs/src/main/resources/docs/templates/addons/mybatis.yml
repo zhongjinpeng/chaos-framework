@@ -1,0 +1,12 @@
+# 能力：MyBatis-Plus（chaos-mybatis-starter）—— 追加到业务服务配置中
+chaos:
+  mybatis:
+    db-type: mysql
+    tenant:
+      # 默认开启：自动为 SQL 追加 tenant_id 条件，缺少租户时拒绝执行。
+      column: tenant_id
+      # 不带租户列的全局表，例如字典表。
+      ignore-tables:
+        - sys_dict
+    pagination:
+      max-limit: 500

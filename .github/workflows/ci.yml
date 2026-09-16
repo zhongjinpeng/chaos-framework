@@ -1,0 +1,245 @@
+name: chaos-framework-ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一分支/PR 的新提交会取消仍在运行的旧流水线，避免排队浪费 runner。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 注意不要命名为 MAVEN_ARGS：Maven 3.9 会自动读取同名环境变量，导致参数重复。
+  CHAOS_MAVEN_SETTINGS: -gs .mvn/settings-central.xml -s .mvn/settings-central.xml
+
+jobs:
+  structure:
+    # 结构扫描只依赖 shell 和 ripgrep，放在最前面快速失败，不必等待 Maven 构建。
+    name: Structure Governance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Structure governance
+        run: scripts/verify-structure.sh
+
+  dependency-review:
+    # 依赖 CVE 门禁：CodeQL 只扫描本仓库源码，不看依赖的已知漏洞，而框架给下游钉死了传递依赖版本。
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  build:
+    name: Unit Tests And Coverage
+    needs: structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # verify 会依次执行单元测试、默认 enforcer（含 dependencyConvergence）和 JaCoCo 报告。
+      - name: Unit tests with coverage
+        run: ./mvnw -B ${CHAOS_MAVEN_SETTINGS} -Pchaos-coverage verify
+
+      # 配置参考文档由编译期配置元数据生成；属性或其 Javadoc 变化后未重新生成会在这里失败。
+      - name: Configuration reference is up to date
+        run: python3 scripts/generate-configuration-reference.py --check
+
+      - name: Release governance validate
+        run: ./mvnw -B ${CHAOS_MAVEN_SETTINGS} -Pchaos-release -Dgpg.skip=true -DskipTests validate
+
+      # SBOM 生成绑定在 chaos-release profile 的 package 阶段；这里只验证它能跑通，
+      # 避免发布当天才发现插件配置有问题。
+      - name: SBOM generation
+        run: ./mvnw -B ${CHAOS_MAVEN_SETTINGS} -Pchaos-release -Dgpg.skip=true -DskipTests package -pl chaos-web -am
+
+      - name: Upload SBOM
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: '**/target/*cyclonedx*'
+          retention-days: 7
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: '**/target/surefire-reports/**'
+          retention-days: 7
+
+      - name: Upload coverage reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: '**/target/site/jacoco/**'
+          retention-days: 7
+
+  archetypes:
+    # 端到端验证 archetype：install 全部模块后生成三个项目并执行 mvn verify，保证“生成即可用”。
+    name: Archetype Verification
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Generate and verify archetypes
+        run: scripts/verify-archetypes.sh
+
+      - name: Upload generated project reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archetype-it-reports
+          path: target/archetype-it/**/target/surefire-reports/**
+          retention-days: 7
+
+  integration-test:
+    # Testcontainers 需要 Docker，ubuntu-latest runner 默认提供。
+    name: Integration Tests
+    needs: structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Integration tests
+        run: ./mvnw -B ${CHAOS_MAVEN_SETTINGS} -Pchaos-integration-test verify
+
+      - name: Upload integration test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failsafe-reports
+          path: |
+            **/target/failsafe-reports/**
+            **/target/surefire-reports/**
+          retention-days: 7
+
+  python:
+    name: chaos-python tracing
+    needs: structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: chaos-python/chaos-tracing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[test,lint]'
+
+      - name: Lint
+        run: ruff check src tests
+
+      - name: Type check
+        run: mypy src
+
+      - name: Test
+        run: pytest -q
+
+      - name: Version alignment with the Java framework
+        run: python3 ../../scripts/check-python-version.py
+
+  smoke:
+    # 三服务 JWT 链路 smoke 较慢，只在主干 push 和手动触发时执行。
+    name: Example JWT Smoke
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # example-order-service 的 Redisson 在启动时即连接 Redis，auth-server 的 Redis 健康检查也依赖它。
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Smoke examples
+        run: scripts/smoke-examples-jwt.sh
+
+      - name: Upload smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs
+          path: target/smoke-logs/**
+          retention-days: 7

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor xmlns="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 https://maven.apache.org/xsd/archetype-descriptor-1.1.0.xsd"
+                      name="chaos-auth-server">
+    <requiredProperties>
+        <requiredProperty key="version">
+            <defaultValue>0.1.0-SNAPSHOT</defaultValue>
+        </requiredProperty>
+        <!-- 默认值在构建 archetype 时由 Maven 替换为当前 chaos 版本，保证生成项目与 archetype 版本一致。 -->
+        <requiredProperty key="chaosVersion">
+            <defaultValue>@project.version@</defaultValue>
+        </requiredProperty>
+    </requiredProperties>
+
+    <fileSets>
+        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+            <directory>src/test/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>application.yml</include>
+            </includes>
+        </fileSet>
+        <!-- 生产配置含 ${ENV_VAR} 形式的 Spring 占位符，不做 Velocity 渲染，原样拷贝。 -->
+        <fileSet filtered="false" encoding="UTF-8">
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>application-prod.yml</include>
+            </includes>
+        </fileSet>
+        <!-- Markdown 的 ## 标题会被 Velocity 当作行注释删除，README 不做渲染。 -->
+        <fileSet filtered="false" encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- chaos-boot-parent 提供依赖版本（BOM）、Java 21、测试插件与可执行 jar 打包约定。 -->
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-boot-parent</artifactId>
+        <version>${chaosVersion}</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
+    <version>${version}</version>
+    <name>${artifactId}</name>
+
+    <dependencies>
+        <!--
+            场景 starter：Spring Cloud Gateway（WebFlux）+ JWT/opaque 鉴权 + 租户校验 + 限流 + 黑名单 + 审计 + Trace + Actuator。
+            网关是 WebFlux 应用，不要引入 chaos-web-starter / chaos-web-service-starter。
+        -->
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-gateway-starter</artifactId>
+        </dependency>
+
+        <!--
+            生产环境必需：多实例 Redis 集群限流与 token 黑名单（内存限流在生产 profile 下会阻断启动）。
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-redis-starter</artifactId>
+        </dependency>
+            Nacos 动态路由：chaos-gateway-nacos-starter
+        -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

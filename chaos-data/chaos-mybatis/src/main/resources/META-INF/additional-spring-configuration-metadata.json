@@ -1,0 +1,71 @@
+{
+  "hints": [
+    {
+      "name": "chaos.mybatis.tenant.missing-tenant-behavior",
+      "values": [
+        {
+          "value": "deny",
+          "description": "缺少租户 ID 时直接拒绝执行 SQL（默认，避免跨租户误查）。"
+        },
+        {
+          "value": "ignore",
+          "description": "缺少租户 ID 时不追加租户条件，保持原 SQL。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.mybatis.data-scope.empty-condition-behavior",
+      "values": [
+        {
+          "value": "deny",
+          "description": "数据权限条件为空时追加永假条件（默认，避免误放行）。"
+        },
+        {
+          "value": "ignore",
+          "description": "数据权限条件为空时保持原 SQL。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.mybatis.db-type",
+      "values": [
+        {
+          "value": "mysql",
+          "description": "MySQL（默认）。"
+        },
+        {
+          "value": "mariadb",
+          "description": "MariaDB。"
+        },
+        {
+          "value": "postgre-sql",
+          "description": "PostgreSQL。"
+        },
+        {
+          "value": "oracle",
+          "description": "Oracle。"
+        },
+        {
+          "value": "sql-server",
+          "description": "SQL Server。"
+        },
+        {
+          "value": "h2",
+          "description": "H2（本地开发/测试）。"
+        },
+        {
+          "value": "dm",
+          "description": "达梦。"
+        },
+        {
+          "value": "kingbase-es",
+          "description": "人大金仓。"
+        },
+        {
+          "value": "ocean-base",
+          "description": "OceanBase。"
+        }
+      ]
+    }
+  ]
+}

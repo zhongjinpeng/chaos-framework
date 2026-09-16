@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-security-api</artifactId>
+    <name>chaos-security-api</name>
+    <description>
+        Security contracts without Spring Security: LoginUser, JWT claim names, JWT revocation SPI,
+        RBAC/ABAC authorization model and data-scope context. Gateway, persistence and Redis adapters depend on this
+        module instead of chaos-security so that servlet filters and AOP stay out of their classpath.
+    </description>
+    <dependencies>
+        <!-- 约束：本模块只允许依赖 chaos-core 与 JDK，禁止引入 Spring / Spring Security（架构测试校验）。 -->
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

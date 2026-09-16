@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-starters</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-web-service-starter</artifactId>
+    <name>chaos-web-service-starter</name>
+    <description>Scenario starter for servlet business services: web, resource server security, tenant, audit, trace and application-layer utilities.</description>
+    <!--
+        场景 starter：Servlet 业务服务的“一站式入口”。
+
+        设计约束（chaos-architecture-tests 校验）：
+        - 只聚合能力 starter，不直接依赖 chaos 库模块或三方框架，保证每项能力的依赖清单只维护在对应能力 starter 中；
+        - 不含 Java 代码。
+
+        包含能力：统一响应/全局异常/Trace/日志模板（web）、JWT/opaque 资源服务器与 RBAC/ABAC（security）、
+        多租户上下文（tenant）、审计（audit，由 security-starter 带入）、事务/重试/领域事件/上下文传播/指标（application）。
+
+        按需追加的能力 starter：chaos-mybatis-starter、chaos-redis-starter、chaos-mq-starter、chaos-job-starter、
+        chaos-storage-starter、chaos-cloud-starter、chaos-cloud-nacos-starter、chaos-audit-jdbc-starter。
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-web-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-security-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-tenant-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-audit-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-application-starter</artifactId>
+        </dependency>
+    </dependencies>
+</project>

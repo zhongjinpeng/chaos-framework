@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-mq</artifactId>
+    <name>chaos-mq</name>
+    <description>Message envelope, producer and consumer contracts.</description>
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-trace</artifactId>
+        </dependency>
+        <!-- 仅 OutboxHealthIndicator 需要；chaos-mq 不应为一个健康检查强依赖 actuator。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

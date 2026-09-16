@@ -1,0 +1,39 @@
+# 依赖更新与安全补丁提醒。
+# Maven 依赖版本集中在 chaos-dependencies/pom.xml 与根 pom.xml 的插件版本属性中，Dependabot 会直接修改这些属性。
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "com.alibaba.cloud*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins*"
+          - "org.codehaus.mojo*"
+          - "org.jacoco*"
+          - "com.github.siom79.japicmp*"
+          - "org.sonatype.central*"
+    ignore:
+      # Spring Boot 4 / Spring Cloud 2025.1 属于大版本迁移，需要人工评估，不自动提 PR。
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springframework.cloud:spring-cloud-dependencies"
+        versions: [">=2025.1.0"]
+      - dependency-name: "com.alibaba.cloud:spring-cloud-alibaba-dependencies"
+        versions: [">=2025.1.0.0"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: pip
+    directory: /chaos-python/chaos-tracing
+    schedule:
+      interval: weekly

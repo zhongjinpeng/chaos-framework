@@ -1,0 +1,36 @@
+# 场景：Servlet 业务服务（chaos-web-service-starter）—— 生产环境必填 / 强烈建议的配置
+#
+# 生产前置依赖：追加 chaos-redis-starter。
+#   生产 profile 下限流、幂等、token 黑名单不允许使用内存 / Noop 实现，缺少 Redis 实现时生产安全检查会阻断启动。
+# 与 templates/auth-server/application-prod.yml 配套：授权服务器签发引用 token（token.type=redis），
+#   本服务通过 introspection 校验，注销、踢人实时生效。如果改用 JWT，把 token.type 改为 jwt 并配置
+#   spring.security.oauth2.resourceserver.jwt.issuer-uri（授权服务器侧需使用 JDBC 授权存储）。
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+chaos:
+  web:
+    forwarding:
+      # 本服务前面的网关 / LB / Ingress 地址段。只有来自这些地址的 X-Forwarded-For 才会被采信，
+      # 不配置时拿到的是代理 IP，按 IP 限流和访问日志都会失真。
+      trusted-proxies:
+        - 10.0.0.0/8
+  security:
+    permit-all:
+      - /actuator/health/**
+    token:
+      type: opaque
+    opaque-token:
+      introspection-uri: ${CHAOS_AUTH_ISSUER_URI}/oauth2/introspect
+      client-id: ${CHAOS_INTROSPECTION_CLIENT_ID}
+      client-secret: ${CHAOS_INTROSPECTION_CLIENT_SECRET}
+  redis:
+    # 多个服务共用一个 Redis 时，用应用名隔离幂等、锁、限流 key。
+    key-prefix: ${spring.application.name}
+  production-safety:
+    # 默认就是 true。列在这里是为了提醒：不要为了“先上线”把它改成 false。
+    fail-fast: true

@@ -1,0 +1,23 @@
+.DS_Store
+**/.DS_Store
+target/
+**/target/
+.idea/
+*.iml
+*.log
+
+# 示例服务运行时输出（logback 模板默认写入工作目录下的 logs/）
+logs/
+**/logs/
+
+# chaos-python 构建与测试产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+chaos-python/**/build/
+chaos-python/**/dist/
+.venv/
+
+# flatten-maven-plugin 生成的发布 POM
+.flattened-pom.xml

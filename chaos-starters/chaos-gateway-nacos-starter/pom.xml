@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-starters</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-gateway-nacos-starter</artifactId>
+    <name>chaos-gateway-nacos-starter</name>
+    <description>Dependency aggregation starter for Gateway dynamic routes backed by Nacos.</description>
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-gateway-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-gateway-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+    </dependencies>
+</project>

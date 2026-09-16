@@ -1,0 +1,38 @@
+{
+  "hints": [
+    {
+      "name": "chaos.security.token.type",
+      "values": [
+        {
+          "value": "jwt",
+          "description": "JWT 自包含 token：本地验签，需要 spring.security.oauth2.resourceserver.jwt.jwk-set-uri 或 issuer-uri。"
+        },
+        {
+          "value": "opaque",
+          "description": "OAuth2 opaque/reference token：每次通过 chaos.security.opaque-token.introspection-uri 远程校验（带短期缓存）。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.security.permit-all",
+      "values": [
+        {
+          "value": "/actuator/health",
+          "description": "健康检查（默认值）。"
+        },
+        {
+          "value": "/actuator/health/**",
+          "description": "健康检查及 liveness/readiness 探针。"
+        },
+        {
+          "value": "/v3/api-docs/**",
+          "description": "OpenAPI 文档，生产环境建议不要放行。"
+        },
+        {
+          "value": "/swagger-ui/**",
+          "description": "Swagger UI，生产环境建议不要放行。"
+        }
+      ]
+    }
+  ]
+}

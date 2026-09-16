@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- chaos-boot-parent 提供依赖版本（BOM）、Java 21、-parameters、测试插件与可执行 jar 打包约定。 -->
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-boot-parent</artifactId>
+        <version>${chaosVersion}</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
+    <version>${version}</version>
+    <name>${artifactId}</name>
+
+    <dependencies>
+        <!-- 场景 starter：Web 统一响应/异常、JWT 资源服务器、租户、审计、Trace、事务与重试。 -->
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-web-service-starter</artifactId>
+        </dependency>
+
+        <!--
+            按需追加能力 starter（版本由 chaos-boot-parent 管理）：
+            - chaos-mybatis-starter：数据库、多租户 SQL 隔离、数据权限、分页上限
+            - chaos-redis-starter  ：生产环境必需，提供 Redis 限流、幂等、token 黑名单、分布式锁
+            - chaos-mq-starter     ：可靠消息（outbox）
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-redis-starter</artifactId>
+        </dependency>
+        -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,137 @@
+spring:
+  application:
+    name: example-order-service
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:chaos_order;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+  cloud:
+    # 示例默认脱离 Nacos 独立运行；需要注册中心/配置中心时激活 nacos profile。
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+chaos:
+  web:
+    request-timing-enabled: true
+    trace-enabled: true
+  security:
+    permit-all:
+      - /actuator/health
+      - /actuator/prometheus
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /api/orders/ping
+    token:
+      type: jwt
+    jwt:
+      revocation-check-enabled: false
+  mybatis:
+    tenant:
+      enabled: true
+      column: tenant_id
+    data-scope:
+      enabled: true
+      empty-condition-behavior: deny
+  tenant:
+    enabled: true
+    fail-closed: true
+  redis:
+    # 多个服务共用 Redis 时用应用名隔离幂等、锁、限流 key。
+    key-prefix: ${spring.application.name}
+  mq:
+    outbox:
+      dispatcher:
+        initial-delay: 5s
+        interval: 2s
+      cleanup:
+        retention: 1d
+
+---
+# 本地调试专用：H2 控制台可直接读写数据库，禁止在非 dev 环境开启。
+spring:
+  config:
+    activate:
+      on-profile: dev
+  h2:
+    console:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: jwt-token
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
+
+---
+spring:
+  config:
+    activate:
+      on-profile: redis-token
+
+chaos:
+  security:
+    token:
+      type: opaque
+    opaque-token:
+      introspection-uri: http://localhost:9000/oauth2/introspect
+      # 凭据从环境变量读取，避免示例配置中的明文密钥被照抄到生产。
+      client-id: ${CHAOS_EXAMPLE_OPAQUE_CLIENT_ID:chaos-client}
+      client-secret: ${CHAOS_EXAMPLE_OPAQUE_CLIENT_SECRET}
+
+---
+# 接入 Nacos：需要本地或远程 Nacos Server，地址可通过 NACOS_SERVER_ADDR 覆盖。
+spring:
+  config:
+    activate:
+      on-profile: nacos
+    import: optional:nacos:${spring.application.name}.yaml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+      discovery:
+        enabled: true
+      config:
+        enabled: true

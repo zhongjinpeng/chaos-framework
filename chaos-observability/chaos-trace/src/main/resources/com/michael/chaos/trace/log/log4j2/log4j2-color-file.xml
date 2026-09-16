@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="APP_NAME">${spring:spring.application.name:-chaos-app}</Property>
+        <Property name="LOG_PATH">${spring:logging.file.path:-logs}</Property>
+        <Property name="LOG_DIR">${LOG_PATH}/${APP_NAME}</Property>
+        <Property name="LOG_LEVEL_ROOT">${spring:logging.level.root:-info}</Property>
+        <Property name="LOG_MAX_HISTORY">${spring:chaos.logging.max-history:-30}</Property>
+        <Property name="LOG_MAX_FILE_SIZE">${spring:chaos.logging.max-file-size:-100MB}</Property>
+        <Property name="CONSOLE_LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{%-5level}{FATAL=bright red, ERROR=bright red, WARN=bright yellow, INFO=bright green, DEBUG=bright cyan, TRACE=bright black} [%t] %style{%logger{36}}{cyan} %style{[traceId=%X{traceId},spanId=%X{spanId},tenantId=%X{tenantId},userId=%X{userId}]}{magenta} - %msg%n%throwable</Property>
+        <Property name="FILE_LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{36} [traceId=%X{traceId},spanId=%X{spanId},tenantId=%X{tenantId},userId=%X{userId},uri=%X{uri},ip=%X{ip},cost=%X{cost}] - %msg%n%throwable</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="COLOR_CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_LOG_PATTERN}" charset="UTF-8" disableAnsi="false" noConsoleNoAnsi="false"/>
+        </Console>
+
+        <RollingFile name="TRACE_FILE"
+                     fileName="${LOG_DIR}/trace/trace.log"
+                     filePattern="${LOG_DIR}/trace/trace.%d{yyyy-MM-dd}.%i.log">
+            <LevelRangeFilter minLevel="TRACE" maxLevel="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${FILE_LOG_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${LOG_MAX_FILE_SIZE}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${LOG_MAX_HISTORY}"/>
+        </RollingFile>
+
+        <RollingFile name="DEBUG_FILE"
+                     fileName="${LOG_DIR}/debug/debug.log"
+                     filePattern="${LOG_DIR}/debug/debug.%d{yyyy-MM-dd}.%i.log">
+            <LevelRangeFilter minLevel="DEBUG" maxLevel="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${FILE_LOG_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${LOG_MAX_FILE_SIZE}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${LOG_MAX_HISTORY}"/>
+        </RollingFile>
+
+        <RollingFile name="INFO_FILE"
+                     fileName="${LOG_DIR}/info/info.log"
+                     filePattern="${LOG_DIR}/info/info.%d{yyyy-MM-dd}.%i.log">
+            <LevelRangeFilter minLevel="INFO" maxLevel="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${FILE_LOG_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${LOG_MAX_FILE_SIZE}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${LOG_MAX_HISTORY}"/>
+        </RollingFile>
+
+        <RollingFile name="WARN_FILE"
+                     fileName="${LOG_DIR}/warn/warn.log"
+                     filePattern="${LOG_DIR}/warn/warn.%d{yyyy-MM-dd}.%i.log">
+            <LevelRangeFilter minLevel="WARN" maxLevel="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${FILE_LOG_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${LOG_MAX_FILE_SIZE}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${LOG_MAX_HISTORY}"/>
+        </RollingFile>
+
+        <RollingFile name="ERROR_FILE"
+                     fileName="${LOG_DIR}/error/error.log"
+                     filePattern="${LOG_DIR}/error/error.%d{yyyy-MM-dd}.%i.log">
+            <LevelRangeFilter minLevel="ERROR" maxLevel="FATAL" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${FILE_LOG_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${LOG_MAX_FILE_SIZE}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${LOG_MAX_HISTORY}"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="${LOG_LEVEL_ROOT}">
+            <AppenderRef ref="COLOR_CONSOLE"/>
+            <AppenderRef ref="TRACE_FILE"/>
+            <AppenderRef ref="DEBUG_FILE"/>
+            <AppenderRef ref="INFO_FILE"/>
+            <AppenderRef ref="WARN_FILE"/>
+            <AppenderRef ref="ERROR_FILE"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-trace</artifactId>
+    <name>chaos-trace</name>
+    <description>Trace constants, MDC bridge and propagation contracts.</description>
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- OpenFeign 出站 trace 透传拦截器使用；只有引入 OpenFeign 的应用才会加载该类。 -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- ChaosObservationFilter 使用；只有接入 Micrometer Observation 的应用才会加载 trace.monitor 包。 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-observation</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- MicrometerChaosMetrics 使用；只有接入 MeterRegistry 的应用才会加载该类。 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

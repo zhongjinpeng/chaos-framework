@@ -1,0 +1,33 @@
+# 场景：OAuth2 授权服务器（chaos-auth-server-starter）—— 生产环境必填 / 强烈建议的配置
+#
+# 下列任一项缺失，生产安全检查都会阻断启动：非 localhost 的 issuer、非 {noop} 客户端密钥、固定 JWK 密钥对、
+# 持久化授权存储（本模板使用 Redis 引用 token）、Redis token 黑名单。
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+chaos:
+  authorization:
+    # 对外可访问的 issuer，必须与网关 / 资源服务配置的 issuer 保持一致。
+    issuer: ${CHAOS_AUTH_ISSUER_URI}
+    token:
+      # 引用 token：授权记录存 Redis，资源服务通过 introspection 校验，注销 / 踢人实时生效。
+      type: redis
+    client:
+      store-type: redis
+      id: ${CHAOS_CLIENT_ID}
+      # 使用 {bcrypt} 等加密格式的密钥，从 Secret / 配置中心注入。
+      secret: ${CHAOS_CLIENT_SECRET}
+    jwk:
+      key-id: ${CHAOS_JWK_KEY_ID}
+      private-key-location: ${CHAOS_JWK_PRIVATE_KEY_LOCATION}
+      public-key-location: ${CHAOS_JWK_PUBLIC_KEY_LOCATION}
+    kickout:
+      enabled: true
+      session-registry-type: redis
+    login-lock:
+      max-failures: 5
+      lock-duration: 15m

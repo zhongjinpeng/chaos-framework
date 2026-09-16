@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-starters</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-gateway-starter</artifactId>
+    <name>chaos-gateway-starter</name>
+    <description>Scenario starter for API gateways: routing, JWT/opaque authentication, tenant validation, rate limiting, audit and observability.</description>
+    <!--
+        网关场景 starter（同时也是网关能力 starter）：引入它即可搭建完整网关。
+        包含：Spring Cloud Gateway（WebFlux）、JWT/opaque 鉴权（只依赖 chaos-security-api）、租户校验、限流、黑名单、
+        灰度、访问日志、审计、Trace，以及健康检查/指标端点（Actuator + Prometheus）。
+
+        默认使用单机内存限流；多实例部署时追加 chaos-redis-starter，自动切换为 Redis 集群限流并启用 JWT 黑名单。
+        Nacos 动态路由追加 chaos-gateway-nacos-starter。
+        注意：网关是 WebFlux 应用，不要同时引入 chaos-web-starter / chaos-web-service-starter（Servlet）。
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-audit-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-gateway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-security-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-tenant</artifactId>
+        </dependency>
+        <!-- JWT 黑名单的 Redis 实现；应用引入 chaos-redis-starter 后自动启用。 -->
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-security-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>oauth2-oidc-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+    </dependencies>
+</project>

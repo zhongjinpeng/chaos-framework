@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-archetypes-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>chaos-archetype-web-service</artifactId>
+    <packaging>maven-archetype</packaging>
+    <name>chaos-archetype-web-service</name>
+    <description>Generates a DDD-layered Servlet business service based on chaos-web-service-starter.</description>
+</project>

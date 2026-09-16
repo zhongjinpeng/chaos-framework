@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-starters</artifactId>
+    <packaging>pom</packaging>
+    <name>chaos-starters</name>
+    <description>Dependency-only starter modules.</description>
+    <!--
+        starter 分两层：
+        - 场景 starter（chaos-web-service-starter、chaos-gateway-starter、chaos-auth-server-starter）：按“要搭什么服务”选择，一个就够；
+        - 能力 starter（其余）：按“还需要什么能力”追加，例如 mybatis、redis、mq、job、storage、cloud。
+    -->
+    <modules>
+        <!-- 场景 starter -->
+        <module>chaos-web-service-starter</module>
+        <module>chaos-auth-server-starter</module>
+        <!-- 能力 starter（chaos-gateway-starter 同时作为网关场景 starter） -->
+        <module>chaos-audit-starter</module>
+        <module>chaos-audit-jdbc-starter</module>
+        <module>chaos-web-starter</module>
+        <module>chaos-application-starter</module>
+        <module>chaos-cloud-starter</module>
+        <module>chaos-cloud-nacos-starter</module>
+        <module>chaos-cloud-reactive-starter</module>
+        <module>chaos-gateway-starter</module>
+        <module>chaos-gateway-nacos-starter</module>
+        <module>chaos-job-starter</module>
+        <module>chaos-tenant-starter</module>
+        <module>chaos-authorization-starter</module>
+        <module>chaos-security-starter</module>
+        <module>chaos-redis-starter</module>
+        <module>chaos-mybatis-starter</module>
+        <module>chaos-mq-starter</module>
+        <module>chaos-storage-starter</module>
+    </modules>
+</project>

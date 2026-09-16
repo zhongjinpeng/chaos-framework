@@ -1,0 +1,37 @@
+# 场景：API 网关（chaos-gateway-starter）—— 生产环境必填 / 强烈建议的配置
+#
+# 生产前置依赖：追加 chaos-redis-starter。
+#   多实例网关必须使用 Redis 集群限流和 token 黑名单；内存限流器在生产 profile 下会被生产安全检查阻断。
+# 与 templates/auth-server/application-prod.yml 配套使用引用 token（opaque）。
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+chaos:
+  gateway:
+    # 网关前面的 SLB / Ingress 地址段；不配置时黑名单与按 IP 限流看到的都是代理 IP。
+    trusted-proxies:
+      - 10.0.0.0/8
+    whitelist:
+      - /actuator/health/**
+    token:
+      type: opaque
+    opaque-token:
+      introspection-uri: ${CHAOS_AUTH_ISSUER_URI}/oauth2/introspect
+      client-id: ${CHAOS_INTROSPECTION_CLIENT_ID}
+      client-secret: ${CHAOS_INTROSPECTION_CLIENT_SECRET}
+    rate-limit:
+      enabled: true
+      default-permits-per-second: 200
+      # 登录、验证码等鉴权白名单接口同样需要限流，这里只跳过健康检查。
+      skip-paths:
+        - /actuator/health/**
+      # Redis 故障时：true 放行（优先可用性）/ false 拒绝（优先保护后端）。无论哪种，都要为 Redis 配置告警。
+      fail-open: true
+    tenant:
+      fail-closed: true
+  redis:
+    key-prefix: ${spring.application.name}

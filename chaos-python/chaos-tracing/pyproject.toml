@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chaos-tracing"
+version = "1.0.0"
+description = "Shared W3C trace context and gRPC interceptors for Chaos Python services"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [
+    { name = "Chaos Framework" },
+]
+dependencies = [
+    "grpcio>=1.60.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+lint = [
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 始终测试源码目录，避免 site-packages 中旧版本安装包遮蔽当前代码。
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+# grpcio 没有随包发布类型信息。
+[[tool.mypy.overrides]]
+module = "grpc.*"
+ignore_missing_imports = true

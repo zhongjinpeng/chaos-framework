@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-examples</artifactId>
+    <packaging>pom</packaging>
+    <name>chaos-examples</name>
+    <!-- 示例工程只用于本地演示与 smoke 测试，不发布到制品仓库，也不参与 API 兼容检查。 -->
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <chaos.api.check.skip>true</chaos.api.check.skip>
+    </properties>
+    <modules>
+        <module>example-auth-server</module>
+        <module>example-order-service</module>
+        <module>example-gateway</module>
+    </modules>
+</project>

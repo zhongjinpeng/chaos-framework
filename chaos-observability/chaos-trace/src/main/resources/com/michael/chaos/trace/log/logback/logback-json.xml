@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <pattern>
+                    <pattern>
+                        {
+                        "level": "%level",
+                        "logger": "%logger{36}",
+                        "thread": "%thread",
+                        "traceId": "%X{traceId:-}",
+                        "spanId": "%X{spanId:-}",
+                        "userId": "%X{userId:-}",
+                        "tenantId": "%X{tenantId:-}",
+                        "appName": "%X{appName:-}",
+                        "uri": "%X{uri:-}",
+                        "ip": "%X{ip:-}",
+                        "cost": "%X{cost:-}",
+                        "message": "%message"
+                        }
+                    </pattern>
+                </pattern>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="${LOG_LEVEL_ROOT:-INFO}">
+        <appender-ref ref="JSON_CONSOLE"/>
+    </root>
+</included>

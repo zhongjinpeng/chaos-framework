@@ -1,0 +1,102 @@
+{
+  "groups": [
+    {
+      "name": "chaos.production-safety",
+      "description": "生产安全检查：生产 profile 下发现 InMemory / Noop 等危险默认实现时阻断启动。"
+    }
+  ],
+  "properties": [
+    {
+      "name": "chaos.production-safety.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "是否启用生产安全检查。"
+    },
+    {
+      "name": "chaos.production-safety.fail-fast",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "发现危险默认实现时是否阻断启动；false 时只输出告警，仅建议在灰度迁移期间使用。"
+    },
+    {
+      "name": "chaos.production-safety.production-mode",
+      "type": "java.lang.Boolean",
+      "description": "显式声明是否为生产模式；不设置时按 chaos.production-safety.profiles 与激活的 profile 判断。"
+    },
+    {
+      "name": "chaos.production-safety.profiles",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [
+        "prod",
+        "production",
+        "prd"
+      ],
+      "description": "视为生产环境的 profile 列表。"
+    },
+    {
+      "name": "chaos.production-safety.allow-unsafe-defaults",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "是否允许在生产模式下使用 InMemory / Noop 等危险默认实现（跳过检查）。"
+    },
+    {
+      "name": "chaos.audit.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "是否启用审计事件发布；关闭后注册 Noop 发布器。"
+    }
+  ],
+  "hints": [
+    {
+      "name": "chaos.production-safety.profiles",
+      "values": [
+        {
+          "value": "prod",
+          "description": "生产环境 profile。"
+        },
+        {
+          "value": "production",
+          "description": "生产环境 profile。"
+        },
+        {
+          "value": "prd",
+          "description": "生产环境 profile（常见缩写）。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.storage.provider",
+      "values": [
+        {
+          "value": "none",
+          "description": "不自动创建对象存储客户端（默认）。"
+        },
+        {
+          "value": "minio",
+          "description": "使用 MinIO，需配置 chaos.storage.minio.*。"
+        },
+        {
+          "value": "oss",
+          "description": "使用阿里云 OSS，需配置 chaos.storage.oss.*。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.tenant.default-isolation-mode",
+      "values": [
+        {
+          "value": "shared-schema",
+          "description": "共享库共享表，通过 tenant_id 隔离。"
+        },
+        {
+          "value": "schema",
+          "description": "共享数据库，每个租户独立 schema。"
+        },
+        {
+          "value": "database",
+          "description": "每个租户独立数据库。"
+        }
+      ]
+    }
+  ]
+}

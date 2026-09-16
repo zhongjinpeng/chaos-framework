@@ -1,0 +1,11 @@
+# 能力：Redis（chaos-redis-starter）—— 多实例部署时追加；启用集群限流、幂等、分布式锁与 token 黑名单
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+chaos:
+  redis:
+    # 多个服务共用 Redis 时隔离 key。
+    key-prefix: ${spring.application.name}

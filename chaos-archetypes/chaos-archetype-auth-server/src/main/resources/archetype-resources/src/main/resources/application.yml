@@ -1,0 +1,18 @@
+# 场景：OAuth2 授权服务器（chaos-auth-server-starter）—— 本地开发最小配置
+#
+# 本地需要 Redis（localhost:6379）：starter 自带 Spring Data Redis，登录失败锁定与 token 黑名单会使用它。
+# 默认签发 JWT，JWK 每次启动临时生成（重启后旧 token 失效），仅适合开发。
+spring:
+  application:
+    name: ${artifactId}
+
+server:
+  port: 9000
+
+chaos:
+  authorization:
+    issuer: http://localhost:9000
+    client:
+      id: chaos-client
+      # {noop} 明文密钥仅限本地；生产 profile 下会被生产安全检查阻断。
+      secret: "{noop}chaos-secret"

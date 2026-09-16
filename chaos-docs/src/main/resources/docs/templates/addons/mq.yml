@@ -1,0 +1,13 @@
+# 能力：可靠消息 outbox（chaos-mq-starter）—— 追加到业务服务配置中
+#
+# 前置：按数据库方言执行 chaos-mq-jdbc 中的 db/chaos-mq-outbox-schema-{mysql,postgresql,h2}.sql 建表。
+chaos:
+  mq:
+    publisher:
+      # Kafka / RocketMQ 同步等待 broker 确认的超时。
+      send-timeout: 10s
+    outbox:
+      dispatcher:
+        batch-size: 100
+      cleanup:
+        retention: 7d

@@ -1,0 +1,101 @@
+{
+  "hints": [
+    {
+      "name": "chaos.gateway.token.type",
+      "values": [
+        {
+          "value": "jwt",
+          "description": "JWT 自包含 token：网关本地验签，需要 chaos.gateway.jwt.jwk-set-uri。"
+        },
+        {
+          "value": "opaque",
+          "description": "opaque/reference token：网关通过 chaos.gateway.opaque-token.introspection-uri 远程校验（带缓存与超时）。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.rate-limit.key-types",
+      "values": [
+        {
+          "value": "route",
+          "description": "按 Gateway routeId 限流。"
+        },
+        {
+          "value": "path",
+          "description": "按请求路径限流。"
+        },
+        {
+          "value": "ip",
+          "description": "按客户端 IP 限流（部署在代理之后时必须配置 chaos.gateway.trusted-proxies）。"
+        },
+        {
+          "value": "user",
+          "description": "按用户 ID 限流。"
+        },
+        {
+          "value": "tenant",
+          "description": "按租户 ID 限流。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.jwt.jws-algorithms",
+      "values": [
+        {
+          "value": "RS256",
+          "description": "RSA SHA-256（默认，与 chaos-authorization 签发算法一致）。"
+        },
+        {
+          "value": "RS384",
+          "description": "RSA SHA-384。"
+        },
+        {
+          "value": "RS512",
+          "description": "RSA SHA-512。"
+        },
+        {
+          "value": "ES256",
+          "description": "ECDSA P-256 SHA-256。"
+        },
+        {
+          "value": "PS256",
+          "description": "RSASSA-PSS SHA-256。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.internal-headers",
+      "values": [
+        {
+          "value": "X-User-Id",
+          "description": "用户 ID（默认剥离）。"
+        },
+        {
+          "value": "X-Tenant-Id",
+          "description": "租户 ID（默认剥离）。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.trusted-proxies",
+      "values": [
+        {
+          "value": "10.0.0.0/8",
+          "description": "私有网段 A（常见 K8s / VPC 内网 LB）。"
+        },
+        {
+          "value": "172.16.0.0/12",
+          "description": "私有网段 B。"
+        },
+        {
+          "value": "192.168.0.0/16",
+          "description": "私有网段 C。"
+        },
+        {
+          "value": "127.0.0.1/32",
+          "description": "本机反向代理。"
+        }
+      ]
+    }
+  ]
+}

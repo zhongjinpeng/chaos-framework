@@ -1,0 +1,20 @@
+# 场景：Servlet 业务服务（chaos-web-service-starter）—— 本地开发最小配置
+#
+# 其余 chaos.* 配置均有开箱即用的默认值（统一响应、全局异常、Trace、租户上下文、审计、内存限流/幂等）。
+# 本地运行需要授权服务器签发 JWT，可直接使用 templates/auth-server 模板启动一个。
+spring:
+  application:
+    name: ${artifactId}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
+
+chaos:
+  security:
+    # 未认证即可访问的路径；默认只放行 /actuator/health。
+    permit-all:
+      - /actuator/health/**
+      - /v3/api-docs/**
+      - /swagger-ui/**

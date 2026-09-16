@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="com/michael/chaos/trace/log/logback/logback-color-file.xml"/>
+</configuration>

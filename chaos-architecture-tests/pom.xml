@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-architecture-tests</artifactId>
+    <name>chaos-architecture-tests</name>
+    <description>Repository-level architecture tests for chaos framework.</description>
+    <!-- chaos-architecture-tests 目前只承载仓库级架构测试（test scope），没有对外 API，不发布、不进入 BOM。 -->
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <chaos.api.check.skip>true</chaos.api.check.skip>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

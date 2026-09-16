@@ -1,0 +1,27 @@
+# 场景：API 网关（chaos-gateway-starter）—— 本地开发最小配置
+#
+# 网关是 WebFlux 应用，不要同时引入 chaos-web-starter / chaos-web-service-starter。
+# 其余 chaos.gateway.* 均有默认值：鉴权开启、租户校验 fail-closed、内存限流、身份头剥离、歧义路径拒绝。
+spring:
+  application:
+    name: ${artifactId}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: demo-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/**
+
+chaos:
+  gateway:
+    whitelist:
+      - /actuator/health/**
+    jwt:
+      jwk-set-uri: http://localhost:9000/oauth2/jwks
+      # 与授权服务器 chaos.authorization.issuer 一致；aud 默认是签发 token 的 client_id。
+      issuer-uri: http://localhost:9000
+      audiences:
+        - chaos-client

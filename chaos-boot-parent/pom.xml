@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        chaos-boot-parent：业务应用的推荐 parent，作用等同于 spring-boot-starter-parent + chaos-dependencies。
+
+        使用方式：
+            <parent>
+                <groupId>com.michael</groupId>
+                <artifactId>chaos-boot-parent</artifactId>
+                <version>1.0.0</version>
+                <relativePath/>
+            </parent>
+
+        提供的内容：
+        - 依赖版本：继承 chaos-dependencies（Spring Boot / Spring Cloud / 三方库 / 全部 chaos 模块），依赖无需写版本；
+        - 编译：Java 21、UTF-8、-parameters（Spring MVC 参数名、@ConfigurationProperties 构造绑定依赖它）；
+        - 测试：surefire 运行 *Test，failsafe 运行 *IT（已绑定 integration-test/verify）；
+        - 打包：spring-boot-maven-plugin 预置 repackage，应用模块只需声明插件坐标即可生成可执行 jar。
+
+        与框架内部构建的关系：本 POM 不继承 chaos-parent，不会把框架自身的发布、API 兼容、覆盖率等治理插件带进业务应用。
+        无法使用 parent 的项目（已有公司级 parent），改为在 dependencyManagement 中 import chaos-dependencies。
+    -->
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-dependencies</artifactId>
+        <version>${revision}</version>
+        <relativePath>../chaos-dependencies/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>chaos-boot-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>chaos-boot-parent</name>
+    <description>Recommended parent POM for applications built on Chaos Framework.</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <resource.delimiter>@</resource.delimiter>
+
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+    </properties>
+
+    <build>
+        <resources>
+            <!-- 与 spring-boot-starter-parent 一致：application*.yml/properties 支持 @project.version@ 形式的占位符过滤。 -->
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/application*.yml</include>
+                    <include>**/application*.yaml</include>
+                    <include>**/application*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>**/application*.yml</exclude>
+                    <exclude>**/application*.yaml</exclude>
+                    <exclude>**/application*.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
+                    <configuration>
+                        <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+                        <delimiters>
+                            <delimiter>${resource.delimiter}</delimiter>
+                        </delimiters>
+                        <useDefaultDelimiters>false</useDefaultDelimiters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <useModulePath>false</useModulePath>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                    <configuration>
+                        <useModulePath>false</useModulePath>
+                        <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <executions>
+                        <execution>
+                            <id>repackage</id>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <!--
+                只对本 POM 生效（inherited=false）：发布出去的 parent 中 ${revision} 必须替换为真实版本。
+                resolveCiFriendliesOnly 只替换版本占位符，pluginManagement、properties 等 parent 内容原样保留。
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

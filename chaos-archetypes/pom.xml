@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>chaos-archetypes-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>chaos-archetypes-parent</name>
+    <description>Maven archetypes that generate ready-to-run projects for each Chaos scenario starter.</description>
+
+    <!--
+        项目脚手架：每个场景 starter 对应一个 archetype，生成的项目以 chaos-boot-parent 为 parent，
+        自带开发/生产两份配置（与 chaos-docs/templates 保持一致，由架构测试校验）和一个离线即可通过的测试。
+
+        archetype 不是运行时依赖，因此不进入 chaos-dependencies BOM；使用方通过 archetype:generate 直接引用坐标。
+        生成结果的可用性由 scripts/verify-archetypes.sh（CI archetypes job）端到端验证。
+    -->
+    <modules>
+        <module>chaos-archetype-web-service</module>
+        <module>chaos-archetype-gateway</module>
+        <module>chaos-archetype-auth-server</module>
+    </modules>
+
+    <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>${maven-archetype-plugin.version}</version>
+            </extension>
+        </extensions>
+        <!--
+            archetype-metadata.xml 需要把 @project.version@ 替换为当前 chaos 版本，作为生成项目 chaosVersion 的默认值；
+            archetype-resources 是 Velocity 模板（含 ${artifactId} 等变量），不能交给 Maven 过滤。
+        -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>META-INF/maven/archetype-metadata.xml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>META-INF/maven/archetype-metadata.xml</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-archetype-plugin</artifactId>
+                    <version>${maven-archetype-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <configuration>
+                        <!-- 只识别 @...@，避免 ${...} 形式的 Velocity/Spring 占位符被误替换。 -->
+                        <delimiters>
+                            <delimiter>@</delimiter>
+                        </delimiters>
+                        <useDefaultDelimiters>false</useDefaultDelimiters>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

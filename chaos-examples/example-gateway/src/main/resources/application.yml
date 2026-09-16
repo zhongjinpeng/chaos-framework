@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: example-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: example-order-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/orders/**
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+chaos:
+  gateway:
+    auth-enabled: true
+    gray-enabled: true
+    # 只放行健康检查；/actuator/** 会把 env、metrics 等端点暴露给未认证请求。
+    whitelist:
+      - /actuator/health/**
+      - /api/orders/ping
+    # 网关前面有 Nginx/SLB 时填写其地址段，只有来自这些地址的 X-Forwarded-For 才会被采信。
+    trusted-proxies: []
+    blacklist:
+      - 203.0.113.10
+    token:
+      type: jwt
+    jwt:
+      validation-enabled: true
+      revocation-check-enabled: false
+      jwk-set-uri: http://localhost:9000/oauth2/jwks
+      # 与授权服务器 issuer 保持一致；aud 默认是签发 token 的 OAuth2 client_id。
+      issuer-uri: http://localhost:9000
+      audiences:
+        - chaos-client
+    tenant:
+      enabled: true
+      fail-closed: true
+      header-name: X-Tenant-Id
+    rate-limit:
+      enabled: true
+      default-permits-per-second: 100
+      skip-paths:
+        - /actuator/health/**
+      rules:
+        - id: order-api
+          path-pattern: /api/orders/**
+          permits-per-second: 50
+
+---
+spring:
+  config:
+    activate:
+      on-profile: redis-token
+
+chaos:
+  gateway:
+    token:
+      type: opaque
+    opaque-token:
+      introspection-uri: http://localhost:9000/oauth2/introspect
+      client-id: chaos-client
+      client-secret: chaos-secret

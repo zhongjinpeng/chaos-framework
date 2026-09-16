@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.michael</groupId>
+        <artifactId>chaos-starters</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-auth-server-starter</artifactId>
+    <name>chaos-auth-server-starter</name>
+    <description>Scenario starter for OAuth2 authorization servers: authorization, Redis-backed token stores, audit and observability endpoints.</description>
+    <!--
+        场景 starter：OAuth2 授权服务器的“一站式入口”。
+
+        包含能力：chaos-authorization-starter（授权服务器、password/sms grant、登录锁定、JWK 轮换、
+        Redis 授权存储与 JWT 黑名单、审计、Trace 日志模板），以及健康检查/指标端点（Actuator + Prometheus）。
+
+        刻意不包含 chaos-web-starter：OAuth2 端点必须返回 RFC 6749 标准响应体，
+        统一 Result 包装与全局异常处理对授权服务器没有收益，还可能改变自定义端点（如退出登录）的响应格式。
+
+        设计约束（chaos-architecture-tests 校验）：只聚合能力 starter，外加 Actuator / Prometheus 两个可观测性依赖；不含 Java 代码。
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-authorization-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+    </dependencies>
+</project>

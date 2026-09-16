@@ -1,0 +1,60 @@
+{
+  "properties": [
+    {
+      "name": "chaos.web.idempotent.replay.stored-headers",
+      "type": "java.util.List<java.lang.String>",
+      "defaultValue": [
+        "Location"
+      ]
+    }
+  ],
+  "hints": [
+    {
+      "name": "chaos.web.forwarding.trusted-proxies",
+      "values": [
+        {
+          "value": "10.0.0.0/8",
+          "description": "私有网段 A（常见 K8s / VPC 内网 LB）。"
+        },
+        {
+          "value": "172.16.0.0/12",
+          "description": "私有网段 B。"
+        },
+        {
+          "value": "192.168.0.0/16",
+          "description": "私有网段 C。"
+        },
+        {
+          "value": "127.0.0.1/32",
+          "description": "本机反向代理。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.web.i18n.default-locale",
+      "values": [
+        {
+          "value": "",
+          "description": "按请求语言解析（默认）。"
+        },
+        {
+          "value": "zh-CN",
+          "description": "固定简体中文。"
+        },
+        {
+          "value": "en",
+          "description": "固定英文。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.web.idempotent.replay.stored-headers",
+      "values": [
+        {
+          "value": "Location",
+          "description": "创建类接口返回的资源地址，回放时必须还原。"
+        }
+      ]
+    }
+  ]
+}

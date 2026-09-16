@@ -1,0 +1,106 @@
+{
+  "hints": [
+    {
+      "name": "chaos.authorization.token.type",
+      "values": [
+        {
+          "value": "jwt",
+          "description": "自包含 JWT：资源服务本地验签，注销依赖 JWT 黑名单。"
+        },
+        {
+          "value": "redis",
+          "description": "Redis 引用 token：资源服务通过 introspection 校验，撤销实时生效。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.authorization.client.store-type",
+      "values": [
+        {
+          "value": "memory",
+          "description": "内存客户端，仅适合本地开发；生产 profile 下会被生产安全检查拦截。"
+        },
+        {
+          "value": "jdbc",
+          "description": "Spring Authorization Server JDBC 客户端仓储（需自行引入 spring-jdbc）。"
+        },
+        {
+          "value": "redis",
+          "description": "Redis 客户端仓储；与 token.type=redis 搭配时的推荐值。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.authorization.consent.store-type",
+      "values": [
+        {
+          "value": "auto",
+          "description": "根据 token / client 存储方式自动选择。"
+        },
+        {
+          "value": "memory",
+          "description": "本地内存，仅适合开发。"
+        },
+        {
+          "value": "jdbc",
+          "description": "JDBC 存储。"
+        },
+        {
+          "value": "redis",
+          "description": "Redis 存储。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.authorization.kickout.scope",
+      "values": [
+        {
+          "value": "client",
+          "description": "同一 OAuth2 client 下互踢。"
+        },
+        {
+          "value": "device",
+          "description": "同一用户在同一 client、同一设备下互踢。"
+        },
+        {
+          "value": "global",
+          "description": "同一用户在所有 client 下全局互踢。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.authorization.kickout.session-registry-type",
+      "values": [
+        {
+          "value": "auto",
+          "description": "有 RedisTemplate 时使用 Redis，否则使用本地内存。"
+        },
+        {
+          "value": "memory",
+          "description": "本地内存索引，仅适合单实例。"
+        },
+        {
+          "value": "redis",
+          "description": "Redis 索引，适合生产多实例。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.authorization.production-safety.profiles",
+      "values": [
+        {
+          "value": "prod",
+          "description": "生产环境 profile。"
+        },
+        {
+          "value": "production",
+          "description": "生产环境 profile。"
+        },
+        {
+          "value": "prd",
+          "description": "生产环境 profile（常见缩写）。"
+        }
+      ]
+    }
+  ]
+}

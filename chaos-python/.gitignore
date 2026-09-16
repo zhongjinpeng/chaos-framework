@@ -1,0 +1,8 @@
+# Python 构建和运行产物，不应提交到仓库。
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
