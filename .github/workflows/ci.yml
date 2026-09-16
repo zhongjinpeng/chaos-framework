@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload SBOM
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: '**/target/*cyclonedx*'
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: surefire-reports
           path: '**/target/surefire-reports/**'
@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload coverage reports
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-reports
           path: '**/target/site/jacoco/**'
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload generated project reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: archetype-it-reports
           path: target/archetype-it/**/target/surefire-reports/**
@@ -162,7 +162,7 @@ jobs:
 
       - name: Upload integration test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: failsafe-reports
           path: |
@@ -238,7 +238,7 @@ jobs:
 
       - name: Upload smoke logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-logs
           path: target/smoke-logs/**
