@@ -171,13 +171,29 @@
                                         <excludes>
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>org.apache.logging.log4j:log4j-core:(,2.17.1)</exclude>
-                                            <exclude>commons-collections:commons-collections</exclude>
+                                            <!--
+                                              3.2.2 修复了 CVE-2015-7501（反序列化 RCE），是安全版本，不能一刀切禁掉：
+                                              spring-kafka-test → kafka_2.13 → commons-validator → commons-beanutils
+                                              会传递引入它。这里只禁 3.2.2 之前的版本。
+                                            -->
+                                            <exclude>commons-collections:commons-collections:(,3.2.2)</exclude>
                                             <exclude>commons-beanutils:commons-beanutils:(,1.9.4)</exclude>
                                             <exclude>org.codehaus.jackson:*</exclude>
                                             <exclude>com.fasterxml.jackson.core:jackson-databind:(,2.13.4.2)</exclude>
                                             <exclude>junit:junit</exclude>
                                             <exclude>org.springframework:spring-core:(,6.0.0)</exclude>
                                         </excludes>
+                                        <includes>
+                                            <!--
+                                              Testcontainers 1.x 传递依赖 JUnit 4，集成测试（chaos-integration-test
+                                              profile）引入它时会撞上上面的 junit:junit 禁令。
+                                              注意：enforcer 的 include/exclude 只能按坐标匹配，无法表达"仅允许经由
+                                              Testcontainers 传入"，所以这里放行的是 test 作用域下的全部 junit:junit。
+                                              compile / runtime 作用域仍被禁止，单元测试用 JUnit 4 的情况由
+                                              "*Test.java 使用 JUnit Jupiter" 的约定和代码评审来兜。
+                                            -->
+                                            <include>junit:junit:*:*:test</include>
+                                        </includes>
                                         <searchTransitive>true</searchTransitive>
                                     </bannedDependencies>
                                 </rules>

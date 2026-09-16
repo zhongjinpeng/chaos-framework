@@ -54,7 +54,9 @@ chaos:
     trace-enabled: true
   security:
     permit-all:
-      - /actuator/health
+      # 必须是 /actuator/health/**：探针路径 /actuator/health/readiness 不被精确匹配的
+      # /actuator/health 覆盖，会返回 401，smoke 脚本会一直等不到就绪。
+      - /actuator/health/**
       - /actuator/prometheus
       - /v3/api-docs/**
       - /swagger-ui/**
