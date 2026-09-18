@@ -1,5 +1,6 @@
 package com.michael.chaos.security.api.access;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +40,37 @@ public record AttributeReference(AttributeNamespace namespace, String name) {
      */
     public static AttributeReference environment(String name) {
         return new AttributeReference(AttributeNamespace.ENVIRONMENT, name);
+    }
+
+    /**
+     * 解析 {@code <命名空间>.<属性名>} 形式的属性引用，例如 {@code subject.tenantId}、{@code resource.ownerId}、
+     * {@code environment.clientIp}（{@code env} 是 {@code environment} 的简写）。
+     *
+     * <p>前缀不是已知命名空间时，整个文本作为 ENVIRONMENT 属性名，因此 {@code http.method} 等带点的环境属性名
+     * 可以直接书写。</p>
+     *
+     * @throws IllegalArgumentException 表达式为空时抛出
+     */
+    public static AttributeReference parse(String expression) {
+        String normalized = expression == null ? "" : expression.trim();
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("attribute reference must not be blank");
+        }
+        int separator = normalized.indexOf('.');
+        if (separator > 0 && separator < normalized.length() - 1) {
+            String prefix = normalized.substring(0, separator).toLowerCase(Locale.ROOT);
+            String name = normalized.substring(separator + 1);
+            AttributeNamespace namespace = switch (prefix) {
+                case "subject" -> AttributeNamespace.SUBJECT;
+                case "resource" -> AttributeNamespace.RESOURCE;
+                case "environment", "env" -> AttributeNamespace.ENVIRONMENT;
+                default -> null;
+            };
+            if (namespace != null) {
+                return new AttributeReference(namespace, name);
+            }
+        }
+        return new AttributeReference(AttributeNamespace.ENVIRONMENT, normalized);
     }
 
     /**

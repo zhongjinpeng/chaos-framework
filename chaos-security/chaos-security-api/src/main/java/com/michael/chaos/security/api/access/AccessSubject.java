@@ -56,6 +56,27 @@ public record AccessSubject(
     }
 
     /**
+     * 从 LoginUser 创建访问主体，并附带主体属性与服务端补全的权限集合。
+     *
+     * @param user 登录用户，为 null 时返回匿名主体
+     * @param permissions 权限集合，为 null 时使用 LoginUser 自带的权限
+     * @param attributes 主体属性，供 ABAC 条件引用
+     */
+    public static AccessSubject from(LoginUser user, Set<String> permissions, Map<String, Object> attributes) {
+        if (user == null) {
+            return ANONYMOUS;
+        }
+        return new AccessSubject(
+                user.userId(),
+                user.username(),
+                user.tenantId(),
+                user.roles(),
+                permissions == null ? user.permissions() : permissions,
+                attributes
+        );
+    }
+
+    /**
      * 是否匿名主体。
      */
     public boolean anonymous() {

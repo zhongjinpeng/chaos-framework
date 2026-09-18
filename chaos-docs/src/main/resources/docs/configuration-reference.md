@@ -17,14 +17,14 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.audit`](#chaosaudit)（9 项）
 - [`chaos.authorization`](#chaosauthorization)（54 项）
 - [`chaos.diagnostics`](#chaosdiagnostics)（5 项）
-- [`chaos.gateway`](#chaosgateway)（40 项）
+- [`chaos.gateway`](#chaosgateway)（47 项）
 - [`chaos.job`](#chaosjob)（4 项）
 - [`chaos.mq`](#chaosmq)（17 项）
 - [`chaos.mybatis`](#chaosmybatis)（16 项）
 - [`chaos.nacos`](#chaosnacos)（4 项）
 - [`chaos.production-safety`](#chaosproduction-safety)（5 项）
 - [`chaos.redis`](#chaosredis)（1 项）
-- [`chaos.security`](#chaossecurity)（14 项）
+- [`chaos.security`](#chaossecurity)（21 项）
 - [`chaos.service`](#chaosservice)（3 项）
 - [`chaos.storage`](#chaosstorage)（9 项）
 - [`chaos.tenant`](#chaostenant)（4 项）
@@ -117,6 +117,13 @@ python3 scripts/generate-configuration-reference.py
 
 | 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
 | --- | --- | --- | --- | --- | --- |
+| `chaos.gateway.access.admin-roles` | `List<String>` |  | 具备这些角色时直接放行。 |  | `chaos-gateway` |
+| `chaos.gateway.access.combining-algorithm` | `PolicyCombiningAlgorithm` | `deny-overrides` | policies 之间的合并算法；配置策略与 RBAC 之间恒为拒绝优先。 | `deny-overrides`, `allow-overrides`, `first-applicable` | `chaos-gateway` |
+| `chaos.gateway.access.enabled` | `Boolean` | `false` | 是否启用网关粗粒度鉴权；默认关闭，避免升级后原有路由突然 403。 |  | `chaos-gateway` |
+| `chaos.gateway.access.policies` | `List<AccessPolicyProperties>` |  | ABAC 策略，属性引用可用 subject.*、resource.*、environment.*（含 clientIp、http.method、http.path）。 |  | `chaos-gateway` |
+| `chaos.gateway.access.role-hierarchy` | `Map<String,List<String>>` |  | 角色继承关系，键继承值中的全部角色，例如 admin: [manager]。 |  | `chaos-gateway` |
+| `chaos.gateway.access.rules` | `List<AccessRuleProperties>` |  | 路径与权限的映射规则，按顺序匹配，第一条命中的规则生效。 |  | `chaos-gateway` |
+| `chaos.gateway.access.wildcard-permission-enabled` | `Boolean` | `true` | 是否允许 token 中的权限编码使用通配符，例如 order:* 覆盖 order:read。 |  | `chaos-gateway` |
 | `chaos.gateway.auth-enabled` | `Boolean` | `true` | 是否启用网关鉴权。 |  | `chaos-gateway` |
 | `chaos.gateway.blacklist` | `List<String>` |  | IP 黑名单。 |  | `chaos-gateway` |
 | `chaos.gateway.fallback.enabled` | `Boolean` | `true` | 是否启用 Gateway 统一降级异常处理。 |  | `chaos-gateway` |
@@ -240,6 +247,13 @@ python3 scripts/generate-configuration-reference.py
 | 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
 | --- | --- | --- | --- | --- | --- |
 | `chaos.security.access.admin-roles` | `List<String>` | `admin` | 具备这些角色时 RBAC 默认放行。 |  | `chaos-security` |
+| `chaos.security.access.combining-algorithm` | `PolicyCombiningAlgorithm` | `deny-overrides` | policies 之间的合并算法；配置策略与 RBAC 之间恒为拒绝优先，DENY 策略始终可以否决 RBAC 放行。 | `deny-overrides`, `allow-overrides`, `first-applicable` | `chaos-security` |
+| `chaos.security.access.policies` | `List<AccessPolicyProperties>` |  | ABAC 授权策略。 |  | `chaos-security` |
+| `chaos.security.access.policy-cache-ttl` | `Duration` | `30s` | 远端策略的本地缓存时长，也是策略改动生效的最大延迟；拉取失败时继续使用上一份快照。 |  | `chaos-security` |
+| `chaos.security.access.policy-redis-key` | `String` | `chaos:security:access:policies` | 远端策略在 Redis 中的 key，值是与 policies 结构一致的 JSON 数组。 |  | `chaos-security` |
+| `chaos.security.access.policy-source` | `PolicySourceType` | `config` | 策略来源：config 只用本配置文件里的 policies；redis 额外从 Redis 读取策略，改完无需重启。 |  | `chaos-security` |
+| `chaos.security.access.role-hierarchy` | `Map<String,List<String>>` |  | 角色继承关系，键继承值中的全部角色，例如 admin: [manager]。 |  | `chaos-security` |
+| `chaos.security.access.wildcard-permission-enabled` | `Boolean` | `true` | 是否允许主体权限编码使用通配符，例如 order:* 覆盖 order:read。 |  | `chaos-security` |
 | `chaos.security.enabled` | `Boolean` | `true` | 是否启用安全自动装配。 |  | `chaos-security` |
 | `chaos.security.http-basic-enabled` | `Boolean` | `false` | 是否启用 HTTP Basic。 |  | `chaos-security` |
 | `chaos.security.jwt.revocation-check-enabled` | `Boolean` | `true` | 是否启用 JWT 撤销检查。 |  | `chaos-security` |

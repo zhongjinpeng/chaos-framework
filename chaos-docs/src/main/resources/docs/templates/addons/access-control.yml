@@ -1,0 +1,39 @@
+# 能力：访问控制 RBAC + ABAC（chaos-security-starter 已包含）—— 需要角色继承、权限通配或属性级授权时追加
+chaos:
+  security:
+    access:
+      # 命中即放行的管理员角色。
+      admin-roles:
+        - admin
+      # order:* 覆盖 order:read、order:read:self。
+      wildcard-permission-enabled: true
+      # 角色继承：admin 继承 manager，manager 继承 user；配置成环会直接启动失败。
+      role-hierarchy:
+        admin:
+          - manager
+        manager:
+          - user
+      # policies 之间的合并算法；与 RBAC 之间恒为拒绝优先。
+      combining-algorithm: deny-overrides
+      # 细粒度限制写成 DENY：命中即拒绝，未命中时交回 RBAC 判定。
+      policies:
+        - id: order-owner-only
+          description: 只能修改自己的订单
+          effect: deny
+          actions:
+            - order:update
+          conditions:
+            - left: resource.ownerId
+              operator: not-eq
+              right: subject.userId
+        - id: deny-export-outside-office-hours
+          description: 非工作时间禁止导出
+          effect: deny
+          actions:
+            - order:export
+          conditions:
+            - left: environment.time
+              operator: between
+              values:
+                - "18:00:00"
+                - "23:59:59"

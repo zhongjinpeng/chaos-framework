@@ -38,6 +38,9 @@ class WithChaosContextTest {
     @org.junit.jupiter.api.extension.ExtendWith(ChaosContextExtension.class)
     class WithoutAnnotation {
 
+    /**
+     * 没有注解时上下文必须是干净的，避免上一个测试的租户、用户串到下一个测试。
+     */
         @Test
         void shouldStartFromEmptyContext() {
             // @Nested 测试的 testClass 为内部类，本身没有注解（@Inherited 只作用于子类，不作用于内部类），扩展按空上下文打开作用域。

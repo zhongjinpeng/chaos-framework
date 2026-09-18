@@ -139,7 +139,39 @@ AuthorizationPolicy sameTenantPolicy = AbacAuthorizationPolicy.allow(
 );
 ```
 
-常用条件工厂包括 `eq`、`notEq`、`in`、`notIn`、`exists`、`notExists`。属性命名空间包括 subject、resource 和 environment；resource 内置支持 `type`、`id`，subject 内置支持 `userId`、`username`、`tenantId`、`roles`、`permissions`。
+常用条件工厂包括 `eq`、`notEq`、`in`、`notIn`、`exists`、`notExists`、`gt`/`gte`/`lt`/`lte`、`between`、`regex`、`contains`。
+属性命名空间包括 subject、resource 和 environment；resource 内置支持 `type`、`id`，subject 内置支持 `userId`、`username`、`tenantId`、`roles`、`permissions`。
+
+日常使用不必手写策略对象：动作 + 资源 + 资源属性用 `@RequireAccess` 声明，策略写在 `chaos.security.access.policies` 配置里。
+
+```java
+@RequireAccess(
+        action = "order:update",
+        resourceType = "order",
+        resourceId = "#order.id",
+        attributes = @AccessAttribute(name = "ownerId", value = "#order.ownerId"))
+public void update(OrderDTO order) { ... }
+```
+
+```yaml
+chaos:
+  security:
+    access:
+      wildcard-permission-enabled: true
+      role-hierarchy:
+        admin: [manager]
+        manager: [user]
+      policies:
+        - id: order-owner-only
+          effect: DENY
+          actions: [order:update]
+          conditions:
+            - left: resource.ownerId
+              operator: NOT_EQ
+              right: subject.userId
+```
+
+完整说明见[访问控制：RBAC + ABAC](../capabilities/access-control.md)。
 
 ## 扩展点
 
@@ -148,6 +180,9 @@ AuthorizationPolicy sameTenantPolicy = AbacAuthorizationPolicy.allow(
 - 不跨层调用 infra 实现，domain/application 只依赖接口。
 - 覆盖 `AuthorizationManager` 可接入策略中心、OPA、Casbin 或企业权限平台。
 - 注册自定义 `AuthorizationPolicy` 可叠加 ABAC 规则，例如同租户、同部门、资源 owner、数据状态、请求环境标签。
+- 注册 `PermissionResolver` 可在服务端按角色展开权限（令牌只带角色时使用），对 `@Permission`、`@RequireAccess` 和 `SecurityUtils.hasPermission` 同时生效。
+- 注册 `SubjectAttributeResolver` 可补充部门、职级等 ABAC 主体属性；注册 `AuthorizationContextContributor` 可补充自定义环境属性。
+- 实现 `AuthorizationPolicySource` 可把策略放到数据库或配置中心，用 `AccessPolicyFactory` 把记录转换成策略。
 - 覆盖 `PermissionCheckService` 可兼容历史系统；默认实现已委托 `PermissionAuthorizationService`。
 - 覆盖 `JwtRevocationService`（chaos-security-api）可接入数据库或认证中心；Redis 场景直接使用 chaos-security-redis 的统一实现。
 - JWT claim 默认读取 `userId`、`username`、`tenantId`、`roles`、`permissions`；`userId` 缺失时用标准 `sub` 兜底，`roles` 与 `permissions` 支持集合或逗号分隔字符串。
@@ -164,8 +199,10 @@ AuthorizationPolicy sameTenantPolicy = AbacAuthorizationPolicy.allow(
 - 身份只来自认证结果：匿名路径不要依赖 `RequestContext.userId()`/`tenantId()` 做授权判断，服务不应绕过网关直接暴露。
 - `ChaosSecurityAutoConfiguration` 显式先于 Spring Boot `SecurityAutoConfiguration` 执行，保证资源服务器过滤器链优先于 Boot 默认链注册。
 - 默认匿名白名单只包含 `/actuator/health`；OpenAPI、Swagger、Prometheus 或业务公开接口必须通过 `chaos.security.permit-all` 显式配置，并配合内网、管理端口或网关策略保护。
-- 默认授权链包含 `RbacAuthorizationPolicy`，权限编码匹配或 `chaos.security.access.admin-roles` 角色放行；RBAC 未命中时弃权，全部策略弃权时由 `AuthorizationManager` 默认拒绝。
-- 组合策略中任一策略 DENY 会优先拒绝，适合用 ABAC 表达冻结资源、跨租户访问、非工作时间等显式拒绝规则。
+- 默认授权链包含 `RbacAuthorizationPolicy`，权限编码匹配（支持 `order:*` 通配与 `role-hierarchy` 角色继承）或 `chaos.security.access.admin-roles` 角色放行；RBAC 未命中时弃权，全部策略弃权时由 `AuthorizationManager` 默认拒绝。
+- 配置里的 ABAC 策略被打包成一条组合策略，组内按 `chaos.security.access.combining-algorithm` 合并；组合策略与 RBAC 之间恒为拒绝优先。
+- 因此细粒度限制要写成 **DENY 策略**（"不是本人就拒绝"），写成 ALLOW 在默认算法下无效——RBAC 已经放行。
+- 策略配置在启动时全部校验，写错时抛 `ChaosDiagnosticException` 并给出 `chaos.security.access.policies[n]...` 的具体路径与改法。
 - ABAC 请求由主体、动作、资源和环境属性组成；资源 owner、租户、部门、状态等属性由业务查询后放入 `AuthorizationResource`。
 - `@DataScope` 负责设置栈式 `DataScopeRequest` 上下文，具体 SQL 条件由 MyBatis 侧 `DataScopeProvider` 扩展；该请求可转换为通用 `AuthorizationRequest` 复用 ABAC/RBAC 决策。
 - `DataScopeAuthorizationService` 可在数据权限 Provider 中复用 `AuthorizationManager`，用于判断当前主体是否允许使用某个数据范围策略。

@@ -8,7 +8,7 @@
 | --- | --- |
 | `com.michael.chaos.security.api.auth` | `LoginUser`、`LoginUserProvider`（获取当前登录用户的 SPI）、`ChaosJwtClaims`（claim 名称常量） |
 | `com.michael.chaos.security.api.token` | `JwtRevocationService`、`NoopJwtRevocationService`、`JwtTokenIds`、`TokenIntrospectionCache` |
-| `com.michael.chaos.security.api.access` | RBAC / ABAC 授权模型：`AuthorizationManager`、`AuthorizationRequest`、`RbacAuthorizationPolicy`、`AbacAuthorizationPolicy` 等 |
+| `com.michael.chaos.security.api.access` | RBAC / ABAC 授权模型：`AuthorizationManager`、`AuthorizationRequest`、`RbacAuthorizationPolicy`（角色继承 `RoleHierarchy`、权限通配 `PermissionPatterns`）、`AbacAuthorizationPolicy`、配置形态策略 `PolicyDefinition`/`AccessPolicyFactory`、策略分组 `CompositeAuthorizationPolicy` 与合并算法 `PolicyCombiningAlgorithm`、扩展 SPI `AuthorizationPolicySource`/`AuthorizationContextContributor` |
 | `com.michael.chaos.security.api.datascope` | `DataScopeContext`、`DataScopeRequest`、`DataScopeAuthorizationService` |
 
 ## 为什么单独拆出
@@ -27,4 +27,4 @@
 - `JwtRevocationService` 以 token ID 为参数：`JwtTokenIds.resolve(jti, tokenValue)` 计算 ID，`JwtTokenIds.revocationTtl(expiresAt, now)` 计算黑名单 TTL，
   授权服务器、资源服务器和网关必须使用同一算法。
 
-更多安全模块说明见 [chaos-security](chaos-security.md)。
+更多安全模块说明见 [chaos-security](chaos-security.md)，授权模型的完整用法见[访问控制：RBAC + ABAC](../capabilities/access-control.md)。

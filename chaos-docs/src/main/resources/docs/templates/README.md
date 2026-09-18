@@ -15,6 +15,8 @@
 | Redis（集群限流、幂等、分布式锁、token 黑名单） | `chaos-redis-starter` | [addons/redis.yml](addons/redis.yml) |
 | 可靠消息（outbox + Kafka / RocketMQ） | `chaos-mq-starter` | [addons/mq.yml](addons/mq.yml) |
 | 对象存储（MinIO / OSS） | `chaos-storage-starter` | [addons/storage.yml](addons/storage.yml) |
+| 访问控制（角色继承、权限通配、ABAC 策略） | `chaos-security-starter`（已含） | [addons/access-control.yml](addons/access-control.yml) |
+| 网关粗粒度鉴权（按路由要求权限） | `chaos-gateway-starter`（已含） | [addons/gateway-access-control.yml](addons/gateway-access-control.yml) |
 
 ## 使用方式
 

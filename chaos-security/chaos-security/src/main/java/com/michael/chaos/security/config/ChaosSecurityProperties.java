@@ -1,9 +1,13 @@
 package com.michael.chaos.security.config;
 
+import com.michael.chaos.security.api.access.AccessPolicyProperties;
+import com.michael.chaos.security.api.access.PolicyCombiningAlgorithm;
+import com.michael.chaos.security.api.access.PolicyDefinition;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -129,12 +133,115 @@ public class ChaosSecurityProperties {
          */
         private List<String> adminRoles = List.of("admin");
 
+        /**
+         * 是否允许主体权限编码使用通配符，例如 order:* 覆盖 order:read。
+         */
+        private boolean wildcardPermissionEnabled = true;
+
+        /**
+         * 角色继承关系，键继承值中的全部角色，例如 admin: [manager]。
+         */
+        private Map<String, List<String>> roleHierarchy = Map.of();
+
+        /**
+         * policies 之间的合并算法；配置策略与 RBAC 之间恒为拒绝优先，DENY 策略始终可以否决 RBAC 放行。
+         */
+        private PolicyCombiningAlgorithm combiningAlgorithm = PolicyCombiningAlgorithm.DENY_OVERRIDES;
+
+        /**
+         * ABAC 授权策略。
+         */
+        private List<AccessPolicyProperties> policies = List.of();
+
+        /**
+         * 策略来源：config 只用本配置文件里的 policies；redis 额外从 Redis 读取策略，改完无需重启。
+         */
+        private PolicySourceType policySource = PolicySourceType.CONFIG;
+
+        /**
+         * 远端策略的本地缓存时长，也是策略改动生效的最大延迟；拉取失败时继续使用上一份快照。
+         */
+        private Duration policyCacheTtl = Duration.ofSeconds(30);
+
+        /**
+         * 远端策略在 Redis 中的 key，值是与 policies 结构一致的 JSON 数组。
+         */
+        private String policyRedisKey = "chaos:security:access:policies";
+
         public List<String> getAdminRoles() {
             return List.copyOf(adminRoles);
         }
 
         public void setAdminRoles(List<String> adminRoles) {
             this.adminRoles = adminRoles == null ? List.of() : List.copyOf(adminRoles);
+        }
+
+        public boolean isWildcardPermissionEnabled() {
+            return wildcardPermissionEnabled;
+        }
+
+        public void setWildcardPermissionEnabled(boolean wildcardPermissionEnabled) {
+            this.wildcardPermissionEnabled = wildcardPermissionEnabled;
+        }
+
+        public Map<String, List<String>> getRoleHierarchy() {
+            return Map.copyOf(roleHierarchy);
+        }
+
+        public void setRoleHierarchy(Map<String, List<String>> roleHierarchy) {
+            this.roleHierarchy = roleHierarchy == null ? Map.of() : Map.copyOf(roleHierarchy);
+        }
+
+        public PolicyCombiningAlgorithm getCombiningAlgorithm() {
+            return combiningAlgorithm;
+        }
+
+        public void setCombiningAlgorithm(PolicyCombiningAlgorithm combiningAlgorithm) {
+            this.combiningAlgorithm = combiningAlgorithm == null
+                    ? PolicyCombiningAlgorithm.DENY_OVERRIDES
+                    : combiningAlgorithm;
+        }
+
+        public List<AccessPolicyProperties> getPolicies() {
+            return List.copyOf(policies);
+        }
+
+        public void setPolicies(List<AccessPolicyProperties> policies) {
+            this.policies = policies == null ? List.of() : List.copyOf(policies);
+        }
+
+        public PolicySourceType getPolicySource() {
+            return policySource;
+        }
+
+        public void setPolicySource(PolicySourceType policySource) {
+            this.policySource = policySource == null ? PolicySourceType.CONFIG : policySource;
+        }
+
+        public Duration getPolicyCacheTtl() {
+            return policyCacheTtl;
+        }
+
+        public void setPolicyCacheTtl(Duration policyCacheTtl) {
+            this.policyCacheTtl = policyCacheTtl == null ? Duration.ofSeconds(30) : policyCacheTtl;
+        }
+
+        public String getPolicyRedisKey() {
+            return policyRedisKey;
+        }
+
+        public void setPolicyRedisKey(String policyRedisKey) {
+            this.policyRedisKey = policyRedisKey;
+        }
+
+        /**
+         * 转换为框架内部的策略定义列表。
+         */
+        public List<PolicyDefinition> toPolicyDefinitions() {
+            return policies.stream()
+                    .filter(policy -> policy != null)
+                    .map(AccessPolicyProperties::toDefinition)
+                    .toList();
         }
     }
 
@@ -304,5 +411,19 @@ public class ChaosSecurityProperties {
          * OAuth2 opaque/reference token。
          */
         OPAQUE
+    }
+
+    /**
+     * ABAC 策略来源。
+     */
+    public enum PolicySourceType {
+        /**
+         * 只使用配置文件里的策略。
+         */
+        CONFIG,
+        /**
+         * 在配置文件策略之外，额外从 Redis 读取策略。
+         */
+        REDIS
     }
 }

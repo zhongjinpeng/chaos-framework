@@ -36,7 +36,16 @@ public final class ChaosFeatureCatalog {
                     "token.type", value(context, "chaos.security.token.type", "JWT"),
                     "jwk-set-uri", endpoint(context, "spring.security.oauth2.resourceserver.jwt.jwk-set-uri"),
                     "introspection-uri", endpoint(context, "chaos.security.opaque-token.introspection-uri"),
-                    "revocation-service", beanTypes(context, "com.michael.chaos.security.api.token.JwtRevocationService"))),
+                    "revocation-service", beanTypes(context, "com.michael.chaos.security.api.token.JwtRevocationService"),
+                    "access.admin-roles", count(context, "chaos.security.access.admin-roles"),
+                    "access.policies", indexedCount(context, "chaos.security.access.policies", "id"),
+                    "access.combining-algorithm",
+                    value(context, "chaos.security.access.combining-algorithm", "DENY_OVERRIDES"),
+                    "access.wildcard-permission",
+                    value(context, "chaos.security.access.wildcard-permission-enabled", "true"),
+                    "access.policy-source", value(context, "chaos.security.access.policy-source", "CONFIG"),
+                    "access.policy-source-beans",
+                    beanTypes(context, "com.michael.chaos.security.api.access.AuthorizationPolicySource"))),
             entry("security-redis", "security.redis.ChaosSecurityRedisAutoConfiguration", context -> Map.of()),
             entry("authorization", "authorization.ChaosAuthorizationAutoConfiguration", context -> settings(
                     "issuer", endpoint(context, "chaos.authorization.issuer"),
@@ -48,7 +57,10 @@ public final class ChaosFeatureCatalog {
                     "issuer-uri", endpoint(context, "chaos.gateway.jwt.issuer-uri"),
                     "audiences", count(context, "chaos.gateway.jwt.audiences"),
                     "rate-limiter", beanTypes(context, "com.michael.chaos.core.ratelimit.RateLimiter"),
-                    "trusted-proxies", count(context, "chaos.gateway.trusted-proxies"))),
+                    "trusted-proxies", count(context, "chaos.gateway.trusted-proxies"),
+                    "access.enabled", value(context, "chaos.gateway.access.enabled", "false"),
+                    "access.rules", indexedCount(context, "chaos.gateway.access.rules", "action"),
+                    "access.policies", indexedCount(context, "chaos.gateway.access.policies", "id"))),
             entry("gateway-nacos", "gateway.nacos.ChaosGatewayNacosAutoConfiguration", context -> Map.of()),
             entry("cloud", "cloud.ChaosCloudAutoConfiguration", context -> Map.of()),
             entry("cloud-nacos", "cloud.nacos.ChaosCloudNacosAutoConfiguration", context -> Map.of()),
@@ -116,6 +128,19 @@ public final class ChaosFeatureCatalog {
     private static String endpoint(ChaosDiagnosticContext context, String property) {
         String value = ChaosSettingMasker.endpoint(context.property(property));
         return value.isEmpty() ? "（未配置）" : value;
+    }
+
+    /**
+     * 统计 {@code <property>[i].<requiredKey>} 形式的配置条数。
+     *
+     * <p>对象列表无法绑定成 {@code List<String>}，这里按下标探测；策略必须配 id，因此用 id 作为探测键。</p>
+     */
+    private static String indexedCount(ChaosDiagnosticContext context, String property, String requiredKey) {
+        int count = 0;
+        while (!context.property(property + "[" + count + "]." + requiredKey).isEmpty()) {
+            count++;
+        }
+        return String.valueOf(count);
     }
 
     private static String count(ChaosDiagnosticContext context, String property) {

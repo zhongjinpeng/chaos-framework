@@ -33,6 +33,143 @@
           "description": "Swagger UI，生产环境建议不要放行。"
         }
       ]
+    },
+    {
+      "name": "chaos.security.access.combining-algorithm",
+      "values": [
+        {
+          "value": "deny-overrides",
+          "description": "拒绝优先：任一配置策略 DENY 即拒绝（默认）。"
+        },
+        {
+          "value": "allow-overrides",
+          "description": "允许优先：任一配置策略 ALLOW 即放行，适合以放行规则为主的场景。"
+        },
+        {
+          "value": "first-applicable",
+          "description": "首个适用策略生效：按配置顺序取第一个非弃权的决策。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.security.access.policies[].effect",
+      "values": [
+        {
+          "value": "allow",
+          "description": "命中条件时放行。"
+        },
+        {
+          "value": "deny",
+          "description": "命中条件时拒绝；拒绝优先于 RBAC 的放行。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.security.access.policies[].conditions[].left",
+      "values": [
+        {
+          "value": "subject.userId",
+          "description": "当前用户 ID。"
+        },
+        {
+          "value": "subject.tenantId",
+          "description": "当前租户 ID。"
+        },
+        {
+          "value": "subject.roles",
+          "description": "当前用户角色集合，配合 IN / CONTAINS 使用。"
+        },
+        {
+          "value": "subject.permissions",
+          "description": "当前用户权限集合，配合 IN / CONTAINS 使用。"
+        },
+        {
+          "value": "resource.type",
+          "description": "@RequireAccess 声明的资源类型。"
+        },
+        {
+          "value": "resource.id",
+          "description": "@RequireAccess 声明的资源 ID。"
+        },
+        {
+          "value": "environment.clientIp",
+          "description": "客户端 IP（来自 chaos-web 按可信代理解析后的 MDC）。"
+        },
+        {
+          "value": "environment.time",
+          "description": "当天时刻 HH:mm:ss，配合 BETWEEN 做办公时间限制。"
+        },
+        {
+          "value": "environment.dayOfWeek",
+          "description": "星期（MONDAY…SUNDAY）。"
+        },
+        {
+          "value": "environment.http.method",
+          "description": "HTTP 方法（Servlet 环境）。"
+        }
+      ],
+      "providers": [
+        {
+          "name": "any"
+        }
+      ]
+    },
+    {
+      "name": "chaos.security.access.policies[].conditions[].operator",
+      "values": [
+        {
+          "value": "eq",
+          "description": "等于，右侧可以是固定值或另一个属性。"
+        },
+        {
+          "value": "not-eq",
+          "description": "不等于。"
+        },
+        {
+          "value": "in",
+          "description": "属于固定值集合；左侧是集合时表示交集非空。"
+        },
+        {
+          "value": "not-in",
+          "description": "不属于固定值集合。"
+        },
+        {
+          "value": "exists",
+          "description": "属性存在，不需要比较值。"
+        },
+        {
+          "value": "not-exists",
+          "description": "属性不存在，不需要比较值。"
+        },
+        {
+          "value": "gt",
+          "description": "大于，按数值或时间比较。"
+        },
+        {
+          "value": "gte",
+          "description": "大于等于。"
+        },
+        {
+          "value": "lt",
+          "description": "小于。"
+        },
+        {
+          "value": "lte",
+          "description": "小于等于。"
+        },
+        {
+          "value": "between",
+          "description": "落在两个边界值之间（闭区间），values 必须是两个值。"
+        },
+        {
+          "value": "regex",
+          "description": "完整匹配任意一条正则表达式。"
+        },
+        {
+          "value": "contains",
+          "description": "集合包含全部指定值，字符串包含全部子串。"
+        }
+      ]
     }
   ]
 }

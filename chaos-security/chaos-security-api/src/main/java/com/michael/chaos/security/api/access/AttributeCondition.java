@@ -1,8 +1,6 @@
 package com.michael.chaos.security.api.access;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -85,54 +83,70 @@ public record AttributeCondition(
     }
 
     /**
-     * 判断条件是否匹配。
+     * 属性大于固定值。
+     */
+    public static AttributeCondition gt(AttributeReference left, String value) {
+        return new AttributeCondition(left, AttributeOperator.GT, null, singleValue(value));
+    }
+
+    /**
+     * 属性大于等于固定值。
+     */
+    public static AttributeCondition gte(AttributeReference left, String value) {
+        return new AttributeCondition(left, AttributeOperator.GTE, null, singleValue(value));
+    }
+
+    /**
+     * 属性小于固定值。
+     */
+    public static AttributeCondition lt(AttributeReference left, String value) {
+        return new AttributeCondition(left, AttributeOperator.LT, null, singleValue(value));
+    }
+
+    /**
+     * 属性小于等于固定值。
+     */
+    public static AttributeCondition lte(AttributeReference left, String value) {
+        return new AttributeCondition(left, AttributeOperator.LTE, null, singleValue(value));
+    }
+
+    /**
+     * 属性落在闭区间内。
+     */
+    public static AttributeCondition between(AttributeReference left, String from, String to) {
+        Set<String> bounds = new LinkedHashSet<>();
+        bounds.add(AccessCollections.normalizeString(from));
+        bounds.add(AccessCollections.normalizeString(to));
+        return new AttributeCondition(left, AttributeOperator.BETWEEN, null, bounds);
+    }
+
+    /**
+     * 属性完整匹配正则表达式。
+     */
+    public static AttributeCondition regex(AttributeReference left, String regex) {
+        return new AttributeCondition(left, AttributeOperator.REGEX, null, singleValue(regex));
+    }
+
+    /**
+     * 属性包含全部指定值。
+     */
+    public static AttributeCondition contains(AttributeReference left, Set<String> values) {
+        return new AttributeCondition(left, AttributeOperator.CONTAINS, null, values);
+    }
+
+    /**
+     * 判断条件是否匹配，具体规则由 {@link AttributeOperator} 常量自带的匹配实现决定。
      */
     public boolean matches(AuthorizationRequest request) {
-        Object leftValue = left == null ? null : left.resolve(request).orElse(null);
-        Object rightValue = right == null ? null : right.resolve(request).orElse(null);
-        return switch (operator) {
-            case EXISTS -> leftValue != null;
-            case NOT_EXISTS -> leftValue == null;
-            case EQ -> matchesEquals(leftValue, rightValue);
-            case NOT_EQ -> matchesNotEquals(leftValue, rightValue);
-            case IN -> matchesIn(leftValue);
-            case NOT_IN -> matchesNotIn(leftValue);
-        };
+        return operator.matches(new AttributeMatchContext(
+                resolve(left, request),
+                resolve(right, request),
+                right != null,
+                values));
     }
 
-    private boolean matchesEquals(Object leftValue, Object rightValue) {
-        if (right != null) {
-            return leftValue != null
-                    && rightValue != null
-                    && Objects.equals(normalizedValue(leftValue), normalizedValue(rightValue));
-        }
-        return leftValue != null && values.stream().anyMatch(value -> Objects.equals(normalizedValue(leftValue), value));
-    }
-
-    private boolean matchesNotEquals(Object leftValue, Object rightValue) {
-        if (right != null) {
-            return leftValue != null && rightValue != null && !matchesEquals(leftValue, rightValue);
-        }
-        return leftValue != null && !values.isEmpty()
-                && values.stream().noneMatch(value -> Objects.equals(normalizedValue(leftValue), value));
-    }
-
-    private boolean matchesIn(Object leftValue) {
-        if (leftValue == null) {
-            return false;
-        }
-        if (leftValue instanceof Collection<?> collection) {
-            return collection.stream().map(this::normalizedValue).anyMatch(values::contains);
-        }
-        return values.contains(normalizedValue(leftValue));
-    }
-
-    private boolean matchesNotIn(Object leftValue) {
-        return leftValue != null && !values.isEmpty() && !matchesIn(leftValue);
-    }
-
-    private String normalizedValue(Object value) {
-        return AccessCollections.normalizeString(value);
+    private static Object resolve(AttributeReference reference, AuthorizationRequest request) {
+        return reference == null ? null : reference.resolve(request).orElse(null);
     }
 
     private static Set<String> singleValue(String value) {

@@ -116,6 +116,7 @@
 
 以下能力没有独立 Maven 模块，契约与实现分布在多个模块中：
 
+- [访问控制 RBAC + ABAC（chaos-security-api + chaos-security）](capabilities/access-control.md)
 - [分布式锁（chaos-core + chaos-redis）](capabilities/distributed-lock.md)
 - [幂等（chaos-core + chaos-web + chaos-mq + chaos-redis）](capabilities/idempotency.md)
 - [缓存 key 策略（chaos-domain + chaos-redis）](capabilities/cache-key.md)

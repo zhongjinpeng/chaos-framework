@@ -20,6 +20,9 @@ class LoginUserOpaqueTokenAuthenticationConverterTest {
     private final LoginUserOpaqueTokenAuthenticationConverter converter =
             new LoginUserOpaqueTokenAuthenticationConverter();
 
+    /**
+     * introspection 结果要转成与 JWT 模式一致的 LoginUser，业务代码才不用关心用的是哪种 token。
+     */
     @Test
     void convertShouldBuildLoginUserPrincipalFromIntrospectionClaims() {
         OAuth2AuthenticatedPrincipal principal = new DefaultOAuth2AuthenticatedPrincipal(Map.of(

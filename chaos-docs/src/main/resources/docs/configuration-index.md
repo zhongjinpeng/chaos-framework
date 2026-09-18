@@ -40,6 +40,7 @@
 | 前缀 | 模块 | Starter | 关键配置 | 默认值 | 风险提示 |
 | --- | --- | --- | --- | --- | --- |
 | `chaos.security` | chaos-security | chaos-security-starter | `enabled`、`permit-all`、`http-basic-enabled`、`token.type`、`access.admin-roles` | `true`、健康检查、`false`、`JWT`、`admin` | 白名单只放明确公开接口；默认 RBAC 放行权限编码或 admin 角色；ABAC 策略 DENY 优先 |
+| `chaos.security.access` | chaos-security | chaos-security-starter | `admin-roles`、`wildcard-permission-enabled`、`role-hierarchy`、`combining-algorithm`、`policies`、`policy-source`、`policy-cache-ttl` | `admin`、`true`、空、`deny-overrides`、空、`config`、`30s` | 细粒度限制写成 DENY 策略（ALLOW 在默认算法下会被 RBAC 放行淹没）；角色继承成环、策略写错在启动时直接报错，见[访问控制](capabilities/access-control.md) |
 | `chaos.security.jwt` | chaos-security | chaos-security-starter | `revocation-check-enabled`、`revocation-fail-open` | `true`、`false` | 已撤销 token 返回 401；撤销存储（Redis）自身异常时默认 fail-closed 返回 503；`revocation-fail-open=true` 优先可用性但注销/互踢可能失效 |
 | `chaos.security.opaque-token` | chaos-security | chaos-security-starter | `introspection-uri`、`client-id`、`client-secret`、`cache-ttl`、`cache-max-size`、`connect-timeout`、`read-timeout` | 空、空、空、`30s`、`10000`、`1s`、`3s` | 缓存只保存成功结果，TTL 不超过 token exp，也是撤销生效的最大延迟窗口（撤销实时性要求高时设为 `0`）；超时避免授权服务器变慢占满业务线程 |
 | `chaos.authorization` | chaos-authorization | chaos-authorization-starter | `issuer`、`access-token-ttl`、`refresh-token-ttl`、`reuse-refresh-tokens` | `http://localhost:9000`、`2h`、`30d`、`false` | 生产必须改 issuer；不建议复用 refresh token |
@@ -57,6 +58,7 @@
 | 前缀 | 模块 | Starter | 关键配置 | 默认值 | 风险提示 |
 | --- | --- | --- | --- | --- | --- |
 | `chaos.gateway` | chaos-gateway | chaos-gateway-starter | `auth-enabled`、`gray-enabled`、`request-timing-enabled`、`whitelist`、`blacklist` | `true`、`true`、`true`、`/actuator/health`、空 | 白名单扩大可能绕过鉴权；Prometheus 不应默认公开 |
+| `chaos.gateway.access` | chaos-gateway | chaos-gateway-starter | `enabled`、`rules`、`admin-roles`、`policies` | `false`、空、`admin`、空 | 粗粒度鉴权：命中规则的请求要过 RBAC/ABAC，没命中的直接放行；细粒度授权仍由下游 `@RequireAccess` 负责 |
 | `chaos.gateway`（入口防护） | chaos-gateway | chaos-gateway-starter | `trusted-proxies`、`internal-headers`、`reject-ambiguous-path` | 空、`X-User-Id,X-Tenant-Id`、`true` | 只有直连地址命中可信代理才解析 `X-Forwarded-For`/`X-Real-IP`；`internal-headers` 中的入站头无条件剔除，认证成功后由网关重新写入；含 `..`、`;`、编码斜杠等歧义路径直接 400，防止白名单穿越 |
 | `chaos.gateway.jwt` | chaos-gateway | chaos-gateway-starter | `validation-enabled`、`revocation-check-enabled`、`jwk-set-uri`、`issuer-uri`、`audiences`、`jws-algorithms`、`clock-skew` | `true`、`true`、空、空、空、`RS256`、`60s` | 开启校验但未配置 decoder 时默认 401；生产应配置 `issuer-uri` 与 `audiences`，否则同一 JWKS 签发给其他受众的 token 也会被接受 |
 | `chaos.gateway.opaque-token` | chaos-gateway | chaos-gateway-starter | `introspection-uri`、`client-id`、`client-secret`、`cache-ttl`、`cache-max-size`、`timeout` | 空、空、空、`30s`、`10000`、`3s` | 缓存 TTL 即撤销生效的最大延迟窗口；超时避免授权服务器变慢拖垮网关 |

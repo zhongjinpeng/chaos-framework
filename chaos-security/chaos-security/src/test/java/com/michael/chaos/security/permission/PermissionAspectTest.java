@@ -1,19 +1,15 @@
 package com.michael.chaos.security.permission;
 
+import static com.michael.chaos.security.support.AspectTestSupport.joinPoint;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.michael.chaos.audit.AuditEvent;
-import com.michael.chaos.audit.AuditEventPublisher;
+import com.michael.chaos.test.audit.CapturingAuditEventPublisher;
 import com.michael.chaos.security.annotation.Permission;
 import com.michael.chaos.security.api.auth.LoginUser;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -53,52 +49,6 @@ class PermissionAspectTest {
         assertThat(event.attributes()).containsEntry("permission", "order:create");
     }
 
-    private ProceedingJoinPoint joinPoint(Method method) throws Throwable {
-        MethodSignature signature = (MethodSignature) Proxy.newProxyInstance(
-                MethodSignature.class.getClassLoader(),
-                new Class<?>[]{MethodSignature.class},
-                (proxy, invokedMethod, args) -> switch (invokedMethod.getName()) {
-                    case "getMethod" -> method;
-                    case "getDeclaringType" -> method.getDeclaringClass();
-                    case "getName" -> method.getName();
-                    default -> defaultValue(invokedMethod.getReturnType());
-                }
-        );
-        return (ProceedingJoinPoint) Proxy.newProxyInstance(
-                ProceedingJoinPoint.class.getClassLoader(),
-                new Class<?>[]{ProceedingJoinPoint.class},
-                (proxy, invokedMethod, args) -> switch (invokedMethod.getName()) {
-                    case "getSignature" -> signature;
-                    case "proceed" -> "ok";
-                    default -> defaultValue(invokedMethod.getReturnType());
-                }
-        );
-    }
-
-    private Object defaultValue(Class<?> type) {
-        if (type == boolean.class) {
-            return false;
-        }
-        if (type == int.class || type == long.class || type == short.class || type == byte.class
-                || type == float.class || type == double.class || type == char.class) {
-            return 0;
-        }
-        return null;
-    }
-
-    private static final class CapturingAuditEventPublisher implements AuditEventPublisher {
-
-        private final List<AuditEvent> events = new ArrayList<>();
-
-        @Override
-        public void publish(AuditEvent event) {
-            events.add(event);
-        }
-
-        private List<AuditEvent> events() {
-            return events;
-        }
-    }
 
     private static final class SecuredService {
 

@@ -5,7 +5,21 @@ import com.michael.chaos.audit.NoopAuditEventPublisher;
 import com.michael.chaos.autoconfigure.support.ProductionSafety;
 import com.michael.chaos.core.diagnostic.ChaosDiagnostic;
 import com.michael.chaos.core.diagnostic.ChaosDiagnosticException;
+import com.michael.chaos.security.access.AccessExpressionEvaluator;
+import com.michael.chaos.security.access.AccessSubjectFactory;
+import com.michael.chaos.security.access.ClaimsPermissionResolver;
+import com.michael.chaos.security.access.PermissionResolver;
+import com.michael.chaos.security.access.RequireAccessAspect;
+import com.michael.chaos.security.access.SubjectAttributeResolver;
+import com.michael.chaos.security.access.env.RequestContextContributor;
+import com.michael.chaos.security.access.env.ServletRequestContextContributor;
+import com.michael.chaos.security.access.env.TimeContextContributor;
+import com.michael.chaos.security.api.access.AccessPolicyFactory;
+import com.michael.chaos.security.api.access.AuthorizationContextContributor;
 import com.michael.chaos.security.api.access.AuthorizationManager;
+import com.michael.chaos.security.api.access.CompositeAuthorizationContextContributor;
+import com.michael.chaos.security.api.access.CompositeAuthorizationPolicy;
+import com.michael.chaos.security.api.access.MapRoleHierarchy;
 import com.michael.chaos.security.api.access.AuthorizationPolicy;
 import com.michael.chaos.security.api.access.DefaultAuthorizationManager;
 import com.michael.chaos.security.api.access.PermissionAuthorizationService;
@@ -31,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -40,6 +55,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.client.support.BasicAuthenticationInterceptor;
@@ -68,6 +84,15 @@ import org.springframework.web.client.RestTemplate;
 @EnableConfigurationProperties(ChaosSecurityProperties.class)
 
 public class ChaosSecurityAutoConfiguration {
+
+    /**
+     * 访问主体工厂，由本类的 {@link #chaosAccessSubjectFactory} 注册，业务侧可以覆盖。
+     *
+     * <p>用字段注入而不是给 {@code permissionAuthorizationService} 加参数：已发布的 {@code @Bean} 方法签名
+     * 属于公开 API，MINOR 版本改签名会被 japicmp 兼容门禁拦下。</p>
+     */
+    @Autowired
+    private ObjectProvider<AccessSubjectFactory> accessSubjectFactoryProvider;
 
     /**
      * 注册 JWT 到 LoginUser 的转换器。
@@ -233,7 +258,108 @@ public class ChaosSecurityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(RbacAuthorizationPolicy.class)
     public RbacAuthorizationPolicy rbacAuthorizationPolicy(ChaosSecurityProperties properties) {
-        return new RbacAuthorizationPolicy("rbac", Set.copyOf(properties.getAccess().getAdminRoles()));
+        ChaosSecurityProperties.Access access = properties.getAccess();
+        return new RbacAuthorizationPolicy(
+                "rbac",
+                Set.copyOf(access.getAdminRoles()),
+                new MapRoleHierarchy(access.getRoleHierarchy()),
+                access.isWildcardPermissionEnabled());
+    }
+
+    /**
+     * 把 {@code chaos.security.access.policies} 配置的 ABAC 策略注册为一条组合策略。
+     *
+     * <p>组内按 {@code chaos.security.access.combining-algorithm} 合并；组合策略与 RBAC 之间恒为拒绝优先，
+     * 保证配置里的 DENY 规则一定能否决 RBAC 的放行。</p>
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "chaosConfiguredAccessPolicy")
+    public CompositeAuthorizationPolicy chaosConfiguredAccessPolicy(ChaosSecurityProperties properties) {
+        ChaosSecurityProperties.Access access = properties.getAccess();
+        return new CompositeAuthorizationPolicy(
+                "chaos-configured-access",
+                AccessPolicyFactory.create(access.toPolicyDefinitions(), "chaos.security.access.policies"),
+                access.getCombiningAlgorithm());
+    }
+
+    /**
+     * 注册默认权限解析器：直接使用令牌里的权限。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PermissionResolver permissionResolver() {
+        return new ClaimsPermissionResolver();
+    }
+
+    /**
+     * 注册访问主体工厂。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AccessSubjectFactory chaosAccessSubjectFactory(
+            PermissionResolver permissionResolver,
+            ObjectProvider<SubjectAttributeResolver> subjectAttributeResolvers) {
+        return new AccessSubjectFactory(permissionResolver, subjectAttributeResolvers.orderedStream().toList());
+    }
+
+    /**
+     * 注册 {@code @RequireAccess} 表达式求值器。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AccessExpressionEvaluator accessExpressionEvaluator() {
+        return new AccessExpressionEvaluator();
+    }
+
+    /**
+     * 注册时间环境属性贡献者。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TimeContextContributor timeContextContributor() {
+        return new TimeContextContributor();
+    }
+
+    /**
+     * 注册请求上下文环境属性贡献者。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public RequestContextContributor requestContextContributor() {
+        return new RequestContextContributor();
+    }
+
+    /**
+     * 把所有环境属性贡献者合并成一个，使用方只依赖单个贡献者。
+     */
+    @Bean
+    @ConditionalOnMissingBean(CompositeAuthorizationContextContributor.class)
+    public CompositeAuthorizationContextContributor chaosAuthorizationContextContributor(
+            ObjectProvider<AuthorizationContextContributor> contextContributors) {
+        return new CompositeAuthorizationContextContributor(contextContributors.orderedStream()
+                .filter(contributor -> !(contributor instanceof CompositeAuthorizationContextContributor))
+                .toList());
+    }
+
+    /**
+     * 注册 RequireAccess 统一授权切面。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public RequireAccessAspect requireAccessAspect(
+            AuthorizationManager authorizationManager,
+            AccessSubjectFactory accessSubjectFactory,
+            AccessExpressionEvaluator accessExpressionEvaluator,
+            CompositeAuthorizationContextContributor authorizationContextContributor,
+            ObjectProvider<AuditEventPublisher> auditEventPublisherProvider,
+            ObjectProvider<ChaosMetrics> metricsProvider) {
+        return new RequireAccessAspect(
+                authorizationManager,
+                accessSubjectFactory,
+                accessExpressionEvaluator,
+                authorizationContextContributor,
+                auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
+                metricsProvider.getIfAvailable());
     }
 
     /**
@@ -251,7 +377,9 @@ public class ChaosSecurityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public PermissionAuthorizationService permissionAuthorizationService(AuthorizationManager authorizationManager) {
-        return new PermissionAuthorizationService(authorizationManager);
+        return new PermissionAuthorizationService(
+                authorizationManager,
+                accessSubjectFactoryProvider.getIfAvailable(() -> new AccessSubjectFactory(null)));
     }
 
     /**
@@ -306,5 +434,28 @@ public class ChaosSecurityAutoConfiguration {
     @ConditionalOnMissingBean
     public DataScopeAspect dataScopeAspect() {
         return new DataScopeAspect();
+    }
+
+    /**
+     * Servlet 环境下的授权环境属性。
+     *
+     * <p>单独放在嵌套配置里：{@code @Bean} 方法签名引用了 servlet 相关类型，必须先确认这些类存在。</p>
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = {
+            "jakarta.servlet.http.HttpServletRequest",
+            "org.springframework.web.context.request.RequestContextHolder"
+    })
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+    public static class ServletAccessContextConfiguration {
+
+        /**
+         * 注册 Servlet 请求环境属性贡献者。
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public ServletRequestContextContributor servletRequestContextContributor() {
+            return new ServletRequestContextContributor();
+        }
     }
 }

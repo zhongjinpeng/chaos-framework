@@ -2,8 +2,6 @@ package com.michael.chaos.security.oauth2;
 
 import com.michael.chaos.security.api.auth.ChaosJwtClaims;
 import com.michael.chaos.security.api.auth.LoginUser;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import org.springframework.core.convert.converter.Converter;
@@ -22,8 +20,8 @@ public class LoginUserJwtAuthenticationConverter implements Converter<Jwt, Abstr
      */
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        Set<String> roles = claimAsSet(jwt, ChaosJwtClaims.ROLES);
-        Set<String> permissions = claimAsSet(jwt, ChaosJwtClaims.PERMISSIONS);
+        Set<String> roles = ChaosJwtClaims.asStringSet(jwt.getClaims().get(ChaosJwtClaims.ROLES));
+        Set<String> permissions = ChaosJwtClaims.asStringSet(jwt.getClaims().get(ChaosJwtClaims.PERMISSIONS));
         String userId = firstNonBlank(jwt.getClaimAsString(ChaosJwtClaims.USER_ID), jwt.getSubject());
         String username = firstNonBlank(
                 jwt.getClaimAsString(ChaosJwtClaims.USERNAME),
@@ -51,31 +49,6 @@ public class LoginUserJwtAuthenticationConverter implements Converter<Jwt, Abstr
                 return loginUser;
             }
         };
-    }
-
-    /**
-     * 将字符串或集合 claim 统一转换为不可变集合。
-     */
-    private Set<String> claimAsSet(Jwt jwt, String claimName) {
-        Object claim = jwt.getClaims().get(claimName);
-        if (claim instanceof Collection<?> values) {
-            Set<String> result = new HashSet<>();
-            for (Object value : values) {
-                if (value != null && !value.toString().isBlank()) {
-                    result.add(value.toString());
-                }
-            }
-            return Set.copyOf(result);
-        }
-        if (claim instanceof String value && !value.isBlank()) {
-            Set<String> result = new HashSet<>();
-            Arrays.stream(value.split(","))
-                    .map(String::trim)
-                    .filter(item -> !item.isBlank())
-                    .forEach(result::add);
-            return Set.copyOf(result);
-        }
-        return Set.of();
     }
 
     private String firstNonBlank(String... values) {
