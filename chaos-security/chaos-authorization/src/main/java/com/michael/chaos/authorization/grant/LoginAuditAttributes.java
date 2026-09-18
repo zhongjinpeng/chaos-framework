@@ -1,7 +1,7 @@
 package com.michael.chaos.authorization.grant;
 
+import com.michael.chaos.audit.AuditAttributes;
 import com.michael.chaos.authorization.session.AuthorizationLoginContext;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -26,12 +26,12 @@ final class LoginAuditAttributes {
     }
 
     static Map<String, String> from(String username, AuthorizationLoginContext loginContext) {
-        Map<String, String> attributes = new LinkedHashMap<>();
-        putIfNotBlank(attributes, USERNAME, username);
-        putIfNotBlank(attributes, "grantType", loginContext.grantType());
-        putIfNotBlank(attributes, "deviceId", loginContext.deviceId());
-        putIfNotBlank(attributes, "userAgent", loginContext.userAgent());
-        return Map.copyOf(attributes);
+        return AuditAttributes.create()
+                .putIfNotBlank(USERNAME, username)
+                .putIfNotBlank("grantType", loginContext.grantType())
+                .putIfNotBlank("deviceId", loginContext.deviceId())
+                .putIfNotBlank("userAgent", loginContext.userAgent())
+                .build();
     }
 
     static String tenant(Map<String, Object> parameters) {
@@ -52,9 +52,4 @@ final class LoginAuditAttributes {
         return value instanceof String text ? text.trim() : "";
     }
 
-    private static void putIfNotBlank(Map<String, String> attributes, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            attributes.put(key, value.trim());
-        }
-    }
 }

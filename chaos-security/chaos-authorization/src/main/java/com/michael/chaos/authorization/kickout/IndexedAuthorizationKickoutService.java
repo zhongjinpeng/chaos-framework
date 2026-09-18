@@ -8,8 +8,6 @@ import com.michael.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.michael.chaos.authorization.session.AuthorizationLoginContext;
 import com.michael.chaos.security.api.auth.LoginUser;
 import com.michael.chaos.security.api.token.JwtRevocationService;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -113,22 +111,8 @@ public class IndexedAuthorizationKickoutService implements AuthorizationKickoutS
                 .principalId(session.principalName())
                 .clientId(session.registeredClientId())
                 .ip(session.ip())
-                .attributes(auditAttributes(session))
+                .attributes(session.auditAttributes())
                 .build());
     }
 
-    private Map<String, String> auditAttributes(AuthorizationSession session) {
-        Map<String, String> attributes = new LinkedHashMap<>();
-        putIfNotBlank(attributes, "authorizationId", session.authorizationId());
-        putIfNotBlank(attributes, "grantType", session.grantType());
-        putIfNotBlank(attributes, "deviceId", session.deviceId());
-        putIfNotBlank(attributes, "userAgent", session.userAgent());
-        return Map.copyOf(attributes);
-    }
-
-    private void putIfNotBlank(Map<String, String> attributes, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            attributes.put(key, value);
-        }
-    }
 }

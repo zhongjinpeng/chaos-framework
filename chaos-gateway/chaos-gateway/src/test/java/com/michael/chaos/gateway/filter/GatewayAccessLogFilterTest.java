@@ -12,6 +12,9 @@ import reactor.core.publisher.Mono;
 
 class GatewayAccessLogFilterTest {
 
+    /**
+     * 网关访问日志要覆盖整条过滤器链并单独聚合下游耗时，区分网关自己慢还是下游慢。
+     */
     @Test
     void coversGatewayChainAndAggregatesDownstreamStage() {
         GatewayAccessLogFilter accessLogFilter = new GatewayAccessLogFilter("gateway", "test");

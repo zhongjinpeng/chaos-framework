@@ -13,18 +13,27 @@ import org.junit.jupiter.api.Test;
  */
 class RegisteredClientIdsTest {
 
+    /**
+     * 主键必须由 clientId 稳定推导，重启、换实例都要得到同一个值。
+     */
     @Test
     void shouldDeriveTheSameIdForTheSameClientId() {
         assertThat(RegisteredClientIds.stableId("iam-client"))
                 .isEqualTo(RegisteredClientIds.stableId("iam-client"));
     }
 
+    /**
+     * 不同客户端不能推导出同一个主键，否则会互相覆盖注册信息。
+     */
     @Test
     void shouldDeriveDifferentIdsForDifferentClients() {
         assertThat(RegisteredClientIds.stableId("iam-client"))
                 .isNotEqualTo(RegisteredClientIds.stableId("order-client"));
     }
 
+    /**
+     * 空 clientId 直接报错，避免用空串算出一个看似合法的主键。
+     */
     @Test
     void shouldRejectBlankClientId() {
         assertThatThrownBy(() -> RegisteredClientIds.stableId(" "))

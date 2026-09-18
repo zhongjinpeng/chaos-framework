@@ -19,6 +19,9 @@ class InMemoryIdempotentRecordStoreTest {
         return new IdempotentRecord(200, "text/plain", body.getBytes(StandardCharsets.UTF_8), Map.of(), 1L);
     }
 
+    /**
+     * 保存的首次响应快照要能原样读回，重复请求回放才有意义。
+     */
     @Test
     void shouldReturnSavedRecord() {
         InMemoryIdempotentRecordStore store = new InMemoryIdempotentRecordStore();
@@ -28,6 +31,9 @@ class InMemoryIdempotentRecordStoreTest {
         assertEquals("first", new String(store.find("k1").orElseThrow().body(), StandardCharsets.UTF_8));
     }
 
+    /**
+     * 过期快照必须读不到，否则客户端会拿到过时的响应。
+     */
     @Test
     void shouldNotReturnExpiredRecord() throws InterruptedException {
         InMemoryIdempotentRecordStore store = new InMemoryIdempotentRecordStore();
@@ -38,6 +44,9 @@ class InMemoryIdempotentRecordStoreTest {
         assertEquals(0, store.size());
     }
 
+    /**
+     * 同键再次保存以最新为准，避免残留旧快照。
+     */
     @Test
     void shouldOverwriteExistingRecord() {
         InMemoryIdempotentRecordStore store = new InMemoryIdempotentRecordStore();
@@ -48,6 +57,9 @@ class InMemoryIdempotentRecordStoreTest {
         assertEquals("second", new String(store.find("k1").orElseThrow().body(), StandardCharsets.UTF_8));
     }
 
+    /**
+     * 删除后立即读不到，配合业务失败时的清理逻辑。
+     */
     @Test
     void shouldRemoveRecord() {
         InMemoryIdempotentRecordStore store = new InMemoryIdempotentRecordStore();

@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 
 class LoginAuditAttributesTest {
 
+    /**
+     * 登录审计绝不能记录密码、验证码、客户端密钥——这是审计表最容易泄密的地方。
+     */
     @Test
     void shouldKeepOnlyNonSensitiveLoginAttributes() {
         Map<String, Object> parameters = new LinkedHashMap<>();
@@ -28,6 +31,9 @@ class LoginAuditAttributesTest {
                 .doesNotContainKeys("password", "refresh_token");
     }
 
+    /**
+     * 租户参数有四种历史写法，取值顺序要和密码模式登录保持一致，否则审计记的租户和实际登录的不是一个。
+     */
     @Test
     void shouldResolveTenantUsingPasswordGrantCompatibilityOrder() {
         Map<String, Object> parameters = Map.of(

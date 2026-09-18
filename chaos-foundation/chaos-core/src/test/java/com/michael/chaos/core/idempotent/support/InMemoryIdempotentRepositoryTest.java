@@ -7,12 +7,18 @@ import org.junit.jupiter.api.Test;
 
 class InMemoryIdempotentRepositoryTest {
 
+    /**
+     * 首次请求必须放行，幂等仓储只拦重复请求。
+     */
     @Test
     void firstCallWithKeyReturnsTrue() {
         InMemoryIdempotentRepository repo = new InMemoryIdempotentRepository();
         assertTrue(repo.saveIfAbsent("order-123", Duration.ofSeconds(10)));
     }
 
+    /**
+     * TTL 内重复的幂等键必须被拦住，这是幂等的核心语义。
+     */
     @Test
     void secondCallWithSameKeyWithinTtlReturnsFalse() {
         InMemoryIdempotentRepository repo = new InMemoryIdempotentRepository();
@@ -20,6 +26,9 @@ class InMemoryIdempotentRepositoryTest {
         assertFalse(repo.saveIfAbsent("order-123", Duration.ofSeconds(10)));
     }
 
+    /**
+     * TTL 过期后同一个键要能再次使用，否则键会被永久占用。
+     */
     @Test
     void afterTtlExpiresSameKeyReturnsTrue() throws InterruptedException {
         InMemoryIdempotentRepository repo = new InMemoryIdempotentRepository();
@@ -44,6 +53,9 @@ class InMemoryIdempotentRepositoryTest {
         assertFalse(repo.saveIfAbsent("k3", Duration.ofMinutes(1)));
     }
 
+    /**
+     * 业务失败时要能主动释放键，避免一次失败把这个键锁死到 TTL 结束。
+     */
     @Test
     void removeReleasesKey() {
         InMemoryIdempotentRepository repo = new InMemoryIdempotentRepository();
@@ -52,6 +64,9 @@ class InMemoryIdempotentRepositoryTest {
         assertTrue(repo.saveIfAbsent("order-9", Duration.ofMinutes(1)));
     }
 
+    /**
+     * 不同键之间互不影响，防止实现把不同请求算成同一个。
+     */
     @Test
     void differentKeysBothReturnTrue() {
         InMemoryIdempotentRepository repo = new InMemoryIdempotentRepository();

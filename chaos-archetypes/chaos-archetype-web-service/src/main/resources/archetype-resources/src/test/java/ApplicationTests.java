@@ -39,12 +39,18 @@ class ApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    /**
+     * 没有登录态的请求必须被挡在业务代码之前，确认安全过滤器链真的生效。
+     */
     @Test
     void unauthenticatedRequestShouldBeRejected() throws Exception {
         mockMvc.perform(get("/api/todos"))
                 .andExpect(status().isUnauthorized());
     }
 
+    /**
+     * 有写权限的用户走完整链路（安全 → 权限切面 → 租户上下文 → 统一响应包装）。
+     */
     @Test
     void writerShouldCreateAndListTodos() throws Exception {
         mockMvc.perform(post("/api/todos")
@@ -61,6 +67,9 @@ class ApplicationTests {
                 .andExpect(jsonPath("$.data[0].title").value("写第一个用例"));
     }
 
+    /**
+     * 只读用户不能写：权限编码是否生效，只有这种反向用例能验证。
+     */
     @Test
     void readerShouldNotCreateTodos() throws Exception {
         mockMvc.perform(post("/api/todos")

@@ -13,8 +13,6 @@ import com.michael.chaos.authorization.session.AuthorizationLoginContext;
 import com.michael.chaos.security.api.auth.LoginUser;
 import com.michael.chaos.security.api.token.JwtRevocationService;
 import com.michael.chaos.security.api.token.NoopJwtRevocationService;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -101,24 +99,10 @@ public class RedisAuthorizationKickoutService implements AuthorizationKickoutSer
                 .tenantId(user.tenantId())
                 .clientId(registeredClient.getId())
                 .ip(session.ip())
-                .attributes(auditAttributes(session))
+                .attributes(session.auditAttributes())
                 .build());
     }
 
-    private Map<String, String> auditAttributes(AuthorizationSession session) {
-        Map<String, String> attributes = new LinkedHashMap<>();
-        putIfNotBlank(attributes, "authorizationId", session.authorizationId());
-        putIfNotBlank(attributes, "grantType", session.grantType());
-        putIfNotBlank(attributes, "deviceId", session.deviceId());
-        putIfNotBlank(attributes, "userAgent", session.userAgent());
-        return Map.copyOf(attributes);
-    }
-
-    private void putIfNotBlank(Map<String, String> attributes, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            attributes.put(key, value);
-        }
-    }
 
     private void removeStaleIndex(LoginUser user, RegisteredClient registeredClient, String authorizationId) {
         String clientId = properties.getKickout().getScope() == ChaosAuthorizationProperties.Scope.CLIENT

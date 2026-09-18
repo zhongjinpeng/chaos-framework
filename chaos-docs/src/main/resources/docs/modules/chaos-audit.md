@@ -57,6 +57,19 @@ auditEventPublisher.publish(AuditSupport.event(AuditAction.AUTH_LOGIN_SUCCESS, A
         .build());
 ```
 
+多个属性、且大多"有值才写"时用 `AuditAttributes`：
+
+```java
+.attributes(AuditAttributes.create()
+        .putIfNotBlank("grantType", loginContext.grantType())
+        .putIfNotBlank("deviceId", loginContext.deviceId())
+        .put("rotated", rotated)
+        .build())
+```
+
+`putIfNotBlank` 跳过空值（设备号、User-Agent 这类可能缺失的字段），`put` 只跳过 null
+（布尔、计数这类"值本身就是结论"的字段不能被当成空值丢掉）。
+
 ## 扩展点
 
 业务系统可以提供自己的 Spring Bean 覆盖默认日志发布器：

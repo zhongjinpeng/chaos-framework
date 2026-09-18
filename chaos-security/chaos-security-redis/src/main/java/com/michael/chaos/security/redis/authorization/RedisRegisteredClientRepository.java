@@ -35,7 +35,7 @@ public class RedisRegisteredClientRepository implements RegisteredClientReposito
             RedisTemplate<Object, Object> redisTemplate,
             ChaosAuthorizationProperties properties) {
         this.redisTemplate = redisTemplate;
-        this.prefix = normalizePrefix(properties.getClient().getRedisKeyPrefix());
+        this.prefix = RedisKeyPrefixes.normalize(properties.getClient().getRedisKeyPrefix(), "chaos:authorization:client");
     }
 
     @Override
@@ -83,9 +83,4 @@ public class RedisRegisteredClientRepository implements RegisteredClientReposito
                 .encodeToString((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
     }
 
-    private String normalizePrefix(String value) {
-        return value == null || value.isBlank()
-                ? "chaos:authorization:client"
-                : value.replaceAll(":+$", "");
-    }
 }

@@ -27,6 +27,18 @@ public final class ChaosStartupReportRenderer {
      */
     public static String render(ChaosFeatureReport report) {
         StringBuilder builder = new StringBuilder();
+        appendHeader(builder, report);
+        appendEnabled(builder, report);
+        appendDisabled(builder, report);
+        appendFindings(builder, report);
+        builder.append("\n  查看完整报告：暴露 actuator 端点 chaos（management.endpoints.web.exposure.include）后访问 /actuator/chaos");
+        return builder.toString();
+    }
+
+    /**
+     * 报告头：应用、profile、生产模式与 fail-fast 开关。
+     */
+    private static void appendHeader(StringBuilder builder, ChaosFeatureReport report) {
         builder.append("Chaos 启动报告 | 应用 ").append(report.application())
                 .append(" | profile ").append(report.activeProfiles().isEmpty() ? "[default]" : report.activeProfiles())
                 .append(" | 生产模式 ").append(report.productionMode() ? "是" : "否")
@@ -37,7 +49,12 @@ public final class ChaosStartupReportRenderer {
                     .map(entry -> entry.getKey() + "=" + entry.getValue())
                     .collect(Collectors.joining(" | ")));
         }
+    }
 
+    /**
+     * 已启用功能：每个一行，带关键配置。
+     */
+    private static void appendEnabled(StringBuilder builder, ChaosFeatureReport report) {
         List<Feature> enabled = report.enabledFeatures();
         builder.append("\n  已启用（").append(enabled.size()).append("）");
         if (enabled.isEmpty()) {
@@ -51,25 +68,36 @@ public final class ChaosStartupReportRenderer {
                         .collect(Collectors.joining(", ")));
             }
         }
+    }
 
+    /**
+     * 未启用功能：按原因归类合并，缺依赖的只列功能名（通常是有意不引入）。
+     */
+    private static void appendDisabled(StringBuilder builder, ChaosFeatureReport report) {
         Map<DisabledCategory, List<Feature>> disabled = new EnumMap<>(DisabledCategory.class);
         report.features().stream()
                 .filter(feature -> !feature.enabled())
                 .forEach(feature -> disabled.computeIfAbsent(feature.category(), key -> new ArrayList<>()).add(feature));
-        if (!disabled.isEmpty()) {
-            builder.append("\n  未启用");
-            disabled.forEach((category, features) -> {
-                builder.append("\n    ").append(pad(label(category)));
-                if (category == DisabledCategory.MISSING_DEPENDENCY || category == DisabledCategory.WEB_APPLICATION_TYPE) {
-                    builder.append(features.stream().map(Feature::name).collect(Collectors.joining(", ")));
-                } else {
-                    builder.append(features.stream()
-                            .map(feature -> feature.name() + "（" + feature.reason() + "）")
-                            .collect(Collectors.joining("; ")));
-                }
-            });
+        if (disabled.isEmpty()) {
+            return;
         }
+        builder.append("\n  未启用");
+        disabled.forEach((category, features) -> {
+            builder.append("\n    ").append(pad(label(category)));
+            if (category == DisabledCategory.MISSING_DEPENDENCY || category == DisabledCategory.WEB_APPLICATION_TYPE) {
+                builder.append(features.stream().map(Feature::name).collect(Collectors.joining(", ")));
+            } else {
+                builder.append(features.stream()
+                        .map(feature -> feature.name() + "（" + feature.reason() + "）")
+                        .collect(Collectors.joining("; ")));
+            }
+        });
+    }
 
+    /**
+     * 诊断提示：按严重程度排序，每条都带"怎么修"。
+     */
+    private static void appendFindings(StringBuilder builder, ChaosFeatureReport report) {
         builder.append("\n  诊断（").append(report.findings().size()).append("）");
         if (report.findings().isEmpty()) {
             builder.append("\n    未发现问题");
@@ -79,8 +107,6 @@ public final class ChaosStartupReportRenderer {
                     .append("：").append(finding.problem())
                     .append("\n           怎么修：").append(finding.fix());
         }
-        builder.append("\n  查看完整报告：暴露 actuator 端点 chaos（management.endpoints.web.exposure.include）后访问 /actuator/chaos");
-        return builder.toString();
     }
 
     private static String label(DisabledCategory category) {

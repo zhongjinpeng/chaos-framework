@@ -8,6 +8,7 @@ import com.michael.chaos.authorization.kickout.AuthorizationKickoutService;
 import com.michael.chaos.authorization.session.AuthorizationLoginContext;
 import com.michael.chaos.authorization.session.AuthorizationSessionAttributes;
 import com.michael.chaos.authorization.session.AuthorizationSessionParameterNames;
+import com.michael.chaos.security.api.auth.ChaosJwtClaims;
 import com.michael.chaos.security.api.auth.LoginUser;
 import java.security.Principal;
 import java.util.Arrays;
@@ -100,13 +101,7 @@ public class ChaosGrantAuthenticationProvider implements AuthenticationProvider 
         try {
             loginUser = handler.authenticate(loginParameters);
         } catch (AuthenticationException ex) {
-            auditEventPublisher.publish(AuditSupport.event(AuditAction.AUTH_LOGIN_FAILURE, AuditOutcome.FAILURE)
-                    .tenantId(LoginAuditAttributes.tenant(loginParameters))
-                    .clientId(registeredClient.getClientId())
-                    .ip(loginContext.ip())
-                    .reason(ex.getMessage())
-                    .attributes(LoginAuditAttributes.from(loginParameters, loginContext))
-                    .build());
+            publishLoginFailure(registeredClient, loginParameters, loginContext, ex);
             throw ex;
         }
         kickoutService.kickout(loginUser, registeredClient, loginContext);
@@ -128,6 +123,37 @@ public class ChaosGrantAuthenticationProvider implements AuthenticationProvider 
         OAuth2Authorization authorization = authorizationBuilder.build();
         authorizationService.save(authorization);
         kickoutService.record(loginUser, registeredClient, authorization, loginContext);
+        publishLoginSuccess(registeredClient, loginUser, loginContext);
+        return new OAuth2AccessTokenAuthenticationToken(
+                registeredClient, clientPrincipal, accessToken, refreshToken, additionalParameters(loginUser));
+    }
+
+    /**
+     * 发布登录失败审计。
+     *
+     * <p>失败事件的租户取自请求参数而不是登录用户：这时候还没认证成功，没有用户对象。</p>
+     */
+    private void publishLoginFailure(
+            RegisteredClient registeredClient,
+            Map<String, Object> loginParameters,
+            AuthorizationLoginContext loginContext,
+            AuthenticationException ex) {
+        auditEventPublisher.publish(AuditSupport.event(AuditAction.AUTH_LOGIN_FAILURE, AuditOutcome.FAILURE)
+                .tenantId(LoginAuditAttributes.tenant(loginParameters))
+                .clientId(registeredClient.getClientId())
+                .ip(loginContext.ip())
+                .reason(ex.getMessage())
+                .attributes(LoginAuditAttributes.from(loginParameters, loginContext))
+                .build());
+    }
+
+    /**
+     * 发布登录成功审计。
+     */
+    private void publishLoginSuccess(
+            RegisteredClient registeredClient,
+            LoginUser loginUser,
+            AuthorizationLoginContext loginContext) {
         auditEventPublisher.publish(AuditSupport.event(AuditAction.AUTH_LOGIN_SUCCESS, AuditOutcome.SUCCESS)
                 .principalId(loginUser.userId())
                 .tenantId(loginUser.tenantId())
@@ -135,14 +161,19 @@ public class ChaosGrantAuthenticationProvider implements AuthenticationProvider 
                 .ip(loginContext.ip())
                 .attributes(LoginAuditAttributes.from(loginUser.username(), loginContext))
                 .build());
+    }
 
-        Map<String, Object> additionalParameters = Map.of(
-                "userId", loginUser.userId(),
-                "username", loginUser.username(),
-                "tenantId", loginUser.tenantId()
+    /**
+     * 令牌响应里附带的用户信息。
+     *
+     * <p>键名复用 {@link ChaosJwtClaims}：资源服务器、网关按同一组常量解析，写死字符串迟早两边对不上。</p>
+     */
+    private Map<String, Object> additionalParameters(LoginUser loginUser) {
+        return Map.of(
+                ChaosJwtClaims.USER_ID, loginUser.userId(),
+                ChaosJwtClaims.USERNAME, loginUser.username(),
+                ChaosJwtClaims.TENANT_ID, loginUser.tenantId()
         );
-        return new OAuth2AccessTokenAuthenticationToken(
-                registeredClient, clientPrincipal, accessToken, refreshToken, additionalParameters);
     }
 
     /**

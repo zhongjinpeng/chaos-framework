@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 class DistributedLockExecuteTest {
 
+    /**
+     * 拿到锁时要正常返回业务结果，锁不能改变业务语义。
+     */
     @Test
     void executeReturnsActionResultWhenLockAcquired() throws Exception {
         DistributedLock lock = new AlwaysAcquireLock();
@@ -17,6 +19,9 @@ class DistributedLockExecuteTest {
         assertEquals("hello", result);
     }
 
+    /**
+     * 拿不到锁必须显式失败，静默跳过会让调用方以为业务执行过了。
+     */
     @Test
     void executeThrowsIllegalStateExceptionWhenLockNotAcquired() {
         DistributedLock lock = new NeverAcquireLock();
@@ -25,6 +30,9 @@ class DistributedLockExecuteTest {
         assertTrue(ex.getMessage().contains("key"));
     }
 
+    /**
+     * 业务抛异常也要释放锁，否则一次异常会把这个 key 锁死。
+     */
     @Test
     void executeCallsUnlockEvenIfActionThrows() {
         AtomicBoolean unlocked = new AtomicBoolean(false);

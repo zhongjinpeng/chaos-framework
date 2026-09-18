@@ -1,16 +1,14 @@
 package com.michael.chaos.gateway.filter;
 
+import static com.michael.chaos.gateway.filter.GatewayFilterTestSupport.responseBody;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.michael.chaos.audit.AuditEvent;
-import com.michael.chaos.audit.AuditEventPublisher;
+import com.michael.chaos.test.audit.CapturingAuditEventPublisher;
 import com.michael.chaos.gateway.config.ChaosGatewayProperties;
 import com.michael.chaos.security.api.token.JwtRevocationService;
 import com.michael.chaos.trace.RequestTiming;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -84,6 +82,9 @@ class JwtAuthenticationGatewayFilterTest {
         assertThat(responseBody(exchange)).contains("\"message\":\"unauthorized\"");
     }
 
+    /**
+     * 转发还没结束时只应记录认证阶段耗时，否则下游慢会被算进网关自身的鉴权耗时。
+     */
     @Test
     void shouldRecordOnlyAuthenticationBeforeForwardingCompletes() {
         ChaosGatewayProperties properties = new ChaosGatewayProperties();
@@ -181,21 +182,4 @@ class JwtAuthenticationGatewayFilterTest {
         );
     }
 
-    private String responseBody(MockServerWebExchange exchange) {
-        return exchange.getResponse().getBodyAsString().block();
-    }
-
-    private static final class CapturingAuditEventPublisher implements AuditEventPublisher {
-
-        private final List<AuditEvent> events = new ArrayList<>();
-
-        @Override
-        public void publish(AuditEvent event) {
-            events.add(event);
-        }
-
-        private List<AuditEvent> events() {
-            return events;
-        }
-    }
 }

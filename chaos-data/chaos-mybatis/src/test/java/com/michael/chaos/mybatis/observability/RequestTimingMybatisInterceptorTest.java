@@ -13,6 +13,9 @@ import org.junit.jupiter.api.Test;
 
 class RequestTimingMybatisInterceptorTest {
 
+    /**
+     * 数据库耗时要计入当前请求的计时器，接口慢时才能一眼看出是慢在 SQL 还是慢在业务逻辑。
+     */
     @Test
     void recordsDatabaseTimeWhenARequestContextIsActive() throws Throwable {
         RequestTiming timing = RequestTiming.start();

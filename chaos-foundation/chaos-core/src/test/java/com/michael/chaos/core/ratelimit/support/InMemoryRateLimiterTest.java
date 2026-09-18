@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 
 class InMemoryRateLimiterTest {
 
+    /**
+     * 配额内的请求必须全部放行，限流器不能宁可错杀。
+     */
     @Test
     void allowsRequestsUpToPermitsPerSecond() {
         InMemoryRateLimiter limiter = new InMemoryRateLimiter();
@@ -17,6 +20,9 @@ class InMemoryRateLimiterTest {
         }
     }
 
+    /**
+     * 超过配额必须拒绝，这是限流器存在的理由。
+     */
     @Test
     void rejectsRequestsBeyondPermitsPerSecond() {
         InMemoryRateLimiter limiter = new InMemoryRateLimiter();
@@ -30,6 +36,9 @@ class InMemoryRateLimiterTest {
         assertFalse(limiter.tryAcquire(context), "Subsequent request should also be rejected");
     }
 
+    /**
+     * 窗口滑动后配额要恢复，否则一次突发会把后续正常流量一直挡住。
+     */
     @Test
     void afterWindowSlides_permitsAreAvailableAgain() throws InterruptedException {
         InMemoryRateLimiter limiter = new InMemoryRateLimiter();
@@ -46,6 +55,9 @@ class InMemoryRateLimiterTest {
         assertTrue(limiter.tryAcquire(context), "Second permit should also be available");
     }
 
+    /**
+     * 不同维度的配额互相独立，一个接口被限不应该波及另一个。
+     */
     @Test
     void differentKeysHaveIndependentLimits() {
         InMemoryRateLimiter limiter = new InMemoryRateLimiter();
@@ -80,6 +92,9 @@ class InMemoryRateLimiterTest {
         assertTrue(limiter.tryAcquire(new RateLimitContext("key:2", 1)), "evicted key starts a fresh window");
     }
 
+    /**
+     * 攻击者用海量不同 key 刷请求时内存不能被撑爆，否则正常用户会被一起拖垮。
+     */
     @Test
     void attackerFloodingDistinctKeysCannotBlockNormalUser() {
         InMemoryRateLimiter limiter = new InMemoryRateLimiter(100);

@@ -1,8 +1,10 @@
 package com.michael.chaos.authorization.kickout;
 
+import com.michael.chaos.audit.AuditAttributes;
 import com.michael.chaos.authorization.session.AuthorizationLoginContext;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 
@@ -35,6 +37,21 @@ public record AuthorizationSession(
 ) implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 转换为审计属性。
+     *
+     * <p>互踢事件无论由哪种会话索引实现发布，审计字段都必须一致，否则同一个动作在不同部署形态下
+     * 落库的字段不同，审计查询就得写两套条件。</p>
+     */
+    public Map<String, String> auditAttributes() {
+        return AuditAttributes.create()
+                .putIfNotBlank("authorizationId", authorizationId)
+                .putIfNotBlank("grantType", grantType)
+                .putIfNotBlank("deviceId", deviceId)
+                .putIfNotBlank("userAgent", userAgent)
+                .build();
+    }
 
     /**
      * 从完整授权对象提取会话摘要。

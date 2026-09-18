@@ -39,6 +39,9 @@ class ArchetypeArchitectureTest {
 
     private static final Pattern VELOCITY_VARIABLES = Pattern.compile("\\$\\{(package|groupId|artifactId|version|chaosVersion)}");
 
+    /**
+     * 脚手架生成的配置必须与文档模板一致，否则使用方照文档改配置会发现对不上。
+     */
     @Test
     void archetypeConfigurationShouldMatchDocumentedTemplates() throws IOException {
         Path root = ProjectModel.projectRoot();
@@ -63,6 +66,9 @@ class ArchetypeArchitectureTest {
         }
     }
 
+    /**
+     * 生成的工程要继承 chaos-boot-parent 并指向当前框架版本，避免一生成就是旧版本。
+     */
     @Test
     void archetypesShouldUseBootParentAndCurrentChaosVersion() throws IOException {
         Path root = ProjectModel.projectRoot();
@@ -80,6 +86,9 @@ class ArchetypeArchitectureTest {
         }
     }
 
+    /**
+     * archetype 资源是 Velocity 模板，`##` 和未转义的 `${}` 会在生成时被吃掉，必须在构建期拦住。
+     */
     @Test
     void velocityRenderedTemplatesShouldNotContainVelocityTraps() throws IOException {
         Path root = ProjectModel.projectRoot();

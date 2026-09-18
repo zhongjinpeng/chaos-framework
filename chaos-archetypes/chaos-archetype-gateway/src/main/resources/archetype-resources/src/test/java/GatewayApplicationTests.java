@@ -19,6 +19,9 @@ class GatewayApplicationTests {
     @Autowired
     private WebTestClient webTestClient;
 
+    /**
+     * 健康检查必须免登录，否则容器探针会一直失败导致实例被反复重启。
+     */
     @Test
     void healthEndpointShouldBePublic() {
         webTestClient.get().uri("/actuator/health")
@@ -26,6 +29,9 @@ class GatewayApplicationTests {
                 .expectStatus().isOk();
     }
 
+    /**
+     * 业务路由没带 token 必须在网关就被拒，不能穿透到下游服务。
+     */
     @Test
     void protectedRouteWithoutTokenShouldBeRejected() {
         webTestClient.get().uri("/api/todos")

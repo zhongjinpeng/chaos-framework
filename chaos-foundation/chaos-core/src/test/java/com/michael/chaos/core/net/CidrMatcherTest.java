@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
  */
 class CidrMatcherTest {
 
+    /**
+     * 可信代理白名单按 CIDR 配置，网段匹配错了等于把伪造的 X-Forwarded-For 当真。
+     */
     @Test
     void shouldMatchIpv4Cidr() {
         CidrMatcher matcher = CidrMatcher.of(List.of("10.0.0.0/8", "192.168.1.10"));
@@ -22,6 +25,9 @@ class CidrMatcherTest {
         assertFalse(matcher.matches("11.0.0.1"));
     }
 
+    /**
+     * 容器环境里客户端地址常以 IPv6 映射形式出现，不能因此漏判可信代理。
+     */
     @Test
     void shouldMatchIpv6AndMappedIpv4() {
         CidrMatcher matcher = CidrMatcher.of(List.of("fd00::/8", "127.0.0.1"));
@@ -31,6 +37,9 @@ class CidrMatcherTest {
         assertFalse(matcher.matches("2001:db8::1"));
     }
 
+    /**
+     * 非 8 位对齐的前缀（如 /26）必须按位比较，按字节比会把邻近网段一起放行。
+     */
     @Test
     void shouldSupportNonByteAlignedPrefix() {
         CidrMatcher matcher = CidrMatcher.of(List.of("172.16.0.0/12"));
@@ -53,6 +62,9 @@ class CidrMatcherTest {
         assertTrue(matcher.matches("8.8.8.8"));
     }
 
+    /**
+     * 非法网段写法要在启动期报错：运行期静默忽略等于白名单默默失效。
+     */
     @Test
     void shouldFailFastOnIllegalConfiguration() {
         assertThrows(IllegalArgumentException.class, () -> CidrMatcher.of(List.of("example.com")));

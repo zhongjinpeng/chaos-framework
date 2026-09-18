@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test;
 
 class AwtCaptchaImageGeneratorTest {
 
+    /**
+     * 验证码要生成可直接嵌到页面的 PNG data URI，前端不需要再单独取图接口。
+     */
     @Test
     void shouldGenerateReadablePngDataUri() throws Exception {
         AwtCaptchaImageGenerator generator = new AwtCaptchaImageGenerator(4, 128, 44);

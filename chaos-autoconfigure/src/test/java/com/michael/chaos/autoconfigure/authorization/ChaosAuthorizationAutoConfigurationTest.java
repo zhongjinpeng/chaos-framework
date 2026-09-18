@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import com.michael.chaos.audit.AuditEventPublisher;
-import com.michael.chaos.audit.AuditSupport;
 import com.michael.chaos.authorization.captcha.CaptchaController;
 import com.michael.chaos.authorization.captcha.CaptchaImageGenerator;
 import com.michael.chaos.authorization.captcha.CaptchaService;

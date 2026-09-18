@@ -24,6 +24,9 @@ class AuthServerApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    /**
+     * JWKS 必须可公开访问，资源服务器与网关靠它验签。
+     */
     @Test
     void jwkSetShouldBePublished() throws Exception {
         mockMvc.perform(get("/oauth2/jwks"))
@@ -31,6 +34,9 @@ class AuthServerApplicationTests {
                 .andExpect(jsonPath("$.keys[0].kty").value("RSA"));
     }
 
+    /**
+     * 元数据端点要暴露 issuer，客户端据此自动发现各个端点地址。
+     */
     @Test
     void authorizationServerMetadataShouldExposeIssuer() throws Exception {
         mockMvc.perform(get("/.well-known/oauth-authorization-server"))

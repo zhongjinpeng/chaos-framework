@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
  */
 class PageQueryTest {
 
+    /**
+     * 页码与页大小来自外部输入，负数、0、超大值都要被规范化，否则会直接打到数据库上。
+     */
     @Test
     void shouldNormalizeIllegalValues() {
         PageQuery query = new PageQuery(-1, 0);

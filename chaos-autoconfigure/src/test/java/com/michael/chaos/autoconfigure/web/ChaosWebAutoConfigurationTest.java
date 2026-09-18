@@ -53,6 +53,9 @@ class ChaosWebAutoConfigurationTest {
         });
     }
 
+    /**
+     * 耗时统计要能一个开关整体关掉，排查性能问题时不用逐个过滤器去关。
+     */
     @Test
     void shouldDisableRequestTimingWithTheSingleSwitch() {
         contextRunner.withPropertyValues("chaos.web.request-timing-enabled=false")

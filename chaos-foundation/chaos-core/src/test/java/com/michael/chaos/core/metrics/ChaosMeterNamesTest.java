@@ -30,6 +30,9 @@ class ChaosMeterNamesTest {
         return fields;
     }
 
+    /**
+     * 指标名要符合 Micrometer 约定且不重复，否则接入 Prometheus 后会出现难以排查的指标冲突。
+     */
     @Test
     void shouldFollowMicrometerNamingConvention() throws Exception {
         Set<String> seen = new HashSet<>();
@@ -48,6 +51,9 @@ class ChaosMeterNamesTest {
         assertFalse(seen.isEmpty());
     }
 
+    /**
+     * 没有 Micrometer 时空实现必须完全无副作用，不能因为少一个可选依赖就把业务打挂。
+     */
     @Test
     void noopShouldSwallowEverything() {
         ChaosMetrics metrics = NoopChaosMetrics.instance();

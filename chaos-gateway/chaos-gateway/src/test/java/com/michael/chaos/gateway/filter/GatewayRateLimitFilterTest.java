@@ -1,5 +1,6 @@
 package com.michael.chaos.gateway.filter;
 
+import static com.michael.chaos.gateway.filter.GatewayFilterTestSupport.responseBody;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.michael.chaos.core.ratelimit.support.InMemoryRateLimiter;
@@ -153,7 +154,4 @@ class GatewayRateLimitFilterTest {
                 .header("X-Tenant-Id", "tenant-a"));
     }
 
-    private String responseBody(MockServerWebExchange exchange) {
-        return exchange.getResponse().getBodyAsString().block();
-    }
 }

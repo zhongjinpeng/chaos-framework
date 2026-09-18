@@ -20,7 +20,7 @@ public class RedisOAuth2AuthorizationConsentService implements OAuth2Authorizati
             RedisTemplate<Object, Object> redisTemplate,
             ChaosAuthorizationProperties properties) {
         this.redisTemplate = redisTemplate;
-        this.prefix = normalizePrefix(properties.getConsent().getRedisKeyPrefix());
+        this.prefix = RedisKeyPrefixes.normalize(properties.getConsent().getRedisKeyPrefix(), "chaos:authorization:consent");
     }
 
     @Override
@@ -51,7 +51,4 @@ public class RedisOAuth2AuthorizationConsentService implements OAuth2Authorizati
                 .encodeToString((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
     }
 
-    private String normalizePrefix(String value) {
-        return value == null || value.isBlank() ? "chaos:authorization:consent" : value.replaceAll(":+$", "");
-    }
 }

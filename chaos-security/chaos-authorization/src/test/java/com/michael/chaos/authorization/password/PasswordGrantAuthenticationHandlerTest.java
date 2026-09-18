@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
 class PasswordGrantAuthenticationHandlerTest {
 
+    /**
+     * 多租户下同名用户可以存在于不同租户，租户标识必须传到业务身份服务，否则会认成别的租户的同名用户。
+     */
     @Test
     void shouldPassTenantIdToUserService() {
         CapturingUserService userService = new CapturingUserService();
@@ -33,6 +36,9 @@ class PasswordGrantAuthenticationHandlerTest {
         assertThat(userService.password).isEqualTo("123456");
     }
 
+    /**
+     * OAuth2 请求参数惯例是下划线，前端框架常写成驼峰；两种写法都要认，避免接入时莫名其妙缺租户。
+     */
     @Test
     void shouldSupportCamelTenantId() {
         CapturingUserService userService = new CapturingUserService();
@@ -47,6 +53,9 @@ class PasswordGrantAuthenticationHandlerTest {
         assertThat(userService.tenant).isEqualTo("1910000000000000001");
     }
 
+    /**
+     * 同时传了 ID 和 code 时以 ID 为准：code 可变，ID 才是稳定标识。
+     */
     @Test
     void shouldPreferTenantIdOverTenantCode() {
         CapturingUserService userService = new CapturingUserService();
@@ -62,6 +71,9 @@ class PasswordGrantAuthenticationHandlerTest {
         assertThat(userService.tenant).isEqualTo("1910000000000000001");
     }
 
+    /**
+     * 老客户端只会传 tenant_code，不能因为换了参数名就登录不了。
+     */
     @Test
     void shouldFallBackToTenantCodeForLegacyClients() {
         CapturingUserService userService = new CapturingUserService();
@@ -76,6 +88,9 @@ class PasswordGrantAuthenticationHandlerTest {
         assertThat(userService.tenant).isEqualTo("demo");
     }
 
+    /**
+     * 缺密码必须直接拒绝，不能带着空密码去调用业务身份服务。
+     */
     @Test
     void shouldRejectMissingPassword() {
         PasswordGrantAuthenticationHandler handler = new PasswordGrantAuthenticationHandler(new CapturingUserService());
@@ -87,6 +102,9 @@ class PasswordGrantAuthenticationHandlerTest {
                 .hasMessageContaining("parameter is required: password");
     }
 
+    /**
+     * 验证码要在查库之前校验，否则撞库攻击仍然能通过登录接口探测用户是否存在。
+     */
     @Test
     void shouldVerifyCaptchaBeforeAuthenticatingUser() {
         CapturingUserService userService = new CapturingUserService();
@@ -103,6 +121,9 @@ class PasswordGrantAuthenticationHandlerTest {
         assertThat(userService.username).isEqualTo("admin");
     }
 
+    /**
+     * 验证码错误按认证失败处理，不泄露是验证码错还是账号密码错。
+     */
     @Test
     void shouldRejectInvalidCaptcha() {
         PasswordGrantAuthenticationHandler handler = new PasswordGrantAuthenticationHandler(
@@ -116,6 +137,9 @@ class PasswordGrantAuthenticationHandlerTest {
                         ex -> assertThat(ex.getError().getErrorCode()).isEqualTo("invalid_captcha"));
     }
 
+    /**
+     * 开启验证码后缺少验证码参数必须拒绝，不能退化成「没传就不校验」。
+     */
     @Test
     void shouldRequireCaptchaParametersWhenCaptchaIsEnabled() {
         PasswordGrantAuthenticationHandler handler = new PasswordGrantAuthenticationHandler(

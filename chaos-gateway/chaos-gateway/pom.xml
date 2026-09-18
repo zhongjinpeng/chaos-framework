@@ -84,6 +84,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 断言网关错误响应确实是可解析的 JSON，而不是靠字符串包含判断。 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

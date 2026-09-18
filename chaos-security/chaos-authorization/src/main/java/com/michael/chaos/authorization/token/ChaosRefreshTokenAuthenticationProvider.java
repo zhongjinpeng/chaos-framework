@@ -1,13 +1,13 @@
 package com.michael.chaos.authorization.token;
 
 import com.michael.chaos.audit.AuditAction;
+import com.michael.chaos.audit.AuditAttributes;
 import com.michael.chaos.audit.AuditEventPublisher;
 import com.michael.chaos.audit.AuditOutcome;
 import com.michael.chaos.audit.AuditSupport;
 import com.michael.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.michael.chaos.authorization.kickout.AuthorizationSessionRegistry;
 import com.michael.chaos.authorization.session.AuthorizationLoginContext;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -177,17 +177,12 @@ public class ChaosRefreshTokenAuthenticationProvider implements AuthenticationPr
     }
 
     private Map<String, String> auditAttributes(AuthorizationLoginContext loginContext, boolean rotated) {
-        Map<String, String> attributes = new LinkedHashMap<>();
-        putIfNotBlank(attributes, "grantType", OAuth2ParameterNames.REFRESH_TOKEN);
-        putIfNotBlank(attributes, "deviceId", loginContext.deviceId());
-        putIfNotBlank(attributes, "userAgent", loginContext.userAgent());
-        attributes.put("rotated", Boolean.toString(rotated));
-        return Map.copyOf(attributes);
+        return AuditAttributes.create()
+                .putIfNotBlank("grantType", OAuth2ParameterNames.REFRESH_TOKEN)
+                .putIfNotBlank("deviceId", loginContext.deviceId())
+                .putIfNotBlank("userAgent", loginContext.userAgent())
+                .put("rotated", rotated)
+                .build();
     }
 
-    private void putIfNotBlank(Map<String, String> attributes, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            attributes.put(key, value);
-        }
-    }
 }

@@ -32,6 +32,9 @@ class RedisRegisteredClientRepositoryTest {
                 InMemoryRedisTemplates.create(store), new ChaosAuthorizationProperties());
     }
 
+    /**
+     * 两种查法（主键、clientId）都要能查到同一个客户端，授权流程两种都会用到。
+     */
     @Test
     void shouldRoundTripByIdAndByClientId() {
         RegisteredClient client = client(RegisteredClientIds.stableId("iam-client"), "iam-client");
@@ -42,6 +45,9 @@ class RedisRegisteredClientRepositoryTest {
         assertThat(repository.findByClientId("iam-client").getId()).isEqualTo(client.getId());
     }
 
+    /**
+     * 主键由 clientId 推导，重启换了新进程也要能按授权记录里的 registeredClientId 反查到客户端。
+     */
     @Test
     void shouldSurviveARestartWithTheSameStableId() {
         // 重启 = 新建一个仓储对象读同一份 Redis 数据。主键由 clientId 推导，
@@ -55,6 +61,9 @@ class RedisRegisteredClientRepositoryTest {
         assertThat(afterRestart.findById(stableId)).isNotNull();
     }
 
+    /**
+     * 同一个 clientId 换主键后旧记录必须清掉，否则会留下永不过期的脏数据。
+     */
     @Test
     void shouldDropTheStaleRecordWhenTheSameClientIdGetsANewId() {
         repository.save(client("old-id", "iam-client"));
@@ -66,6 +75,9 @@ class RedisRegisteredClientRepositoryTest {
         assertThat(repository.findByClientId("iam-client").getId()).isEqualTo("new-id");
     }
 
+    /**
+     * 查不到返回 null 而不是抛异常，Spring Authorization Server 按 null 判断客户端不存在。
+     */
     @Test
     void shouldReturnNullForUnknownLookups() {
         assertThat(repository.findById("missing")).isNull();
@@ -74,6 +86,9 @@ class RedisRegisteredClientRepositoryTest {
         assertThat(repository.findByClientId(" ")).isNull();
     }
 
+    /**
+     * 保存 null 直接报错，避免写进一条空记录后在授权流程里才炸。
+     */
     @Test
     void shouldRejectNullClient() {
         assertThatThrownBy(() -> repository.save(null)).isInstanceOf(IllegalArgumentException.class);

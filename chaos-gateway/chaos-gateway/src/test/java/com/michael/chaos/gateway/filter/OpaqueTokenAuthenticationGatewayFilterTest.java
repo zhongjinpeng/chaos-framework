@@ -19,6 +19,9 @@ import reactor.test.StepVerifier;
 
 class OpaqueTokenAuthenticationGatewayFilterTest {
 
+    /**
+     * introspection 阶段耗时要和下游转发耗时分开统计，否则看不出是授权服务器慢还是业务服务慢。
+     */
     @Test
     void shouldRecordOnlyIntrospectionBeforeForwardingCompletes() {
         ChaosGatewayProperties properties = new ChaosGatewayProperties();

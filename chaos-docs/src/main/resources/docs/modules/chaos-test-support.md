@@ -12,6 +12,7 @@
 | 不连 Redis 的 `RedisTemplate` | `test.redis.InMemoryRedisTemplates` | spring-data-redis |
 | Testcontainers 镜像与 `@DynamicPropertySource` 属性注册 | `test.containers.ChaosContainers`、`ChaosTestProperties` | testcontainers（mysql / postgresql 模块按需） |
 | 生产安全检查的 `ApplicationContextRunner` 辅助 | `test.boot.ProductionSafetyTestSupport` | spring-boot-test |
+| 收集审计事件并断言（限流拒绝、权限拒绝是否留下记录） | `test.audit.CapturingAuditEventPublisher` | chaos-audit |
 
 除 `chaos-core` 与 `junit-jupiter-api` 外，所有依赖都是 optional：项目用到哪个框架，对应辅助类才可用，本模块不会把框架反向带进测试 classpath。
 
@@ -98,8 +99,16 @@ ProductionSafetyTestSupport.productionMode(contextRunner)
         .run(context -> assertThat(context).hasFailed());
 ```
 
+审计事件断言：
+
+```java
+CapturingAuditEventPublisher publisher = new CapturingAuditEventPublisher();
+// ... 触发一次被拒绝的请求
+assertThat(publisher.eventsOf("security.permission.denied")).hasSize(1);
+```
+
 ## 注意事项
 
 - `InMemoryRedisTemplates` 只模拟 `opsForValue().set/get` 与 `delete`；需要 Lua、过期、Hash 等真实语义时使用 Redis 容器。
 - `@WithChaosContext` 只作用于执行测试方法的线程，测试内自建线程池需要走框架的上下文传播。
-- 框架仓库内部的 `chaos-autoconfigure`、`chaos-security-redis` 测试同样使用本模块（test scope）。
+- 框架仓库内部的 `chaos-autoconfigure`、`chaos-security`、`chaos-authorization`、`chaos-gateway`、`chaos-security-redis` 测试同样使用本模块（test scope）：辅助类只允许有一份，不允许各测试各抄一遍。

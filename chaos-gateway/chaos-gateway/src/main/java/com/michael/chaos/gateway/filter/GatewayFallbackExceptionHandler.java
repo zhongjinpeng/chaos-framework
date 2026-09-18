@@ -6,6 +6,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.Ordered;
@@ -20,6 +21,20 @@ import reactor.core.publisher.Mono;
  * <p>WebFlux 网关转发、过滤链或下游连接异常时，由该处理器统一输出 JSON，避免把底层异常泄漏给调用方。</p>
  */
 public class GatewayFallbackExceptionHandler implements ErrorWebExceptionHandler, Ordered {
+
+    /**
+     * 判定为"下游不可用"的异常类型。
+     *
+     * <p>写成集合而不是一串 {@code instanceof}：新增一种连接异常时只改这份清单，判定逻辑不动；
+     * 判定要沿 cause 链向下找，因为 WebClient 会把连接异常包在自己的异常里。</p>
+     */
+    private static final Set<Class<? extends Throwable>> UNAVAILABLE_CAUSES = Set.of(
+            ConnectException.class,
+            TimeoutException.class,
+            UnknownHostException.class,
+            SocketException.class,
+            SocketTimeoutException.class,
+            ClosedChannelException.class);
 
     private final ChaosGatewayProperties properties;
 
@@ -65,12 +80,8 @@ public class GatewayFallbackExceptionHandler implements ErrorWebExceptionHandler
     private boolean isUnavailable(Throwable ex) {
         Throwable current = ex;
         while (current != null) {
-            if (current instanceof ConnectException
-                    || current instanceof TimeoutException
-                    || current instanceof UnknownHostException
-                    || current instanceof SocketException
-                    || current instanceof SocketTimeoutException
-                    || current instanceof ClosedChannelException) {
+            Throwable cause = current;
+            if (UNAVAILABLE_CAUSES.stream().anyMatch(type -> type.isInstance(cause))) {
                 return true;
             }
             current = current.getCause();

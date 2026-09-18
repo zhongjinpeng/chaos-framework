@@ -26,6 +26,9 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
  */
 class ChaosLogoutControllerTest {
 
+    /**
+     * 没有合法 Bearer 头时返回未撤销而不是抛异常：注销接口被随手调用不应该产生 5xx。
+     */
     @Test
     void returnsFalseWhenAuthorizationHeaderMissingOrMalformed() {
         OAuth2AuthorizationService authzService = mock(OAuth2AuthorizationService.class);
@@ -37,6 +40,9 @@ class ChaosLogoutControllerTest {
         verify(authzService, never()).findByToken(any(), any());
     }
 
+    /**
+     * token 查不到对应授权（已过期或已注销）时按未撤销返回，保持接口幂等。
+     */
     @Test
     void returnsFalseWhenAuthorizationNotFound() {
         OAuth2AuthorizationService authzService = mock(OAuth2AuthorizationService.class);
@@ -49,6 +55,9 @@ class ChaosLogoutControllerTest {
         verify(authzService, never()).remove(any());
     }
 
+    /**
+     * 找到授权时必须真正删除，否则 refresh token 还能继续换新 token。
+     */
     @Test
     void removesAuthorizationWhenFound() {
         OAuth2AuthorizationService authzService = mock(OAuth2AuthorizationService.class);

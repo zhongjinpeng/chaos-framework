@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 
 class RequestTimingContextTest {
 
+    /**
+     * 同名阶段嵌套时只算一次，避免重试或嵌套调用把耗时重复累加。
+     */
     @Test
     void accumulatesStagesAndCollapsesNestedSameStage() {
         RequestTiming timing = RequestTiming.start();
@@ -28,6 +31,9 @@ class RequestTimingContextTest {
         assertThat(RequestTimingContext.current()).isEmpty();
     }
 
+    /**
+     * 异步切换线程后要继续累加到同一个计时器，否则异步部分的耗时会丢失。
+     */
     @Test
     void propagatesTheSameAccumulatorAcrossFrameworkContextSnapshot() throws Exception {
         RequestTiming timing = RequestTiming.start();

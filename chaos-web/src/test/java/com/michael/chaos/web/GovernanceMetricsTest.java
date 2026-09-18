@@ -57,6 +57,9 @@ class GovernanceMetricsTest {
                 .build();
     }
 
+    /**
+     * 限流拒绝要计入指标并带 source 标签，否则线上只能看到请求变少，看不出是被谁限的。
+     */
     @Test
     void shouldCountRateLimitRejections() throws Exception {
         ChaosWebProperties properties = new ChaosWebProperties();
@@ -70,6 +73,9 @@ class GovernanceMetricsTest {
                 .containsExactly(ChaosMeterNames.RATE_LIMIT_REJECTED + "{" + ChaosMeterNames.TAG_SOURCE + ",web}");
     }
 
+    /**
+     * 重复请求被拒要有指标，便于区分「客户端重发」和「业务真失败」。
+     */
     @Test
     void shouldCountIdempotentRejection() throws Exception {
         MockMvc mockMvc = mockMvc(new ChaosWebProperties(), new InMemoryIdempotentRecordStore());
@@ -80,6 +86,9 @@ class GovernanceMetricsTest {
         assertThat(metrics.names()).containsExactly(ChaosMeterNames.IDEMPOTENT_REJECTED);
     }
 
+    /**
+     * 回放命中与拒绝要分开计数：两者对客户端的影响完全不同。
+     */
     @Test
     void shouldCountIdempotentReplay() throws Exception {
         ChaosWebProperties properties = new ChaosWebProperties();

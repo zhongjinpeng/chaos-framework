@@ -17,6 +17,9 @@ class TraceFeignRequestInterceptorTest {
         TraceContext.clear();
     }
 
+    /**
+     * 服务间调用必须透传 W3C traceparent，断在这里整条链路就拼不起来了。
+     */
     @Test
     void shouldPropagateW3cHeaders() {
         TraceContext.start("", "", TRACEPARENT, "vendor=state", "tenant=acme", "", "", "order-service");

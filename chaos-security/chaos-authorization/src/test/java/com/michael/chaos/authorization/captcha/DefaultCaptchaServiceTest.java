@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 
 class DefaultCaptchaServiceTest {
 
+    /**
+     * 验证码一次性有效：校验通过后必须立刻失效，否则可以拿同一个验证码反复撞库。
+     */
     @Test
     void shouldCreateVerifyAndConsumeCaptchaOnce() {
         InMemoryCaptchaStore store = new InMemoryCaptchaStore();
@@ -27,6 +30,9 @@ class DefaultCaptchaServiceTest {
         assertThat(service.verify(challenge.captchaId(), "AB3D")).isFalse();
     }
 
+    /**
+     * 答错也要作废，否则攻击者可以对同一张图穷举答案。
+     */
     @Test
     void shouldConsumeCaptchaAfterWrongAnswer() {
         InMemoryCaptchaStore store = new InMemoryCaptchaStore();

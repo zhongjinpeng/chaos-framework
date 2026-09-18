@@ -73,5 +73,10 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.michael</groupId>
+            <artifactId>chaos-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

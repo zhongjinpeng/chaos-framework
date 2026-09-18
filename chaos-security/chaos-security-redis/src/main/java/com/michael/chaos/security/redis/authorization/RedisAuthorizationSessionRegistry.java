@@ -6,7 +6,6 @@ import com.michael.chaos.authorization.kickout.AuthorizationSessionRegistry;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.Set;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
@@ -32,7 +31,7 @@ public class RedisAuthorizationSessionRegistry implements AuthorizationSessionRe
             RedisTemplate<Object, Object> redisTemplate,
             ChaosAuthorizationProperties properties) {
         this.redisTemplate = redisTemplate;
-        this.prefix = normalizePrefix(properties.getKickout().getRedisKeyPrefix());
+        this.prefix = RedisKeyPrefixes.normalize(properties.getKickout().getRedisKeyPrefix(), "chaos:authorization:kickout");
     }
 
     /**
@@ -181,10 +180,4 @@ public class RedisAuthorizationSessionRegistry implements AuthorizationSessionRe
         return prefix + ":session:id:" + authorizationId;
     }
 
-    private String normalizePrefix(String value) {
-        if (value == null || value.isBlank()) {
-            return "chaos:authorization:kickout";
-        }
-        return value.endsWith(":") ? value.substring(0, value.length() - 1) : value;
-    }
 }

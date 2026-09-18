@@ -71,6 +71,9 @@ class OutboxHealthTest {
         }
     }
 
+    /**
+     * 积压量在阈值内时健康检查必须是 UP，否则轻微积压就会把实例摘掉。
+     */
     @Test
     void shouldBeUpWithinThresholds() {
         OutboxHealth health = new OutboxHealth(new CountingRepository(10, 0, null), 100, 10);
@@ -81,6 +84,9 @@ class OutboxHealthTest {
         assertThat(snapshot.details()).containsEntry("pending", 10L).containsEntry("deadLetter", 0L);
     }
 
+    /**
+     * 待发送消息堆积超阈值说明投递链路已经跟不上，必须在健康检查里暴露出来。
+     */
     @Test
     void shouldBeDownWhenPendingExceedsThreshold() {
         OutboxHealth health = new OutboxHealth(new CountingRepository(101, 0, null), 100, 10);
@@ -88,6 +94,9 @@ class OutboxHealthTest {
         assertThat(health.check().status()).isEqualTo(OutboxHealth.Status.DOWN);
     }
 
+    /**
+     * 死信堆积意味着消息已经彻底投递失败，比积压更严重，同样要报 DOWN。
+     */
     @Test
     void shouldBeDownWhenDeadLetterExceedsThreshold() {
         OutboxHealth health = new OutboxHealth(new CountingRepository(0, 11, null), 100, 10);

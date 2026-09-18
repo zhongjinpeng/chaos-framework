@@ -32,7 +32,7 @@ public class RedisOAuth2AuthorizationService implements OAuth2AuthorizationServi
             RedisTemplate<Object, Object> redisTemplate,
             ChaosAuthorizationProperties properties) {
         this.redisTemplate = redisTemplate;
-        this.prefix = normalizePrefix(properties.getToken().getRedisKeyPrefix());
+        this.prefix = RedisKeyPrefixes.normalize(properties.getToken().getRedisKeyPrefix(), "chaos:authorization");
     }
 
     /**
@@ -301,10 +301,4 @@ public class RedisOAuth2AuthorizationService implements OAuth2AuthorizationServi
     /**
      * 规范化 Redis key 前缀。
      */
-    private String normalizePrefix(String value) {
-        if (value == null || value.isBlank()) {
-            return "chaos:authorization";
-        }
-        return value.endsWith(":") ? value.substring(0, value.length() - 1) : value;
-    }
 }

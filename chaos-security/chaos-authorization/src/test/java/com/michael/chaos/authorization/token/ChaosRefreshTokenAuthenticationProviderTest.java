@@ -4,11 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.michael.chaos.audit.AuditEvent;
-import com.michael.chaos.audit.AuditEventPublisher;
+import com.michael.chaos.test.audit.CapturingAuditEventPublisher;
 import com.michael.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.michael.chaos.authorization.kickout.InMemoryAuthorizationSessionRegistry;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -63,17 +61,4 @@ class ChaosRefreshTokenAuthenticationProviderTest {
         return new OAuth2ClientAuthenticationToken(client, org.springframework.security.oauth2.core.ClientAuthenticationMethod.CLIENT_SECRET_BASIC, null);
     }
 
-    private static final class CapturingAuditEventPublisher implements AuditEventPublisher {
-
-        private final List<AuditEvent> events = new ArrayList<>();
-
-        @Override
-        public void publish(AuditEvent event) {
-            events.add(event);
-        }
-
-        private List<AuditEvent> events() {
-            return events;
-        }
-    }
 }
