@@ -17,6 +17,11 @@
         (authorization, registered client, consent, session registry, kickout, captcha, login lock).
     </description>
     <dependencies>
+        <!-- StaleValueReader 丢弃不兼容存量数据时要留痕，否则"令牌悄悄失效"无从排查。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.michael</groupId>
             <artifactId>chaos-security-api</artifactId>

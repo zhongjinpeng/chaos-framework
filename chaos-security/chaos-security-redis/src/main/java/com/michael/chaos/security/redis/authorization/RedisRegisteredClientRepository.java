@@ -57,7 +57,7 @@ public class RedisRegisteredClientRepository implements RegisteredClientReposito
         if (id == null || id.isBlank()) {
             return null;
         }
-        Object value = redisTemplate.opsForValue().get(idKey(id));
+        Object value = StaleValueReader.read(redisTemplate, idKey(id));
         return value instanceof RegisteredClient client ? client : null;
     }
 

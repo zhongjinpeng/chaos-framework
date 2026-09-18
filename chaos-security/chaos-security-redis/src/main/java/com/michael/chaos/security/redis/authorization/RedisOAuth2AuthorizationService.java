@@ -80,7 +80,7 @@ public class RedisOAuth2AuthorizationService implements OAuth2AuthorizationServi
      */
     @Override
     public OAuth2Authorization findById(String id) {
-        Object value = redisTemplate.opsForValue().get(authorizationKey(id));
+        Object value = StaleValueReader.read(redisTemplate, authorizationKey(id));
         return value instanceof OAuth2Authorization authorization ? authorization : null;
     }
 

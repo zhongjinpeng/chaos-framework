@@ -12,6 +12,15 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
  */
 public class LoginUserAuthenticationToken extends AbstractAuthenticationToken {
 
+    /**
+     * 本类会随 {@code OAuth2Authorization} 一起被 JDK 序列化写入 Redis，必须钉死 UID。
+     *
+     * <p>不写显式 UID 时，serialVersionUID 由类结构推导：字段、方法签名一改就变，框架升级后
+     * 存量令牌全部读不回来（{@code InvalidClassException: local class incompatible}），
+     * 表现是所有在线用户的请求报 500 而不是干净地重新登录。</p>
+     */
+    private static final long serialVersionUID = 1L;
+
     private final LoginUser principal;
 
     /**

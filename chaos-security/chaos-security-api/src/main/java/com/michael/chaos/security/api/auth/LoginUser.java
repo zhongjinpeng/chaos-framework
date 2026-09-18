@@ -21,6 +21,12 @@ public record LoginUser(
 ) implements Serializable {
 
     /**
+     * 作为认证主体随令牌一起被 JDK 序列化写入 Redis，必须钉死 UID，理由同
+     * {@code LoginUserAuthenticationToken}：record 的 UID 同样由组件推导，加一个字段就全废。
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
      * 规范化角色和权限集合，避免认证主体被外部修改。
      */
     public LoginUser {

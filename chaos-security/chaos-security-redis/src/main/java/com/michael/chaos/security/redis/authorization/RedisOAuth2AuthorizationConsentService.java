@@ -38,7 +38,7 @@ public class RedisOAuth2AuthorizationConsentService implements OAuth2Authorizati
 
     @Override
     public OAuth2AuthorizationConsent findById(String registeredClientId, String principalName) {
-        Object value = redisTemplate.opsForValue().get(key(registeredClientId, principalName));
+        Object value = StaleValueReader.read(redisTemplate, key(registeredClientId, principalName));
         return value instanceof OAuth2AuthorizationConsent consent ? consent : null;
     }
 

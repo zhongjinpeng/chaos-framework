@@ -112,7 +112,7 @@ public class RedisAuthorizationSessionRegistry implements AuthorizationSessionRe
                 || authorizationId == null || authorizationId.isBlank()) {
             return;
         }
-        Object session = redisTemplate.opsForValue().get(sessionKey(authorizationId));
+        Object session = StaleValueReader.read(redisTemplate, sessionKey(authorizationId));
         redisTemplate.delete(sessionKey(authorizationId));
         redisTemplate.opsForSet().remove(principalGlobalKey(principalName), authorizationId);
         if (registeredClientId != null && !registeredClientId.isBlank()) {
@@ -139,7 +139,7 @@ public class RedisAuthorizationSessionRegistry implements AuthorizationSessionRe
                 continue;
             }
             String authorizationId = value.toString();
-            Object session = redisTemplate.opsForValue().get(sessionKey(authorizationId));
+            Object session = StaleValueReader.read(redisTemplate, sessionKey(authorizationId));
             if (session instanceof AuthorizationSession authorizationSession) {
                 result.add(authorizationSession);
             } else {

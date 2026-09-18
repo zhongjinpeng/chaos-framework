@@ -21,3 +21,6 @@ chaos-python/**/dist/
 
 # flatten-maven-plugin 生成的发布 POM
 .flattened-pom.xml
+
+# Claude Code 个人设置（不入库）
+.claude/settings.local.json
