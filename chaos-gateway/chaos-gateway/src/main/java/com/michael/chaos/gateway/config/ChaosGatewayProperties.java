@@ -1,5 +1,8 @@
 package com.michael.chaos.gateway.config;
 
+import com.michael.chaos.security.api.access.AccessPolicyProperties;
+import com.michael.chaos.security.api.access.PolicyCombiningAlgorithm;
+import com.michael.chaos.security.api.access.PolicyDefinition;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -7,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -100,6 +104,11 @@ public class ChaosGatewayProperties {
     @Valid
     @NotNull(message = "chaos.gateway.fallback must not be null")
     private Fallback fallback = new Fallback();
+
+    /**
+     * 网关粗粒度鉴权（RBAC/ABAC）配置。
+     */
+    private Access access = new Access();
 
     /**
      * 是否输出请求耗时日志。
@@ -202,6 +211,14 @@ public class ChaosGatewayProperties {
         this.rateLimit = rateLimit == null ? new RateLimit() : rateLimit;
     }
 
+    public Access getAccess() {
+        return access;
+    }
+
+    public void setAccess(Access access) {
+        this.access = access == null ? new Access() : access;
+    }
+
     public Fallback getFallback() {
         return fallback;
     }
@@ -221,6 +238,118 @@ public class ChaosGatewayProperties {
     /**
      * Gateway JWT 校验配置。
      */
+    /**
+     * 网关粗粒度鉴权配置。
+     *
+     * <p>字段与 {@code chaos.security.access.*} 同名同义，两边各写一份是为了保留各自的配置文档
+     * （配置参考由字段 Javadoc 生成），装配逻辑通过 {@code AuthorizationManagerBuilder} 共用。</p>
+     */
+    public static class Access {
+
+        /**
+         * 是否启用网关粗粒度鉴权；默认关闭，避免升级后原有路由突然 403。
+         */
+        private boolean enabled = false;
+
+        /**
+         * 路径与权限的映射规则，按顺序匹配，第一条命中的规则生效。
+         */
+        private List<AccessRuleProperties> rules = List.of();
+
+        /**
+         * 具备这些角色时直接放行。
+         */
+        private List<String> adminRoles = new ArrayList<>(List.of("admin"));
+
+        /**
+         * 是否允许 token 中的权限编码使用通配符，例如 order:* 覆盖 order:read。
+         */
+        private boolean wildcardPermissionEnabled = true;
+
+        /**
+         * 角色继承关系，键继承值中的全部角色，例如 admin: [manager]。
+         */
+        private Map<String, List<String>> roleHierarchy = Map.of();
+
+        /**
+         * policies 之间的合并算法；配置策略与 RBAC 之间恒为拒绝优先。
+         */
+        private PolicyCombiningAlgorithm combiningAlgorithm = PolicyCombiningAlgorithm.DENY_OVERRIDES;
+
+        /**
+         * ABAC 策略，属性引用可用 subject.*、resource.*、environment.*（含 clientIp、http.method、http.path）。
+         */
+        private List<AccessPolicyProperties> policies = List.of();
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public List<AccessRuleProperties> getRules() {
+            return List.copyOf(rules);
+        }
+
+        public void setRules(List<AccessRuleProperties> rules) {
+            this.rules = rules == null ? List.of() : List.copyOf(rules);
+        }
+
+        public List<String> getAdminRoles() {
+            return List.copyOf(adminRoles);
+        }
+
+        public void setAdminRoles(List<String> adminRoles) {
+            this.adminRoles = adminRoles == null ? new ArrayList<>() : new ArrayList<>(adminRoles);
+        }
+
+        public boolean isWildcardPermissionEnabled() {
+            return wildcardPermissionEnabled;
+        }
+
+        public void setWildcardPermissionEnabled(boolean wildcardPermissionEnabled) {
+            this.wildcardPermissionEnabled = wildcardPermissionEnabled;
+        }
+
+        public Map<String, List<String>> getRoleHierarchy() {
+            return Map.copyOf(roleHierarchy);
+        }
+
+        public void setRoleHierarchy(Map<String, List<String>> roleHierarchy) {
+            this.roleHierarchy = roleHierarchy == null ? Map.of() : Map.copyOf(roleHierarchy);
+        }
+
+        public PolicyCombiningAlgorithm getCombiningAlgorithm() {
+            return combiningAlgorithm;
+        }
+
+        public void setCombiningAlgorithm(PolicyCombiningAlgorithm combiningAlgorithm) {
+            this.combiningAlgorithm = combiningAlgorithm == null
+                    ? PolicyCombiningAlgorithm.DENY_OVERRIDES
+                    : combiningAlgorithm;
+        }
+
+        public List<AccessPolicyProperties> getPolicies() {
+            return List.copyOf(policies);
+        }
+
+        public void setPolicies(List<AccessPolicyProperties> policies) {
+            this.policies = policies == null ? List.of() : List.copyOf(policies);
+        }
+
+        /**
+         * 转换为框架内部的策略定义列表。
+         */
+        public List<PolicyDefinition> toPolicyDefinitions() {
+            return policies.stream()
+                    .filter(policy -> policy != null)
+                    .map(AccessPolicyProperties::toDefinition)
+                    .toList();
+        }
+    }
+
     public static class Jwt {
 
         /**

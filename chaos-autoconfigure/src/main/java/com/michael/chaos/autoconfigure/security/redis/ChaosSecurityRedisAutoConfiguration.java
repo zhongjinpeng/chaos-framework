@@ -3,8 +3,20 @@ package com.michael.chaos.autoconfigure.security.redis;
 import com.michael.chaos.autoconfigure.authorization.ChaosAuthorizationAutoConfiguration;
 import com.michael.chaos.autoconfigure.gateway.ChaosGatewayAutoConfiguration;
 import com.michael.chaos.autoconfigure.security.ChaosSecurityAutoConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michael.chaos.security.api.access.AuthorizationPolicyJsonCodec;
+import com.michael.chaos.security.api.access.AuthorizationPolicySource;
+import com.michael.chaos.security.api.access.CachingAuthorizationPolicySource;
+import com.michael.chaos.security.api.access.CompositeAuthorizationPolicy;
 import com.michael.chaos.security.api.token.JwtRevocationService;
+import com.michael.chaos.security.config.ChaosSecurityProperties;
+import com.michael.chaos.security.redis.access.RedisAuthorizationPolicySource;
 import com.michael.chaos.security.redis.token.RedisJwtRevocationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -44,5 +56,61 @@ public class ChaosSecurityRedisAutoConfiguration {
     @ConditionalOnMissingBean(JwtRevocationService.class)
     public JwtRevocationService jwtRevocationService(StringRedisTemplate stringRedisTemplate) {
         return new RedisJwtRevocationService(stringRedisTemplate);
+    }
+
+    /**
+     * Redis 动态策略来源。
+     *
+     * <p>单独放在嵌套配置里：本类同时被网关和授权服务器使用，它们的 classpath 上没有 chaos-security，
+     * 因此引用 {@link ChaosSecurityProperties} 的 Bean 方法必须先确认该类存在。</p>
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass({ChaosSecurityProperties.class, ObjectMapper.class})
+    @ConditionalOnProperty(prefix = "chaos.security.access", name = "policy-source", havingValue = "redis")
+    @EnableConfigurationProperties(ChaosSecurityProperties.class)
+    public static class AccessPolicySourceConfiguration {
+
+        private static final Logger log = LoggerFactory.getLogger(AccessPolicySourceConfiguration.class);
+
+        /**
+         * 注册带本地缓存的 Redis 策略来源。
+         *
+         * <p>拉取失败时保留上一份快照并打告警日志：策略是拒绝规则的载体，让它因为一次网络抖动而清空，
+         * 等于悄悄放行。</p>
+         */
+        @Bean
+        @ConditionalOnBean(StringRedisTemplate.class)
+        @ConditionalOnMissingBean(AuthorizationPolicySource.class)
+        public CachingAuthorizationPolicySource redisAuthorizationPolicySource(
+                StringRedisTemplate stringRedisTemplate,
+                ChaosSecurityProperties properties) {
+            ChaosSecurityProperties.Access access = properties.getAccess();
+            RedisAuthorizationPolicySource source = new RedisAuthorizationPolicySource(
+                    stringRedisTemplate,
+                    access.getPolicyRedisKey(),
+                    new AuthorizationPolicyJsonCodec());
+            return new CachingAuthorizationPolicySource(
+                    source,
+                    access.getPolicyCacheTtl(),
+                    failure -> log.warn(
+                            "读取 Redis 授权策略失败（key={}），继续使用上一份策略快照：{}",
+                            source.key(),
+                            failure.getMessage()));
+        }
+
+        /**
+         * 把动态策略接入顶层策略列表。
+         */
+        @Bean
+        @ConditionalOnBean(AuthorizationPolicySource.class)
+        @ConditionalOnMissingBean(name = "chaosRedisAccessPolicy")
+        public CompositeAuthorizationPolicy chaosRedisAccessPolicy(
+                AuthorizationPolicySource authorizationPolicySource,
+                ChaosSecurityProperties properties) {
+            return new CompositeAuthorizationPolicy(
+                    "chaos-redis-access",
+                    authorizationPolicySource,
+                    properties.getAccess().getCombiningAlgorithm());
+        }
     }
 }

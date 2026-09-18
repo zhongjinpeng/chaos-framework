@@ -1,7 +1,9 @@
 package com.michael.chaos.gateway.filter;
 
+import com.michael.chaos.security.api.access.AccessSubject;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -26,6 +28,16 @@ public final class GatewayExchangeAttributes {
      * 认证成功后 token 中携带的租户 ID。
      */
     public static final String AUTHENTICATED_TENANT_ID = GatewayExchangeAttributes.class.getName() + ".tenantId";
+
+    /**
+     * 认证成功后 token 中携带的角色集合。
+     */
+    public static final String AUTHENTICATED_ROLES = GatewayExchangeAttributes.class.getName() + ".roles";
+
+    /**
+     * 认证成功后 token 中携带的权限集合。
+     */
+    public static final String AUTHENTICATED_PERMISSIONS = GatewayExchangeAttributes.class.getName() + ".permissions";
 
     private GatewayExchangeAttributes() {
     }
@@ -60,5 +72,59 @@ public final class GatewayExchangeAttributes {
     public static String authenticatedUserId(ServerWebExchange exchange) {
         String value = exchange.getAttribute(AUTHENTICATED_USER_ID);
         return value == null ? "" : value;
+    }
+
+    /**
+     * 读取认证成功后的角色集合；未认证时返回空集合。
+     */
+    public static Set<String> authenticatedRoles(ServerWebExchange exchange) {
+        return stringSet(exchange, AUTHENTICATED_ROLES);
+    }
+
+    /**
+     * 读取认证成功后的权限集合；未认证时返回空集合。
+     */
+    public static Set<String> authenticatedPermissions(ServerWebExchange exchange) {
+        return stringSet(exchange, AUTHENTICATED_PERMISSIONS);
+    }
+
+    /**
+     * 把认证结果转换为授权决策用的访问主体；未认证时返回匿名主体。
+     *
+     * <p>身份只取自 token 解析结果（attribute），绝不读请求头——请求头可以被客户端伪造。</p>
+     */
+    public static AccessSubject authenticatedSubject(ServerWebExchange exchange) {
+        String userId = authenticatedUserId(exchange);
+        if (userId.isBlank()) {
+            return AccessSubject.ANONYMOUS;
+        }
+        return new AccessSubject(
+                userId,
+                userId,
+                authenticatedTenantId(exchange),
+                authenticatedRoles(exchange),
+                authenticatedPermissions(exchange),
+                Map.of());
+    }
+
+    /**
+     * 写入认证结果中的角色与权限集合。
+     */
+    public static void putAuthenticatedAuthorities(
+            ServerWebExchange exchange,
+            Set<String> roles,
+            Set<String> permissions) {
+        if (roles != null && !roles.isEmpty()) {
+            exchange.getAttributes().put(AUTHENTICATED_ROLES, Set.copyOf(roles));
+        }
+        if (permissions != null && !permissions.isEmpty()) {
+            exchange.getAttributes().put(AUTHENTICATED_PERMISSIONS, Set.copyOf(permissions));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<String> stringSet(ServerWebExchange exchange, String attributeName) {
+        Object value = exchange.getAttribute(attributeName);
+        return value instanceof Set<?> values ? (Set<String>) values : Set.of();
     }
 }

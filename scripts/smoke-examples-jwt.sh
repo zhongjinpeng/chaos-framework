@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 示例 JWT 链路 smoke：auth-server 签发 token -> gateway 鉴权 -> order-service 查询/创建订单 -> Prometheus 指标。
+# 示例 JWT 链路 smoke：auth-server 签发 token -> gateway 鉴权 -> order-service 查询/创建订单
+# -> ABAC 策略拒绝大额订单 -> Prometheus 指标。
 #
 # 流程：先用 ./mvnw 一次性打包三个示例（避免三个 spring-boot:run 并发重复编译），再用 java -jar 启动。
 # 前置条件：本机 localhost:6379 有可用 Redis（order-service 的 Redisson 启动即连接），无需 Nacos。
@@ -133,6 +134,20 @@ curl -fsS -X POST "http://localhost:${GATEWAY_PORT}/api/orders" \
   -H "Idempotency-Key: smoke-$(date +%s)" \
   -H 'Content-Type: application/json' \
   -d '{"orderNo":"SMOKE-20260525-001","buyerId":"10001","amount":199.90}' >/dev/null
+
+echo "验证 ABAC 策略：大额订单被拒绝"
+large_order_status="$(
+  curl -s -o /dev/null -w '%{http_code}' -X POST "http://localhost:${GATEWAY_PORT}/api/orders" \
+    -H "Authorization: Bearer ${access_token}" \
+    -H 'X-Tenant-Id: tenant-a' \
+    -H "Idempotency-Key: smoke-large-$(date +%s)" \
+    -H 'Content-Type: application/json' \
+    -d '{"orderNo":"SMOKE-LARGE-20260525-001","buyerId":"10001","amount":200000.00}'
+)"
+if [[ "${large_order_status}" != "403" ]]; then
+  echo "大额订单应被 chaos.security.access.policies 中的 deny-large-order 策略拒绝，实际返回 ${large_order_status}"
+  exit 1
+fi
 
 echo "验证 Prometheus 指标"
 curl -fsS "http://localhost:${AUTH_PORT}/actuator/prometheus" >/dev/null

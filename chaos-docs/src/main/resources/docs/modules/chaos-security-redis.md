@@ -7,6 +7,7 @@
 | 包 | 内容 |
 | --- | --- |
 | `com.michael.chaos.security.redis.token` | `RedisJwtRevocationService`：全框架唯一的 JWT 黑名单实现 |
+| `com.michael.chaos.security.redis.access` | `RedisAuthorizationPolicySource`：从 Redis 读取 ABAC 策略，改策略不重启 |
 | `com.michael.chaos.security.redis.authorization` | 授权服务器 Redis 存储：`RedisOAuth2AuthorizationService`、`RedisRegisteredClientRepository`、`RedisOAuth2AuthorizationConsentService`、`RedisAuthorizationSessionRegistry`、`RedisAuthorizationKickoutService`、`RedisCaptchaStore`、`RedisLoginFailureLimiter` |
 
 依赖 `chaos-security-api`；`chaos-authorization`、`spring-data-redis` 为 optional。
@@ -19,6 +20,14 @@ Lettuce 与 Redisson 连接工厂都可用）。
 统一使用 `StringRedisTemplate`：若授权服务器用 `RedisTemplate<Object,Object>` 写入，key 会被 JDK 序列化，资源服务器按字符串读取永远查不到，
 导致“注销后 token 仍然可用”。2.0 删除了 `RedisTemplateJwtRevocationService`，三方统一使用 `RedisJwtRevocationService`，
 并由集成测试验证一个客户端写入的记录另一个客户端可见。
+
+## 动态授权策略
+
+`chaos.security.access.policy-source=redis` 后，策略以 JSON 数组存在 `chaos:security:access:policies`（可配置），
+字段与 `chaos.security.access.policies` 配置一致，可直接用 redis-cli 修改，`policy-cache-ttl` 内生效。
+
+拉取失败（网络抖动、有人把 JSON 写坏）时保留上一份快照并打告警日志——策略是拒绝规则的载体，清空等于悄悄放行。
+详见[访问控制](../capabilities/access-control.md)。
 
 ## 使用
 

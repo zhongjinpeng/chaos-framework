@@ -3,6 +3,8 @@ package com.michael.chaos.examples.order.interfaces.rest;
 import com.michael.chaos.domain.dto.PageResult;
 import com.michael.chaos.examples.order.application.OrderApplicationService;
 import com.michael.chaos.examples.order.application.query.OrderSummary;
+import com.michael.chaos.security.annotation.AccessAttribute;
+import com.michael.chaos.security.annotation.RequireAccess;
 import com.michael.chaos.web.idempotent.Idempotent;
 import com.michael.chaos.web.ratelimit.RateLimit;
 import jakarta.validation.Valid;
@@ -55,6 +57,7 @@ public class OrderController {
      */
     @GetMapping
     @RateLimit(permitsPerSecond = 20)
+    @RequireAccess(action = "order:read", resourceType = "order")
     public PageResult<OrderSummary> pageOrders(
             @RequestParam(defaultValue = "1") @Positive long current,
             @RequestParam(defaultValue = "10") @Positive @Max(100) long size) {
@@ -63,9 +66,20 @@ public class OrderController {
 
     /**
      * 创建当前租户订单。
+     *
+     * <p>演示 ABAC：动作要求 {@code order:create} 权限，同时把订单金额作为资源属性交给授权策略，
+     * 大额订单的拒绝规则写在 {@code chaos.security.access.policies} 配置里，不需要改代码。</p>
      */
     @PostMapping
     @Idempotent
+    @RequireAccess(
+            action = "order:create",
+            resourceType = "order",
+            resourceId = "#request.orderNo",
+            attributes = {
+                    @AccessAttribute(name = "amount", value = "#request.amount"),
+                    @AccessAttribute(name = "buyerId", value = "#request.buyerId")
+            })
     public OrderSummary createOrder(@Valid @RequestBody CreateOrderRequest request) {
         return orderApplicationService.createOrder(new OrderApplicationService.CreateOrderCommand(
                 request.orderNo(),

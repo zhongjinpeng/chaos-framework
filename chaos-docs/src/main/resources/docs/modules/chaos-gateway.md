@@ -2,7 +2,7 @@
 
 ## 职责
 
-统一鉴权、灰度、限流入口、黑名单、访问日志、Trace 透传。
+统一鉴权、灰度、限流入口、黑名单、访问日志、Trace 透传，以及按路由的粗粒度 RBAC/ABAC 鉴权。
 
 ## 依赖方式
 
@@ -206,6 +206,7 @@ curl -H 'Authorization: Bearer eyJ...' \
 | +10 | `BlacklistFilter` | IP 黑名单 |
 | +25 | `GrayTagFilter` | 灰度标签透传 |
 | +30 | `JwtAuthenticationGatewayFilter` / `OpaqueTokenAuthenticationGatewayFilter` | 验签或 introspection，以 claim 重写身份头 |
+| +35 | `AccessControlGatewayFilter` | 粗粒度鉴权：按路径+方法映射动作，做 RBAC/ABAC 判定（默认关闭） |
 | +35 | `TenantGatewayFilter` | 租户状态校验、租户一致性校验 |
 | +40 | `GatewayRateLimitFilter` | 全局限流 |
 
@@ -239,6 +240,27 @@ curl -H 'Authorization: Bearer eyJ...' \
 - token 无效（`BadOpaqueTokenException`）→ 401；
 - 授权服务器超时、宕机等 → 503，避免客户端误以为登录失效而清空登录态。
 - 开启缓存后 token 撤销最多延迟 `cache-ttl` 生效。
+
+### 粗粒度鉴权
+
+`chaos.gateway.access.enabled=true` 后，按 `rules` 把路径 + 方法映射成动作，交给 `AuthorizationManager` 判定：
+
+```yaml
+chaos:
+  gateway:
+    access:
+      enabled: true
+      rules:
+        - path: /api/orders/**
+          methods: [GET]
+          action: order:read
+```
+
+- 网关只依赖 `chaos-security-api`，用 `AuthorizationManagerBuilder` 独立组装 RBAC + 配置策略，不依赖 chaos-security；
+- 主体来自 token 解析结果（`roles`、`permissions` claim），不读任何请求头；
+- 没命中规则的请求直接放行，白名单与歧义路径不参与匹配；
+- 拒绝时返回 403 统一错误体，上报 `chaos.security.access.denied{source=gateway}` 并写审计事件；
+- 细粒度授权（"只能改自己的订单"）仍由下游服务的 `@RequireAccess` 负责，见[访问控制](../capabilities/access-control.md)。
 
 ## 注意事项
 

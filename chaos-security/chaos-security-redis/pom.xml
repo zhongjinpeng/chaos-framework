@@ -38,6 +38,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <!-- RedisAuthorizationPolicySource 解析策略 JSON 时使用。 -->
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>

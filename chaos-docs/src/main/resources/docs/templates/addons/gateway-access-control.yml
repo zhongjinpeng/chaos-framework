@@ -1,0 +1,25 @@
+# 能力：网关粗粒度鉴权（chaos-gateway-starter 已包含）—— 需要在网关按路由拦住整类接口时追加
+chaos:
+  gateway:
+    access:
+      # 默认关闭：开启后没命中规则的请求仍然放行，命中规则的请求必须通过 RBAC/ABAC 判定。
+      enabled: true
+      rules:
+        - path: /api/orders/**
+          methods: [GET]
+          action: order:read
+          resource-type: order
+        - path: /api/admin/**
+          action: admin:access
+      # 细粒度限制写成 DENY：命中即拒绝，未命中时交回 RBAC 判定。
+      policies:
+        - id: deny-admin-from-external
+          description: 后台路由只允许内网访问
+          effect: deny
+          actions:
+            - admin:access
+          conditions:
+            - left: environment.clientIp
+              operator: regex
+              values:
+                - "(?!10\\.).*"

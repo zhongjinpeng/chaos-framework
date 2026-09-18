@@ -117,6 +117,10 @@ public class OpaqueTokenAuthenticationGatewayFilter implements GlobalFilter, Ord
         if (!tenantId.isBlank()) {
             exchange.getAttributes().put(GatewayExchangeAttributes.AUTHENTICATED_TENANT_ID, tenantId);
         }
+        GatewayExchangeAttributes.putAuthenticatedAuthorities(
+                exchange,
+                ChaosJwtClaims.asStringSet(principal.getAttributes().get(ChaosJwtClaims.ROLES)),
+                ChaosJwtClaims.asStringSet(principal.getAttributes().get(ChaosJwtClaims.PERMISSIONS)));
         return chain.filter(exchange.mutate()
                 .request(builder -> builder.headers(headers -> {
                     headers.remove(ChaosHeaders.USER_ID);

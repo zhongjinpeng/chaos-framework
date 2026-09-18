@@ -11,6 +11,7 @@ import com.michael.chaos.core.metrics.ChaosMetrics;
 import com.michael.chaos.core.ratelimit.RateLimiter;
 import com.michael.chaos.core.ratelimit.support.InMemoryRateLimiter;
 import com.michael.chaos.gateway.config.ChaosGatewayProperties;
+import com.michael.chaos.gateway.filter.AccessControlGatewayFilter;
 import com.michael.chaos.gateway.filter.BlacklistFilter;
 import com.michael.chaos.gateway.filter.GatewayAccessLogFilter;
 import com.michael.chaos.gateway.filter.GatewayDownstreamTimingFilter;
@@ -27,6 +28,9 @@ import com.michael.chaos.gateway.ratelimit.GatewayRateLimiter;
 import com.michael.chaos.gateway.ratelimit.RateLimiterGatewayAdapter;
 import com.michael.chaos.gateway.security.CachingReactiveOpaqueTokenIntrospector;
 import com.michael.chaos.gateway.security.GatewayJwtDecoders;
+import com.michael.chaos.security.api.access.AuthorizationManager;
+import com.michael.chaos.security.api.access.AuthorizationManagerBuilder;
+import com.michael.chaos.security.api.access.AuthorizationPolicySource;
 import com.michael.chaos.security.api.token.JwtRevocationService;
 import com.michael.chaos.tenant.TenantAccessValidator;
 import java.util.List;
@@ -268,6 +272,49 @@ public class ChaosGatewayAutoConfiguration {
                 properties,
                 jwtDecoderProvider.getIfAvailable(),
                 jwtRevocationServiceProvider.getIfAvailable(),
+                auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
+                metricsProvider.getIfAvailable()
+        );
+    }
+
+    /**
+     * 注册网关授权决策服务。
+     *
+     * <p>网关只依赖 chaos-security-api，因此在这里独立组装 RBAC + 配置策略，不复用资源服务器的 Bean。</p>
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "chaos.gateway.access", name = "enabled", havingValue = "true")
+    public AuthorizationManager gatewayAuthorizationManager(
+            ChaosGatewayProperties properties,
+            ObjectProvider<AuthorizationPolicySource> policySourceProvider) {
+        ChaosGatewayProperties.Access access = properties.getAccess();
+        return AuthorizationManagerBuilder.create()
+                .policyGroupId("chaos-gateway-access")
+                .adminRoles(access.getAdminRoles())
+                .roleHierarchy(access.getRoleHierarchy())
+                .wildcardPermissionEnabled(access.isWildcardPermissionEnabled())
+                .combiningAlgorithm(access.getCombiningAlgorithm())
+                .policyDefinitions(access.toPolicyDefinitions(), "chaos.gateway.access.policies")
+                .policySource(policySourceProvider.getIfAvailable())
+                .build();
+    }
+
+    /**
+     * 注册网关粗粒度鉴权过滤器。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(AuthorizationManager.class)
+    @ConditionalOnProperty(prefix = "chaos.gateway.access", name = "enabled", havingValue = "true")
+    public AccessControlGatewayFilter accessControlGatewayFilter(
+            ChaosGatewayProperties properties,
+            AuthorizationManager authorizationManager,
+            ObjectProvider<AuditEventPublisher> auditEventPublisherProvider,
+            ObjectProvider<ChaosMetrics> metricsProvider) {
+        return new AccessControlGatewayFilter(
+                properties,
+                authorizationManager,
                 auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
                 metricsProvider.getIfAvailable()
         );

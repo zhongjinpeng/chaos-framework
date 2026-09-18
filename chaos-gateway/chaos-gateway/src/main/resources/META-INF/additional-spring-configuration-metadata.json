@@ -96,6 +96,83 @@
           "description": "本机反向代理。"
         }
       ]
+    },
+    {
+      "name": "chaos.gateway.access.combining-algorithm",
+      "values": [
+        {
+          "value": "deny-overrides",
+          "description": "拒绝优先：任一配置策略 DENY 即拒绝（默认）。"
+        },
+        {
+          "value": "allow-overrides",
+          "description": "允许优先：任一配置策略 ALLOW 即放行。"
+        },
+        {
+          "value": "first-applicable",
+          "description": "首个适用策略生效。"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.access.rules[].methods",
+      "values": [
+        {
+          "value": "GET",
+          "description": "只对 GET 生效。"
+        },
+        {
+          "value": "POST",
+          "description": "只对 POST 生效。"
+        },
+        {
+          "value": "PUT",
+          "description": "只对 PUT 生效。"
+        },
+        {
+          "value": "DELETE",
+          "description": "只对 DELETE 生效。"
+        }
+      ],
+      "providers": [
+        {
+          "name": "any"
+        }
+      ]
+    },
+    {
+      "name": "chaos.gateway.access.policies[].conditions[].left",
+      "values": [
+        {
+          "value": "subject.userId",
+          "description": "token 中的用户 ID。"
+        },
+        {
+          "value": "subject.tenantId",
+          "description": "token 中的租户 ID。"
+        },
+        {
+          "value": "subject.roles",
+          "description": "token 中的角色集合，配合 IN / CONTAINS 使用。"
+        },
+        {
+          "value": "environment.clientIp",
+          "description": "按可信代理解析后的客户端 IP。"
+        },
+        {
+          "value": "environment.http.method",
+          "description": "HTTP 方法。"
+        },
+        {
+          "value": "environment.http.path",
+          "description": "请求路径。"
+        }
+      ],
+      "providers": [
+        {
+          "name": "any"
+        }
+      ]
     }
   ]
 }

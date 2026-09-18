@@ -6,6 +6,7 @@ import com.michael.chaos.autoconfigure.diagnostics.ChaosFeatureReport.DisabledCa
 import com.michael.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Finding;
 import com.michael.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Severity;
 import com.michael.chaos.core.ratelimit.support.InMemoryRateLimiter;
+import com.michael.chaos.security.api.access.AuthorizationPolicySource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -185,6 +186,21 @@ class ChaosBuiltInDiagnosticRulesTest {
 
         environment.setProperty("chaos.audit.async.enabled", "true");
         assertThat(ChaosBuiltInDiagnosticRules.synchronousJdbcAudit(context(false))).isEmpty();
+    }
+
+    /**
+     * 声明 Redis 策略来源却没有对应 Bean 时告警：否则 Redis 里的 DENY 规则会静默失效。
+     */
+    @Test
+    void missingAuthorizationPolicySourceRule() {
+        assertThat(ChaosBuiltInDiagnosticRules.missingAuthorizationPolicySource(context(false))).isEmpty();
+
+        environment.setProperty("chaos.security.access.policy-source", "redis");
+        assertThat(ChaosBuiltInDiagnosticRules.missingAuthorizationPolicySource(context(false)))
+                .singleElement().extracting(Finding::severity).isEqualTo(Severity.WARN);
+
+        beanFactory.registerSingleton("authorizationPolicySource", (AuthorizationPolicySource) List::of);
+        assertThat(ChaosBuiltInDiagnosticRules.missingAuthorizationPolicySource(context(false))).isEmpty();
     }
 
     private ChaosDiagnosticContext context(boolean productionMode, String... enabledFeatures) {

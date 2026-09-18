@@ -181,6 +181,7 @@ curl http://localhost:8081/actuator/chaos
 | 可信代理 | INFO / WARN | 配置了 `server.forward-headers-strategy` 却没有 `trusted-proxies`（INFO）；开启 `trust-identity-headers` 却没有可信代理（WARN） | 配置 `chaos.gateway.trusted-proxies` / `chaos.web.forwarding.trusted-proxies` |
 | 生产安全被放宽 | WARN | 生产模式下 `chaos.production-safety.fail-fast=false` 或 `allow-unsafe-defaults=true` | 迁移完成后删除放宽配置 |
 | 响应式应用混入 chaos-web | WARN | 网关应用类路径中存在 chaos-web | 网关服务移除 `chaos-web-starter` / `chaos-web-service-starter` |
+| 动态授权策略来源缺失 | WARN | `chaos.security.access.policy-source=redis` 但容器中没有 `AuthorizationPolicySource` | 引入 `chaos-redis-starter`，或把 `policy-source` 改回 `config` |
 
 ### 自定义规则
 

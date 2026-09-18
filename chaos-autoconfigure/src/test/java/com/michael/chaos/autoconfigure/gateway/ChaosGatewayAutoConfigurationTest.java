@@ -7,6 +7,7 @@ import com.michael.chaos.core.diagnostic.ChaosDiagnosticException;
 import com.michael.chaos.core.ratelimit.RateLimiter;
 import com.michael.chaos.core.ratelimit.support.InMemoryRateLimiter;
 import com.michael.chaos.gateway.config.ChaosGatewayProperties;
+import com.michael.chaos.gateway.filter.AccessControlGatewayFilter;
 import com.michael.chaos.gateway.filter.GatewayAccessLogFilter;
 import com.michael.chaos.gateway.filter.GatewayDownstreamTimingFilter;
 import com.michael.chaos.gateway.filter.GatewayFallbackExceptionHandler;
@@ -15,8 +16,18 @@ import com.michael.chaos.gateway.filter.GatewayTraceFilter;
 import com.michael.chaos.gateway.filter.JwtAuthenticationGatewayFilter;
 import com.michael.chaos.gateway.filter.TenantGatewayFilter;
 import com.michael.chaos.gateway.ratelimit.GatewayRateLimitKeyResolver;
+import com.michael.chaos.security.api.access.AccessSubject;
+import com.michael.chaos.security.api.access.AuthorizationDecision;
+import com.michael.chaos.security.api.access.AuthorizationManager;
+import com.michael.chaos.security.api.access.AuthorizationPolicy;
+import com.michael.chaos.security.api.access.AuthorizationPolicySource;
+import com.michael.chaos.security.api.access.AuthorizationRequest;
+import com.michael.chaos.security.api.access.AuthorizationResource;
 import com.michael.chaos.gateway.ratelimit.GatewayRateLimiter;
 import com.michael.chaos.gateway.ratelimit.RateLimiterGatewayAdapter;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
@@ -116,6 +127,9 @@ class ChaosGatewayAutoConfigurationTest {
                         .hasMessageContaining("chaos.gateway.opaque-token.client-secret"));
     }
 
+    /**
+     * 网关侧同样要能一个开关关掉耗时统计，与 web 侧行为保持一致。
+     */
     @Test
     void shouldDisableRequestTimingWithTheSingleSwitch() {
         contextRunner.withPropertyValues("chaos.gateway.request-timing-enabled=false")
@@ -187,5 +201,95 @@ class ChaosGatewayAutoConfigurationTest {
         GatewayTraceFilter gatewayTraceFilter() {
             return new GatewayTraceFilter();
         }
+    }
+
+    /**
+     * 默认不启用粗粒度鉴权，升级后原有路由不会突然 403。
+     */
+    @Test
+    void accessControlShouldBeDisabledByDefault() {
+        contextRunner.run(context -> {
+            assertThat(context).doesNotHaveBean(AccessControlGatewayFilter.class);
+            assertThat(context).doesNotHaveBean(AuthorizationManager.class);
+        });
+    }
+
+    /**
+     * 开启后注册过滤器与授权决策服务，RBAC 与 ABAC 策略都按配置生效。
+     */
+    @Test
+    void shouldRegisterAccessControlWhenEnabled() {
+        contextRunner
+                .withPropertyValues(
+                        "chaos.gateway.access.enabled=true",
+                        "chaos.gateway.access.rules[0].path=/api/orders/**",
+                        "chaos.gateway.access.rules[0].methods[0]=GET",
+                        "chaos.gateway.access.rules[0].action=order:read",
+                        "chaos.gateway.access.role-hierarchy.root[0]=admin",
+                        "chaos.gateway.access.policies[0].id=deny-external",
+                        "chaos.gateway.access.policies[0].effect=DENY",
+                        "chaos.gateway.access.policies[0].actions[0]=order:read",
+                        "chaos.gateway.access.policies[0].conditions[0].left=environment.network",
+                        "chaos.gateway.access.policies[0].conditions[0].operator=EQ",
+                        "chaos.gateway.access.policies[0].conditions[0].values[0]=external")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(AccessControlGatewayFilter.class);
+                    AuthorizationManager manager = context.getBean(AuthorizationManager.class);
+                    AccessSubject user = new AccessSubject(
+                            "1001", "alice", "tenant-a", Set.of("user"), Set.of("order:read"), Map.of());
+
+                    assertThat(manager.isAllowed(AuthorizationRequest.of(user, "order:read"))).isTrue();
+                    assertThat(manager.decide(AuthorizationRequest.of(
+                            user,
+                            "order:read",
+                            AuthorizationResource.NONE,
+                            Map.of("network", "external"))).policyId()).isEqualTo("deny-external");
+                    assertThat(manager.isAllowed(AuthorizationRequest.of(new AccessSubject(
+                            "1002", "root", "tenant-a", Set.of("root"), Set.of(), Map.of()), "order:delete"))).isTrue();
+                });
+    }
+
+    /**
+     * 策略写错时启动失败，并指出具体配置路径。
+     */
+    @Test
+    void invalidGatewayPolicyShouldFailStartup() {
+        contextRunner
+                .withPropertyValues(
+                        "chaos.gateway.access.enabled=true",
+                        "chaos.gateway.access.policies[0].id=bad",
+                        "chaos.gateway.access.policies[0].actions[0]=order:read",
+                        "chaos.gateway.access.policies[0].conditions[0].left=subject.tenantId",
+                        "chaos.gateway.access.policies[0].conditions[0].operator=IN")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure()
+                        .rootCause()
+                        .isInstanceOf(ChaosDiagnosticException.class)
+                        .hasMessageContaining("chaos.gateway.access.policies[0].conditions[0].values"));
+    }
+
+    /**
+     * 网关可以接入动态策略来源（例如 Redis），无需改动装配。
+     */
+    @Test
+    void shouldUseDynamicPolicySourceWhenPresent() {
+        contextRunner
+                .withPropertyValues("chaos.gateway.access.enabled=true")
+                .withBean(AuthorizationPolicySource.class, () -> () -> List.of(new AuthorizationPolicy() {
+
+                    @Override
+                    public String id() {
+                        return "dynamic-deny";
+                    }
+
+                    @Override
+                    public AuthorizationDecision decide(AuthorizationRequest request) {
+                        return AuthorizationDecision.deny(id(), "dynamic");
+                    }
+                }))
+                .run(context -> assertThat(context.getBean(AuthorizationManager.class).decide(
+                        AuthorizationRequest.of(new AccessSubject(
+                                "1001", "alice", "tenant-a", Set.of("admin"), Set.of(), Map.of()),
+                                "order:read")).policyId()).isEqualTo("dynamic-deny"));
     }
 }

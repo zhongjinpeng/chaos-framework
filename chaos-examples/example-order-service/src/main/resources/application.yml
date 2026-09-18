@@ -65,6 +65,18 @@ chaos:
       type: jwt
     jwt:
       revocation-check-enabled: false
+    access:
+      # 演示 ABAC：超过 10 万的订单一律拒绝创建，规则写在配置里，代码只负责把金额作为资源属性交上去。
+      policies:
+        - id: deny-large-order
+          description: 大额订单需要走人工审批渠道
+          effect: deny
+          actions:
+            - order:create
+          conditions:
+            - left: resource.amount
+              operator: gt
+              values: ["100000"]
   mybatis:
     tenant:
       enabled: true

@@ -27,6 +27,8 @@ public final class ChaosBuiltInDiagnosticRules {
 
     static final String CHAOS_WEB_MARKER = "com.michael.chaos.web.filter.TraceFilter";
 
+    static final String AUTHORIZATION_POLICY_SOURCE = "com.michael.chaos.security.api.access.AuthorizationPolicySource";
+
     private ChaosBuiltInDiagnosticRules() {
     }
 
@@ -41,7 +43,8 @@ public final class ChaosBuiltInDiagnosticRules {
                 ChaosBuiltInDiagnosticRules::trustedProxies,
                 ChaosBuiltInDiagnosticRules::productionSafetyRelaxed,
                 ChaosBuiltInDiagnosticRules::servletLibraryInReactiveApplication,
-                ChaosBuiltInDiagnosticRules::synchronousJdbcAudit);
+                ChaosBuiltInDiagnosticRules::synchronousJdbcAudit,
+                ChaosBuiltInDiagnosticRules::missingAuthorizationPolicySource);
     }
 
     /**
@@ -82,6 +85,23 @@ public final class ChaosBuiltInDiagnosticRules {
         return List.of(new Finding(Severity.INFO, "production-safety",
                 "当前使用开发用实现 " + String.join("、", implementations) + "，以生产 profile 启动时会被生产安全检查阻断",
                 "上线前引入 chaos-redis-starter 并配置 spring.data.redis.*，Redis 实现会自动替换这些兜底实现"));
+    }
+
+    /**
+     * 声明了 Redis 策略来源，但容器里没有任何 {@code AuthorizationPolicySource}。
+     *
+     * <p>这种组合不会报错，只是所有动态策略静默失效——写在 Redis 里的拒绝规则一条都不生效，
+     * 而日志里什么都看不到。最常见的原因是没引入 chaos-redis-starter（没有 StringRedisTemplate）。</p>
+     */
+    static List<Finding> missingAuthorizationPolicySource(ChaosDiagnosticContext context) {
+        if (!"REDIS".equals(normalize(context.property("chaos.security.access.policy-source"), "CONFIG"))
+                || context.hasBeanOfType(AUTHORIZATION_POLICY_SOURCE)) {
+            return List.of();
+        }
+        return List.of(new Finding(Severity.WARN, "security",
+                "chaos.security.access.policy-source=redis 但容器中没有 AuthorizationPolicySource，"
+                        + "Redis 里的授权策略全部不生效（包括 DENY 规则）",
+                "引入 chaos-redis-starter 并配置 spring.data.redis.*，或把 chaos.security.access.policy-source 改回 config"));
     }
 
     /**

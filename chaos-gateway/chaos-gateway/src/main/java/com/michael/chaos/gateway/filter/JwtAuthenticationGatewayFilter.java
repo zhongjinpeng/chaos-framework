@@ -141,6 +141,10 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
         String tenantId = jwt.getClaimAsString(ChaosJwtClaims.TENANT_ID);
         putAttributeIfNotBlank(exchange, GatewayExchangeAttributes.AUTHENTICATED_USER_ID, userId);
         putAttributeIfNotBlank(exchange, GatewayExchangeAttributes.AUTHENTICATED_TENANT_ID, tenantId);
+        GatewayExchangeAttributes.putAuthenticatedAuthorities(
+                exchange,
+                ChaosJwtClaims.asStringSet(jwt.getClaims().get(ChaosJwtClaims.ROLES)),
+                ChaosJwtClaims.asStringSet(jwt.getClaims().get(ChaosJwtClaims.PERMISSIONS)));
         ServerWebExchange mutatedExchange = exchange.mutate()
                 .request(builder -> builder.headers(headers -> {
                     headers.remove(ChaosHeaders.USER_ID);
