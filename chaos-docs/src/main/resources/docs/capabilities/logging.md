@@ -4,7 +4,7 @@
 
 MDC 字段、JSON logback include 和访问日志字段约定。
 
-> 仓库中不存在 `chaos-log` 模块。`MdcKeys`、`MdcSupport`（包 `com.michael.chaos.trace.log`）以及 logback/log4j2 模板都位于 `chaos-observability/chaos-trace`，对外 artifactId 为 `chaos-trace`。
+> 仓库中不存在 `chaos-log` 模块。`MdcKeys`、`MdcSupport`（包 `com.chaos.trace.log`）以及 logback/log4j2 模板都位于 `chaos-observability/chaos-trace`，对外 artifactId 为 `chaos-trace`。
 
 ## 依赖方式
 
@@ -12,7 +12,7 @@ MDC 字段、JSON logback include 和访问日志字段约定。
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-trace</artifactId>
 </dependency>
 ```
@@ -25,7 +25,7 @@ MDC 字段、JSON logback include 和访问日志字段约定。
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="com/michael/chaos/trace/log/logback/logback-color-file.xml"/>
+    <include resource="com/chaos/trace/log/logback/logback-color-file.xml"/>
 </configuration>
 ```
 
@@ -45,9 +45,9 @@ chaos:
     total-size-cap: 10GB
 ```
 
-如果应用切换到 Log4j2，可使用 `com/michael/chaos/trace/log/log4j2/log4j2-color-file.xml` 作为 `log4j2-spring.xml` 模板。不要在同一个应用里同时启用 Logback 和 Log4j2；切换 Log4j2 时需要排除 `spring-boot-starter-logging` 并引入 `spring-boot-starter-log4j2`。
+如果应用切换到 Log4j2，可使用 `com/chaos/trace/log/log4j2/log4j2-color-file.xml` 作为 `log4j2-spring.xml` 模板。不要在同一个应用里同时启用 Logback 和 Log4j2；切换 Log4j2 时需要排除 `spring-boot-starter-logging` 并引入 `spring-boot-starter-log4j2`。
 
-JSON 日志仍可在 logback 中 include `com/michael/chaos/trace/log/logback/logback-json.xml`。
+JSON 日志仍可在 logback 中 include `com/chaos/trace/log/logback/logback-json.xml`。
 
 ## 示例
 

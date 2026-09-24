@@ -9,7 +9,7 @@
 
         使用方式：
             <parent>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-boot-parent</artifactId>
                 <version>1.0.0</version>
                 <relativePath/>
@@ -26,7 +26,7 @@
         无法使用 parent 的项目（已有公司级 parent），改为在 dependencyManagement 中 import chaos-dependencies。
     -->
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-dependencies</artifactId>
         <version>${revision}</version>
         <relativePath>../chaos-dependencies/pom.xml</relativePath>

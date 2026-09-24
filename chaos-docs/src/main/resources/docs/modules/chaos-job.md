@@ -12,12 +12,12 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-job-starter</artifactId>
 </dependency>
 <!-- 多实例部署需要分布式锁 -->
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-redis-starter</artifactId>
 </dependency>
 ```

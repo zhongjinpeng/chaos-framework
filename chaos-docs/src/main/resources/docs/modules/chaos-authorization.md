@@ -10,7 +10,7 @@ OAuth2 Authorization Server，多 grant_type 登录，JWT/Redis token，互踢�
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-authorization-starter</artifactId>
 </dependency>
 ```

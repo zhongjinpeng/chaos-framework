@@ -20,7 +20,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-test-support</artifactId>
     <scope>test</scope>
 </dependency>

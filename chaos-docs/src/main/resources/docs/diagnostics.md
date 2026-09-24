@@ -43,10 +43,10 @@ Chaos 启动报告 | 应用 example-gateway | profile [default] | 生产模式 �
 | 配置项 | 默认值 | 说明 |
 | --- | --- | --- |
 | `chaos.diagnostics.startup-report.enabled` | `true` | 是否输出启动报告 |
-| `chaos.diagnostics.startup-report.level` | `info` | `info` 或 `debug`；设为 `debug` 后只在 `logging.level.com.michael.chaos.StartupReport=debug` 时可见 |
+| `chaos.diagnostics.startup-report.level` | `info` | `info` 或 `debug`；设为 `debug` 后只在 `logging.level.com.chaos.StartupReport=debug` 时可见 |
 | `chaos.diagnostics.startup-report.identifiers` | 空 | 追加到报告抬头的自定义标识，见下节 |
 
-日志 logger 名固定为 `com.michael.chaos.StartupReport`，可以单独调整级别或输出目标。
+日志 logger 名固定为 `com.chaos.StartupReport`，可以单独调整级别或输出目标。
 
 ### 自定义启动标识
 
@@ -118,11 +118,11 @@ ChaosStartupIdentifierContributor deploymentIdentifiers(Environment environment)
 | 想要 | 怎么做 |
 | --- | --- |
 | 用自己的 banner | 放 `src/main/resources/banner.txt`。应用自己的资源在 classpath 上排在依赖 jar 之前（可执行 jar 里 `BOOT-INF/classes` 先于 `BOOT-INF/lib`），因此它天然覆盖框架那份 |
-| 指定任意位置 | `spring.banner.location=classpath:my/banner.txt`；写 `classpath:com/michael/chaos/banner.txt` 则是显式要框架那份（应用同时有自己的 `banner.txt` 时也照用框架的） |
+| 指定任意位置 | `spring.banner.location=classpath:my/banner.txt`；写 `classpath:com/chaos/banner.txt` 则是显式要框架那份（应用同时有自己的 `banner.txt` 时也照用框架的） |
 | 一个都不要 | `spring.main.banner-mode=off` |
 
 实现上，框架把同一份 banner 同时打包到 `classpath:banner.txt`（Spring Boot 未配置
-`spring.banner.location` 时的默认查找位置）和 `classpath:com/michael/chaos/banner.txt`（显式引用用）。
+`spring.banner.location` 时的默认查找位置）和 `classpath:com/chaos/banner.txt`（显式引用用）。
 不是在运行期改默认值：banner 在 `SpringApplication#run` 里于容器刷新之前就已打印，那时自动装配还没跑，
 而能赶在它之前的 `EnvironmentPostProcessor` 需要 `spring.factories`（本仓库禁用）。
 

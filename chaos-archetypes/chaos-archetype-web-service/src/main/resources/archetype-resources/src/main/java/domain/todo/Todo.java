@@ -1,8 +1,8 @@
 package ${package}.domain.todo;
 
-import com.michael.chaos.core.exception.BizException;
-import com.michael.chaos.core.exception.CommonErrorCode;
-import com.michael.chaos.domain.model.AggregateRoot;
+import com.chaos.core.exception.BizException;
+import com.chaos.core.exception.CommonErrorCode;
+import com.chaos.domain.model.AggregateRoot;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;

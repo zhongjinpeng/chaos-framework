@@ -10,7 +10,7 @@ Kafka 发布器适配模块，源码目录为 `chaos-mq/chaos-mq-kafka`，对外
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-mq-starter</artifactId>
 </dependency>
 <dependency>

@@ -4,7 +4,7 @@
 
 本模块是仓库治理测试，名称直接表明它不是给业务方使用的测试支持库（后者是 `chaos-test-support`）。
 
-仓库级架构治理测试（test scope，包 `com.michael.chaos.architecture`），在 `./mvnw test` 阶段执行。
+仓库级架构治理测试（test scope，包 `com.chaos.architecture`），在 `./mvnw test` 阶段执行。
 
 | 测试类 | 内容 |
 | --- | --- |

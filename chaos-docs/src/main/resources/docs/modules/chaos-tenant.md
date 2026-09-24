@@ -12,7 +12,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-tenant</artifactId>
 </dependency>
 ```
@@ -34,7 +34,7 @@ chaos:
 ### Servlet 租户校验
 
 早期版本只有网关调用 `TenantAccessValidator`，绕过网关直接访问的 Servlet 服务完全不校验租户状态。
-`TenantAccessServletFilter`（`com.michael.chaos.tenant.servlet`，Servlet / Spring Web 为可选依赖）补上这一环，
+`TenantAccessServletFilter`（`com.chaos.tenant.servlet`，Servlet / Spring Web 为可选依赖）补上这一环，
 自动装配只负责注册。开启后：
 
 - 过滤器顺序为 `-90`，位于 Spring Security 过滤器链（`-100`）之后，读取认证结果写入 `RequestContext` 的租户 ID；

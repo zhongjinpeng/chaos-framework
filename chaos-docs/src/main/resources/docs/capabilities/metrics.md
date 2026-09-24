@@ -1,6 +1,6 @@
 # 治理指标与健康检查（chaos-core + chaos-trace + 各能力模块）
 
-> 仓库中不存在 `chaos-metrics` 模块。上报端口位于 `chaos-core`（包 `com.michael.chaos.core.metrics`），
+> 仓库中不存在 `chaos-metrics` 模块。上报端口位于 `chaos-core`（包 `com.chaos.core.metrics`），
 > Micrometer 实现位于 `chaos-trace`，埋点散落在各能力模块，装配在 `chaos-autoconfigure`。
 
 ## 解决的问题

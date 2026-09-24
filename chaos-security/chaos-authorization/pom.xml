@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-parent</artifactId>
         <version>${revision}</version>
         <relativePath>../../pom.xml</relativePath>
@@ -20,15 +20,15 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-audit</artifactId>
         </dependency>
         <dependency>
@@ -74,7 +74,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-test-support</artifactId>
             <scope>test</scope>
         </dependency>

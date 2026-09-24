@@ -1,6 +1,6 @@
 # 幂等（chaos-core + chaos-web + chaos-mq + chaos-redis）
 
-> 仓库中不存在 `chaos-idempotent` 模块。幂等契约位于 `chaos-core`（包 `com.michael.chaos.core.idempotent`），各场景适配分布在对应模块。
+> 仓库中不存在 `chaos-idempotent` 模块。幂等契约位于 `chaos-core`（包 `com.chaos.core.idempotent`），各场景适配分布在对应模块。
 
 ## 组成
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | `IdempotentRepository`（saveIfAbsent / remove） | chaos-core |
 | `IdempotentRecordStore`、`IdempotentRecord`、`IdempotentRecordCodec`（首次响应快照） | chaos-core |
-| `@Idempotent` 注解、`IdempotentKeyGenerator`（HTTP 语义：按租户/用户/方法/路径隔离） | chaos-web（`com.michael.chaos.web.idempotent`） |
+| `@Idempotent` 注解、`IdempotentKeyGenerator`（HTTP 语义：按租户/用户/方法/路径隔离） | chaos-web（`com.chaos.web.idempotent`） |
 | HTTP 幂等拦截器 `IdempotentInterceptor` | chaos-web |
 | HTTP 响应快照采集 `IdempotentResponseReplayFilter` | chaos-web |
 | MQ 幂等消费 `IdempotentMessageConsumer` | chaos-mq |

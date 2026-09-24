@@ -10,7 +10,7 @@ Servlet 业务服务通过场景 starter `chaos-web-service-starter` 间接引�
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-application-starter</artifactId>
 </dependency>
 ```

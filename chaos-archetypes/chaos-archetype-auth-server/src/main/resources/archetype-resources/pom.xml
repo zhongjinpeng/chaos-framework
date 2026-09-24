@@ -6,7 +6,7 @@
 
     <!-- chaos-boot-parent 提供依赖版本（BOM）、Java 21、测试插件与可执行 jar 打包约定。 -->
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-boot-parent</artifactId>
         <version>${chaosVersion}</version>
         <relativePath/>
@@ -23,7 +23,7 @@
             Redis 授权存储与 token 黑名单、审计、Actuator + Prometheus。
         -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-auth-server-starter</artifactId>
         </dependency>
 

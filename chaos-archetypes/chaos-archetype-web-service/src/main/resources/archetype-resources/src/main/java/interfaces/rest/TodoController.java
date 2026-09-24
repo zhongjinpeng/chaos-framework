@@ -2,7 +2,7 @@ package ${package}.interfaces.rest;
 
 import ${package}.application.TodoApplicationService;
 import ${package}.application.TodoApplicationService.TodoView;
-import com.michael.chaos.web.idempotent.Idempotent;
+import com.chaos.web.idempotent.Idempotent;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

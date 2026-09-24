@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-starters</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -23,28 +23,28 @@
     -->
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-audit-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-autoconfigure</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-gateway</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-tenant</artifactId>
         </dependency>
         <!-- JWT 黑名单的 Redis 实现；应用引入 chaos-redis-starter 后自动启用。 -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security-redis</artifactId>
         </dependency>
         <dependency>

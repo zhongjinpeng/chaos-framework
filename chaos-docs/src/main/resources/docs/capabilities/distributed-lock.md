@@ -1,6 +1,6 @@
 # 分布式锁（chaos-core + chaos-redis）
 
-> 仓库中不存在 `chaos-lock` 模块。锁接口位于 `chaos-core`（包 `com.michael.chaos.core.lock`），Redisson 实现位于 `chaos-redis`。
+> 仓库中不存在 `chaos-lock` 模块。锁接口位于 `chaos-core`（包 `com.chaos.core.lock`），Redisson 实现位于 `chaos-redis`。
 
 ## 职责
 
@@ -13,12 +13,12 @@
 ```xml
 <!-- 只依赖接口 -->
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-core</artifactId>
 </dependency>
 <!-- 运行时实现 -->
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-redis-starter</artifactId>
 </dependency>
 ```

@@ -2,11 +2,11 @@ package ${package}.application;
 
 import ${package}.domain.todo.Todo;
 import ${package}.domain.todo.TodoRepository;
-import com.michael.chaos.core.context.RequestContext;
-import com.michael.chaos.core.exception.BizException;
-import com.michael.chaos.core.exception.CommonErrorCode;
-import com.michael.chaos.security.annotation.Permission;
-import com.michael.chaos.service.event.DomainEventPublisher;
+import com.chaos.core.context.RequestContext;
+import com.chaos.core.exception.BizException;
+import com.chaos.core.exception.CommonErrorCode;
+import com.chaos.security.annotation.Permission;
+import com.chaos.service.event.DomainEventPublisher;
 import java.util.List;
 import org.springframework.stereotype.Service;
 

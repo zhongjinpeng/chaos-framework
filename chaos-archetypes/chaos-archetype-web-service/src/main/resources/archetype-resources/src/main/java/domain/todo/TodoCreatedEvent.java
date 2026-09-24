@@ -1,6 +1,6 @@
 package ${package}.domain.todo;
 
-import com.michael.chaos.domain.model.DomainEvent;
+import com.chaos.domain.model.DomainEvent;
 import java.time.Instant;
 
 /**

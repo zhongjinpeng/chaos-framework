@@ -30,7 +30,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-security-starter</artifactId>
 </dependency>
 ```

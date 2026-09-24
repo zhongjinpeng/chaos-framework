@@ -1,7 +1,7 @@
 package ${package}.identity;
 
-import com.michael.chaos.authorization.core.ChaosAuthorizationUserService;
-import com.michael.chaos.security.api.auth.LoginUser;
+import com.chaos.authorization.core.ChaosAuthorizationUserService;
+import com.chaos.security.api.auth.LoginUser;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

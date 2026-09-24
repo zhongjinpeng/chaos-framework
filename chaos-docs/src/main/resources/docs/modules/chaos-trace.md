@@ -7,7 +7,7 @@ TraceId/SpanId 创建、MDC 桥接、W3C Trace Context 兼容和出站 Header �
 ## 指标约定
 
 原先独立的 `chaos-monitor` 已并入 `chaos-trace`：
-包 `com.michael.chaos.monitor` 更名为 `com.michael.chaos.trace.monitor`。
+包 `com.chaos.monitor` 更名为 `com.chaos.trace.monitor`。
 
 | 类型 | 说明 |
 | --- | --- |
@@ -31,7 +31,7 @@ management:
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-trace</artifactId>
 </dependency>
 ```

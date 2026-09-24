@@ -27,7 +27,7 @@ MQ 能力域聚合目录。契约模块位于 `chaos-mq/chaos-mq`，对外 artif
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-mq-starter</artifactId>
 </dependency>
 ```

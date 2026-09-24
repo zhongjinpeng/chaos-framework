@@ -39,10 +39,10 @@ chaos-framework
 │   └── chaos-gateway-nacos           Nacos 动态路由
 ├── chaos-job                         分布式任务执行（DistributedJobRunner）
 ├── chaos-storage
-│   ├── chaos-storage                 对象存储端口（com.michael.chaos.storage）
+│   ├── chaos-storage                 对象存储端口（com.chaos.storage）
 │   ├── chaos-storage-oss             阿里云 OSS 适配
 │   └── chaos-storage-minio           MinIO 适配
-├── chaos-autoconfigure               全部自动装配（com.michael.chaos.autoconfigure.<feature>）与生产安全检查；依赖均为 optional
+├── chaos-autoconfigure               全部自动装配（com.chaos.autoconfigure.<feature>）与生产安全检查；依赖均为 optional
 ├── chaos-boot-parent                 业务应用推荐 parent（继承 BOM；编译、测试、repackage 约定；不含框架治理插件）
 ├── chaos-starters
 │   ├── 场景 starter                  chaos-web-service-starter、chaos-gateway-starter、chaos-auth-server-starter（一个应用选一个）
@@ -128,7 +128,7 @@ flowchart TB
 | 6 | starter 不含 Java 代码，不依赖示例、测试支持和架构测试模块 | `startersShouldOnlyAggregateDependencies`、`startersShouldNotDependOnExamplesOrTestModules` |
 | 7 | 只有 starter 可以依赖 `chaos-autoconfigure`，库模块与示例不得依赖 | `autoConfigurationShouldLiveInSingleModuleWithBoot3Imports` |
 | 8 | `chaos-test-support` 只能以 test scope 被依赖 | `testSupportShouldOnlyBeUsedInTestScope` |
-| 9 | 每个模块的 Java 包位于基础包 `com.michael.chaos.<module>` 下，且不落入其他模块更具体的基础包；新增模块须在规则表中登记基础包 | `packagesShouldMatchModuleBasePackage` |
+| 9 | 每个模块的 Java 包位于基础包 `com.chaos.<module>` 下，且不落入其他模块更具体的基础包；新增模块须在规则表中登记基础包 | `packagesShouldMatchModuleBasePackage` |
 | 10 | 场景 starter（`chaos-web-service-starter`、`chaos-auth-server-starter`）只聚合能力 starter（外加 Actuator / Prometheus）；能力 starter 不得依赖场景 starter | `scenarioStartersShouldOnlyAggregateCapabilityStarters` |
 
 规则基于 POM 解析与源码 import 扫描，而不是 ArchUnit 字节码导入：架构测试模块不依赖业务模块，单独运行
@@ -139,12 +139,12 @@ flowchart TB
 
 | 历史名称 | 实际位置 |
 | --- | --- |
-| chaos-cache | `chaos-domain` 的 `com.michael.chaos.domain.cache` |
-| chaos-lock | 契约在 `chaos-core` 的 `com.michael.chaos.core.lock`，Redisson 实现在 `chaos-redis` |
-| chaos-idempotent | 契约在 `chaos-core` 的 `com.michael.chaos.core.idempotent`，Redis 实现在 `chaos-redis`，`@Idempotent` 注解、key 生成与拦截器在 `chaos-web` |
-| chaos-feign | `chaos-trace` 的 `com.michael.chaos.trace.feign.TraceFeignRequestInterceptor`，由 `chaos-autoconfigure`（cloud）注册，通过 `chaos-cloud-starter` 引入 |
+| chaos-cache | `chaos-domain` 的 `com.chaos.domain.cache` |
+| chaos-lock | 契约在 `chaos-core` 的 `com.chaos.core.lock`，Redisson 实现在 `chaos-redis` |
+| chaos-idempotent | 契约在 `chaos-core` 的 `com.chaos.core.idempotent`，Redis 实现在 `chaos-redis`，`@Idempotent` 注解、key 生成与拦截器在 `chaos-web` |
+| chaos-feign | `chaos-trace` 的 `com.chaos.trace.feign.TraceFeignRequestInterceptor`，由 `chaos-autoconfigure`（cloud）注册，通过 `chaos-cloud-starter` 引入 |
 | chaos-nacos | `chaos-autoconfigure`（cloud.nacos） / `chaos-cloud-nacos-starter`；网关动态路由见 `chaos-gateway-nacos` |
-| chaos-log | `chaos-trace` 的 `com.michael.chaos.trace.log`（`MdcKeys`、`MdcSupport`、日志模板） |
+| chaos-log | `chaos-trace` 的 `com.chaos.trace.log`（`MdcKeys`、`MdcSupport`、日志模板） |
 | chaos-iam | 未落地，仓库中不存在 |
 
 ## 2. Module Responsibilities
@@ -212,7 +212,7 @@ META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```text
 order-service
 ├── order-bootstrap
-│   └── src/main/java/com/michael/chaos/order/OrderApplication.java
+│   └── src/main/java/com/chaos/order/OrderApplication.java
 ├── order-adapter
 │   ├── web
 │   ├── persistence
@@ -245,16 +245,16 @@ domain -> no framework infrastructure
 
 ## 6. Package Convention
 
-All framework packages start with `com.michael.chaos`. Each module owns exactly one base package
-`com.michael.chaos.<module>` (for example `chaos-security-api` → `com.michael.chaos.security.api`,
-`chaos-audit-jdbc` → `com.michael.chaos.audit.jdbc`, `chaos-autoconfigure` → `com.michael.chaos.autoconfigure.<feature>`),
+All framework packages start with `com.chaos`. Each module owns exactly one base package
+`com.chaos.<module>` (for example `chaos-security-api` → `com.chaos.security.api`,
+`chaos-audit-jdbc` → `com.chaos.audit.jdbc`, `chaos-autoconfigure` → `com.chaos.autoconfigure.<feature>`),
 so a fully qualified class name tells which artifact to depend on and no package is split across jars.
 The mapping is enforced by rule 9 in section 1.2.
 
 Recommended business package:
 
 ```text
-com.michael.chaos.{boundedContext}
+com.chaos.{boundedContext}
 ├── bootstrap
 ├── adapter
 │   ├── web
@@ -312,7 +312,7 @@ traceId, spanId, userId, appName, uri, ip, cost
 Use:
 
 ```xml
-<include resource="com/michael/chaos/trace/log/logback/logback-json.xml"/>
+<include resource="com/chaos/trace/log/logback/logback-json.xml"/>
 ```
 
 Trace filters populate MDC. Feign and Gateway forward trace headers.

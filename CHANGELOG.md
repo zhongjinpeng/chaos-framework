@@ -21,7 +21,7 @@
 `chaos-security/`（`chaos-security-api`、`chaos-security`、`chaos-authorization`、`chaos-security-redis`）、
 `chaos-gateway/`、`chaos-data/`（`chaos-mybatis`、`chaos-redis`）、`chaos-mq/`、`chaos-storage/`。
 
-全部自动装配集中在单一的 `chaos-autoconfigure`（`com.michael.chaos.autoconfigure.<feature>`），
+全部自动装配集中在单一的 `chaos-autoconfigure`（`com.chaos.autoconfigure.<feature>`），
 starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 starter 两层。
 `chaos-boot-parent` 是业务应用推荐的 parent。
 
@@ -118,11 +118,11 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 | 移除项 | 替代 |
 | --- | --- |
 | `RequestContext.traceId()`（`forRemoval = true`，自 0.1.0） | `TraceContext.traceId()` |
-| `com.michael.chaos.audit.jdbc.AuditAttributeSanitizer` / `DefaultAuditAttributeSanitizer` | `com.michael.chaos.audit.*` 下的同名类型 |
+| `com.chaos.audit.jdbc.AuditAttributeSanitizer` / `DefaultAuditAttributeSanitizer` | `com.chaos.audit.*` 下的同名类型 |
 | `IdempotentKeyContext` 的 5 参构造器 | 携带 `tenantId` / `userId` 的完整构造器 |
 | `ChaosLogoutController(OAuth2AuthorizationService)` 单参构造器 | 包含撤销服务的完整构造器 |
 | `chaos.tenant.header-name`、`chaos.tenant.default-isolation-mode` | 网关用 `chaos.gateway.tenant.header-name`；隔离模式由 `TenantStatusProvider` 返回 |
-| `com.michael.chaos.trace.monitor.MeterNames` | `com.michael.chaos.core.metrics.ChaosMeterNames`（旧类声明的两个指标从未被任何代码发射） |
+| `com.chaos.trace.monitor.MeterNames` | `com.chaos.core.metrics.ChaosMeterNames`（旧类声明的两个指标从未被任何代码发射） |
 
 ### Added（1.0 易用性：幂等响应回放与错误文案国际化）
 
@@ -205,7 +205,7 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 - **autoconfigure**：内置带框架版本号的 banner，**零配置生效**。版本号由 Maven 资源过滤在框架构建期烧入，
   显示的一定是实际引入的框架版本。同一份 banner 被打包到两个位置：`classpath:banner.txt`
   （Spring Boot 未配置 `spring.banner.location` 时的默认查找位置，因此引入任一 starter 即生效）
-  与 `classpath:com/michael/chaos/banner.txt`（要显式引用时用）。
+  与 `classpath:com/chaos/banner.txt`（要显式引用时用）。
   覆盖方式按优先级：放自己的 `src/main/resources/banner.txt`（应用资源在 classpath 上先于依赖 jar，
   可执行 jar 里 `BOOT-INF/classes` 先于 `BOOT-INF/lib`）、写 `spring.banner.location`、
   或 `spring.main.banner-mode=off` 全关。
@@ -224,13 +224,13 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
   `ChaosContainers` / `ChaosTestProperties` Testcontainers 辅助、`ProductionSafetyTestSupport`。
 - **architecture**：新增 `DependencyDirectionArchitectureTest`，把模块依赖方向规则 1~9 固化为测试（core 框架无关、security-api 不依赖 Spring、
   gateway/mybatis/redis 只依赖 security-api、redis 无安全概念、autoconfigure 只含装配代码、starter 与 test-support 的依赖约束、包与模块一一对应），
-  规则说明与依赖图见 `docs/architecture.md` 1.1 节。架构测试包由 `com.michael.chaos.test.architecture` 改为 `com.michael.chaos.architecture`。
+  规则说明与依赖图见 `docs/architecture.md` 1.1 节。架构测试包由 `com.chaos.test.architecture` 改为 `com.chaos.architecture`。
 - **docs**：新增 `modules/chaos-test-support.md`、`modules/chaos-security-api.md`、`modules/chaos-security-redis.md`。
 
 ### Changed（1.0 模块结构调整）
 
 - **autoconfigure**：16 个 `chaos-*-autoconfigure` 模块与 `chaos-autoconfigure-support` 合并为唯一的 `chaos-autoconfigure`，
-  自动装配类移入 `com.michael.chaos.autoconfigure.<feature>` 子包（例如 `com.michael.chaos.autoconfigure.web.ChaosWebAutoConfiguration`）。
+  自动装配类移入 `com.chaos.autoconfigure.<feature>` 子包（例如 `com.chaos.autoconfigure.web.ChaosWebAutoConfiguration`）。
   功能库与三方框架在该模块中全部为 optional，每个自动装配以 `@ConditionalOnClass` 声明依赖；新增 `OptionalDependencyIsolationTest`
   物理移除依赖验证不会出现 `NoClassDefFoundError`。starter 聚合 `chaos-autoconfigure` + 功能库。
 - **autoconfigure**：授权服务器自动装配的 spring-data-redis、spring-jdbc 为可选依赖（使用 `store-type=jdbc` 时自行引入

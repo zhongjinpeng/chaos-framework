@@ -6,7 +6,7 @@
 
     <!-- chaos-boot-parent 提供依赖版本（BOM）、Java 21、测试插件与可执行 jar 打包约定。 -->
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-boot-parent</artifactId>
         <version>${chaosVersion}</version>
         <relativePath/>
@@ -23,14 +23,14 @@
             网关是 WebFlux 应用，不要引入 chaos-web-starter / chaos-web-service-starter。
         -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-gateway-starter</artifactId>
         </dependency>
 
         <!--
             生产环境必需：多实例 Redis 集群限流与 token 黑名单（内存限流在生产 profile 下会阻断启动）。
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-redis-starter</artifactId>
         </dependency>
             Nacos 动态路由：chaos-gateway-nacos-starter

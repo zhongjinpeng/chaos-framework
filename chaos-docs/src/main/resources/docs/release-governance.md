@@ -114,7 +114,7 @@ scripts/verify-api-compatibility.sh 1.0.0
 > 拿它当基线会得到错误结论（多报或漏报）。在本地做发布验证前先清掉：
 >
 > ```bash
-> rm -rf ~/.m2/repository/com/michael
+> rm -rf ~/.m2/repository/com/chaos
 > ```
 >
 > CI 从 Maven Central 解析基线，没有这个问题。
@@ -134,7 +134,7 @@ scripts/verify-api-compatibility.sh 1.0.0
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-dependencies</artifactId>
             <version>${chaos.version}</version>
             <type>pom</type>
@@ -183,8 +183,8 @@ BOM 不包含：`chaos-architecture-tests`（仓库内部架构测试，不发�
 典型 Web 业务服务的组合（场景 starter + 能力 starter，选型说明见 [chaos-starters](modules/chaos-starters.md)）：
 
 ```xml
-<dependency><groupId>com.michael</groupId><artifactId>chaos-web-service-starter</artifactId></dependency>
-<dependency><groupId>com.michael</groupId><artifactId>chaos-redis-starter</artifactId></dependency>
+<dependency><groupId>com.chaos</groupId><artifactId>chaos-web-service-starter</artifactId></dependency>
+<dependency><groupId>com.chaos</groupId><artifactId>chaos-redis-starter</artifactId></dependency>
 ```
 
 `chaos-boot-parent`（packaging pom）作为业务应用推荐 parent 发布，以 `chaos-dependencies` 为 parent，不进入 BOM。

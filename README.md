@@ -20,7 +20,7 @@
 
 ```bash
 mvn archetype:generate -B \
-  -DarchetypeGroupId=com.michael \
+  -DarchetypeGroupId=com.chaos \
   -DarchetypeArtifactId=chaos-archetype-web-service \
   -DarchetypeVersion=1.0.0 \
   -DgroupId=com.acme -DartifactId=todo-service -Dpackage=com.acme.todo
@@ -29,7 +29,7 @@ mvn verify            # 离线即可通过
 mvn spring-boot:run   # 日志中输出 Chaos 启动报告
 ```
 
-手工接入：以 `com.michael:chaos-boot-parent:1.0.0` 为 parent，引入场景 starter，从配置模板复制 `application.yml`。
+手工接入：以 `com.chaos:chaos-boot-parent:1.0.0` 为 parent，引入场景 starter，从配置模板复制 `application.yml`。
 完整步骤见 [5 分钟上手](chaos-docs/src/main/resources/docs/getting-started.md)。
 
 ## 文档

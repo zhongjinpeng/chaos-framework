@@ -1,6 +1,6 @@
 # chaos-cloud（OpenFeign 透传）
 
-> 仓库中不存在 `chaos-feign` 模块。拦截器实现 `TraceFeignRequestInterceptor` 位于 chaos-trace（`com.michael.chaos.trace.feign`，feign-core 为可选依赖），
+> 仓库中不存在 `chaos-feign` 模块。拦截器实现 `TraceFeignRequestInterceptor` 位于 chaos-trace（`com.chaos.trace.feign`，feign-core 为可选依赖），
 > 由 `chaos-autoconfigure` 负责注册；
 > Servlet 服务通过 `chaos-cloud-starter` 引入；响应式服务使用 `chaos-cloud-reactive-starter`（不带 OpenFeign）。
 
@@ -14,7 +14,7 @@ OpenFeign Trace Header 自动透传，兼容 W3C Trace Context。
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-cloud-starter</artifactId>
 </dependency>
 ```

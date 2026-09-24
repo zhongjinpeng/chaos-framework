@@ -6,7 +6,7 @@
 
 | 包 | 自动装配 |
 | --- | --- |
-| `com.michael.chaos.autoconfigure.web` | `ChaosWebAutoConfiguration` |
+| `com.chaos.autoconfigure.web` | `ChaosWebAutoConfiguration` |
 | `...service` | `ChaosServiceAutoConfiguration` |
 | `...tenant` | `ChaosTenantAutoConfiguration` |
 | `...audit` / `...audit.jdbc` | `ChaosAuditAutoConfiguration`、`ChaosAuditJdbcAutoConfiguration` |
@@ -29,7 +29,7 @@
 
 本模块把所有 chaos 功能库与三方框架声明为 `optional`，由 starter 决定真正引入哪些：
 
-- 每个自动装配以类级 `@ConditionalOnClass` 声明其功能库（如 `com.michael.chaos.web.config.ChaosWebProperties`）与框架；
+- 每个自动装配以类级 `@ConditionalOnClass` 声明其功能库（如 `com.chaos.web.config.ChaosWebProperties`）与框架；
 - 引用可选类型的 `@Bean` 放入带 `@ConditionalOnClass` 的嵌套配置类，或像授权服务器的 Redis/JDBC 存储那样，
   把引用可选类型的代码集中到只在类存在时才调用的辅助类（`AuthorizationRedisStores`、`AuthorizationJdbcStores`）；
 - `@Bean` 方法签名（包括 `ObjectProvider<可选类型>` 泛型参数）会被 Spring 反射解析，不能直接出现可选类型；

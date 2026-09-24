@@ -3,8 +3,8 @@
 ## 当前拆分原则
 
 每个功能域拆分为三层：
-1. **核心契约**（如 `chaos-core` 中的 `com.michael.chaos.core.lock`、`com.michael.chaos.core.idempotent`）— 纯 Java 接口，不依赖 Spring
-2. **统一自动装配模块** `chaos-autoconfigure`（如 `com.michael.chaos.autoconfigure.redis`）— 全部 Spring Boot 自动装配逻辑，功能库与三方框架均为 optional
+1. **核心契约**（如 `chaos-core` 中的 `com.chaos.core.lock`、`com.chaos.core.idempotent`）— 纯 Java 接口，不依赖 Spring
+2. **统一自动装配模块** `chaos-autoconfigure`（如 `com.chaos.autoconfigure.redis`）— 全部 Spring Boot 自动装配逻辑，功能库与三方框架均为 optional
 3. **starter 模块**（如 `chaos-redis-starter`）— 纯依赖聚合，无 Java 代码
 
 ## 为什么锁、幂等、缓存没有独立模块

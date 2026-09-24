@@ -12,7 +12,7 @@ JDBC outbox 可靠消息持久化适配器。源码目录为 `chaos-mq/chaos-mq-
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-mq-starter</artifactId>
 </dependency>
 ```

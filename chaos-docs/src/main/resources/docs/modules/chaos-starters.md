@@ -44,7 +44,7 @@ starter 分两层：
 
 ```xml
 <parent>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-boot-parent</artifactId>
     <version>1.0.0</version>
     <relativePath/>
@@ -52,15 +52,15 @@ starter 分两层：
 
 <dependencies>
     <dependency>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-web-service-starter</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-mybatis-starter</artifactId>
     </dependency>
     <dependency>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-redis-starter</artifactId>
     </dependency>
 </dependencies>

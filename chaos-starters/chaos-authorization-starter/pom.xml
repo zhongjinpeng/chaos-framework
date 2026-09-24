@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-starters</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -14,20 +14,20 @@
     <description>Dependency aggregation starter for OAuth2 authorization server.</description>
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-audit-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-autoconfigure</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-authorization</artifactId>
         </dependency>
         <!-- JDBC 客户端/授权存储（store-type=jdbc）为可选能力：需要时自行引入 spring-boot-starter-jdbc。 -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security-redis</artifactId>
         </dependency>
         <dependency>

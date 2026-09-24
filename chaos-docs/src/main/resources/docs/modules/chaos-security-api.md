@@ -6,10 +6,10 @@
 
 | 包 | 内容 |
 | --- | --- |
-| `com.michael.chaos.security.api.auth` | `LoginUser`、`LoginUserProvider`（获取当前登录用户的 SPI）、`ChaosJwtClaims`（claim 名称常量） |
-| `com.michael.chaos.security.api.token` | `JwtRevocationService`、`NoopJwtRevocationService`、`JwtTokenIds`、`TokenIntrospectionCache` |
-| `com.michael.chaos.security.api.access` | RBAC / ABAC 授权模型：`AuthorizationManager`、`AuthorizationRequest`、`RbacAuthorizationPolicy`（角色继承 `RoleHierarchy`、权限通配 `PermissionPatterns`）、`AbacAuthorizationPolicy`、配置形态策略 `PolicyDefinition`/`AccessPolicyFactory`、策略分组 `CompositeAuthorizationPolicy` 与合并算法 `PolicyCombiningAlgorithm`、扩展 SPI `AuthorizationPolicySource`/`AuthorizationContextContributor` |
-| `com.michael.chaos.security.api.datascope` | `DataScopeContext`、`DataScopeRequest`、`DataScopeAuthorizationService` |
+| `com.chaos.security.api.auth` | `LoginUser`、`LoginUserProvider`（获取当前登录用户的 SPI）、`ChaosJwtClaims`（claim 名称常量） |
+| `com.chaos.security.api.token` | `JwtRevocationService`、`NoopJwtRevocationService`、`JwtTokenIds`、`TokenIntrospectionCache` |
+| `com.chaos.security.api.access` | RBAC / ABAC 授权模型：`AuthorizationManager`、`AuthorizationRequest`、`RbacAuthorizationPolicy`（角色继承 `RoleHierarchy`、权限通配 `PermissionPatterns`）、`AbacAuthorizationPolicy`、配置形态策略 `PolicyDefinition`/`AccessPolicyFactory`、策略分组 `CompositeAuthorizationPolicy` 与合并算法 `PolicyCombiningAlgorithm`、扩展 SPI `AuthorizationPolicySource`/`AuthorizationContextContributor` |
+| `com.chaos.security.api.datascope` | `DataScopeContext`、`DataScopeRequest`、`DataScopeAuthorizationService` |
 
 ## 为什么单独拆出
 

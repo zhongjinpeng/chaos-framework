@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-starters</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -25,7 +25,7 @@
     -->
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-authorization-starter</artifactId>
         </dependency>
         <dependency>

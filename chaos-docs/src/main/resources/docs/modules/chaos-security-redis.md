@@ -6,9 +6,9 @@
 
 | 包 | 内容 |
 | --- | --- |
-| `com.michael.chaos.security.redis.token` | `RedisJwtRevocationService`：全框架唯一的 JWT 黑名单实现 |
-| `com.michael.chaos.security.redis.access` | `RedisAuthorizationPolicySource`：从 Redis 读取 ABAC 策略，改策略不重启 |
-| `com.michael.chaos.security.redis.authorization` | 授权服务器 Redis 存储：`RedisOAuth2AuthorizationService`、`RedisRegisteredClientRepository`、`RedisOAuth2AuthorizationConsentService`、`RedisAuthorizationSessionRegistry`、`RedisAuthorizationKickoutService`、`RedisCaptchaStore`、`RedisLoginFailureLimiter` |
+| `com.chaos.security.redis.token` | `RedisJwtRevocationService`：全框架唯一的 JWT 黑名单实现 |
+| `com.chaos.security.redis.access` | `RedisAuthorizationPolicySource`：从 Redis 读取 ABAC 策略，改策略不重启 |
+| `com.chaos.security.redis.authorization` | 授权服务器 Redis 存储：`RedisOAuth2AuthorizationService`、`RedisRegisteredClientRepository`、`RedisOAuth2AuthorizationConsentService`、`RedisAuthorizationSessionRegistry`、`RedisAuthorizationKickoutService`、`RedisCaptchaStore`、`RedisLoginFailureLimiter` |
 
 依赖 `chaos-security-api`；`chaos-authorization`、`spring-data-redis` 为 optional。
 

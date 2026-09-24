@@ -10,7 +10,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-gateway-starter</artifactId>
 </dependency>
 ```
@@ -21,7 +21,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-gateway-nacos-starter</artifactId>
 </dependency>
 ```

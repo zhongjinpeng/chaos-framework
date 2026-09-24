@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-parent</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
@@ -36,118 +36,118 @@
         </dependency>
         <!-- chaos-core 纯 Java、无三方依赖：生产安全检查与启动诊断使用其中的 ChaosDiagnostic，必须始终存在。 -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-core</artifactId>
         </dependency>
 
         <!-- chaos 功能库：optional，每个自动装配以 @ConditionalOnClass 感知其是否存在。 -->
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-audit</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-audit-jdbc</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-authorization</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-storage</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-gateway</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-gateway-nacos</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-job</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mq</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mq-jdbc</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mq-kafka</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mq-rocketmq</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mybatis</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-redis</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-security-redis</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-service</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-storage-minio</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-storage-oss</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-tenant</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-trace</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-web</artifactId>
             <optional>true</optional>
         </dependency>
@@ -315,7 +315,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-test-support</artifactId>
             <scope>test</scope>
         </dependency>
@@ -338,7 +338,7 @@
                 <directory>${basedir}/src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>com/michael/chaos/banner.txt</include>
+                    <include>com/chaos/banner.txt</include>
                 </includes>
             </resource>
             <!--
@@ -356,11 +356,11 @@
                 这里不做成运行期改默认值（EnvironmentPostProcessor 需要 spring.factories，
                 本仓库禁用），而 banner 在 SpringApplication#run 里于容器刷新之前就已打印，
                 自动装配那时还没跑，也来不及改。
-                源文件只有一份（com/michael/chaos/banner.txt），两处内容不会漂移，
+                源文件只有一份（com/chaos/banner.txt），两处内容不会漂移，
                 由 ChaosBannerTest 断言。
             -->
             <resource>
-                <directory>${basedir}/src/main/resources/com/michael/chaos</directory>
+                <directory>${basedir}/src/main/resources/com/chaos</directory>
                 <filtering>true</filtering>
                 <includes>
                     <include>banner.txt</include>
@@ -370,7 +370,7 @@
                 <directory>${basedir}/src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                    <exclude>com/michael/chaos/banner.txt</exclude>
+                    <exclude>com/chaos/banner.txt</exclude>
                 </excludes>
             </resource>
         </resources>

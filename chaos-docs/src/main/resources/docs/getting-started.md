@@ -8,7 +8,7 @@
 
 ```bash
 mvn archetype:generate -B \
-  -DarchetypeGroupId=com.michael \
+  -DarchetypeGroupId=com.chaos \
   -DarchetypeArtifactId=chaos-archetype-web-service \
   -DarchetypeVersion=1.0.0 \
   -DgroupId=com.acme -DartifactId=todo-service -Dpackage=com.acme.todo
@@ -33,7 +33,7 @@ cd todo-service
 
 ```xml
 <parent>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-boot-parent</artifactId>
     <version>1.0.0</version>
     <relativePath/>
@@ -41,13 +41,13 @@ cd todo-service
 
 <dependencies>
     <dependency>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-web-service-starter</artifactId>
     </dependency>
 </dependencies>
 ```
 
-已有公司级 parent 时，改为在 `dependencyManagement` 中 import `com.michael:chaos-dependencies:1.0.0`（type pom、scope import），
+已有公司级 parent 时，改为在 `dependencyManagement` 中 import `com.chaos:chaos-dependencies:1.0.0`（type pom、scope import），
 并参考 [chaos-boot-parent](modules/chaos-boot-parent.md) 补齐 `-parameters` 与打包插件。
 配置从 [templates/web-service/application.yml](templates/web-service/application.yml) 复制。
 
@@ -90,7 +90,7 @@ Chaos 启动报告 | 应用 todo-service | profile [default] | 生产模式 否 
 业务接口需要授权服务器签发的 token。最快的方式是再生成一个授权服务器：
 
 ```bash
-mvn archetype:generate -B -DarchetypeGroupId=com.michael -DarchetypeArtifactId=chaos-archetype-auth-server \
+mvn archetype:generate -B -DarchetypeGroupId=com.chaos -DarchetypeArtifactId=chaos-archetype-auth-server \
   -DarchetypeVersion=1.0.0 -DgroupId=com.acme -DartifactId=auth-server -Dpackage=com.acme.auth
 cd auth-server && mvn spring-boot:run          # 需要本机 Redis（localhost:6379）
 

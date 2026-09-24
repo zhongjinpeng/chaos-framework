@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.michael.chaos.security.api.auth.LoginUser;
-import com.michael.chaos.test.security.ChaosMockMvcSecurity;
-import com.michael.chaos.test.security.TestLoginUsers;
+import com.chaos.security.api.auth.LoginUser;
+import com.chaos.test.security.ChaosMockMvcSecurity;
+import com.chaos.test.security.TestLoginUsers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

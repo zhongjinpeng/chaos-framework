@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # archetype 端到端验证：用本地构建的 archetype 生成项目，再对生成项目执行 mvn verify。
 #
-# 为什么需要安装到本地仓库：生成的项目以 com.michael:chaos-boot-parent:<revision> 为 parent，
+# 为什么需要安装到本地仓库：生成的项目以 com.chaos:chaos-boot-parent:<revision> 为 parent，
 # 依赖 chaos-*-starter，这些坐标只有 install 到 ~/.m2 后才能被一个“仓库外”的独立项目解析。
 # 注意：本脚本默认执行 ./mvnw install，会把当前版本的全部 chaos 构件写入本机 ~/.m2/repository。
 #
@@ -45,7 +45,7 @@ for archetype in ${ARCHETYPES}; do
       org.apache.maven.plugins:maven-archetype-plugin:3.4.1:generate \
       -DinteractiveMode=false \
       -DarchetypeCatalog=local \
-      -DarchetypeGroupId=com.michael \
+      -DarchetypeGroupId=com.chaos \
       -DarchetypeArtifactId="chaos-archetype-${archetype}" \
       -DarchetypeVersion="${REVISION}" \
       -DgroupId=com.acme.demo \

@@ -19,7 +19,7 @@
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-dependencies</artifactId>
             <version>${chaos.version}</version>
             <type>pom</type>
@@ -33,7 +33,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-web-starter</artifactId>
 </dependency>
 ```

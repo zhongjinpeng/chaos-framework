@@ -12,7 +12,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-audit-jdbc-starter</artifactId>
 </dependency>
 ```
@@ -21,7 +21,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-audit-jdbc</artifactId>
 </dependency>
 ```
@@ -130,8 +130,8 @@ AuditEventPublisher auditEventPublisher(
 
 ## 脱敏策略
 
-脱敏端口已上移到 chaos-audit：`com.michael.chaos.audit.AuditAttributeSanitizer` / `DefaultAuditAttributeSanitizer`，
-日志发布器和 JDBC 发布器共用。`com.michael.chaos.audit.jdbc` 包下的同名类型保留为废弃兼容类型。
+脱敏端口已上移到 chaos-audit：`com.chaos.audit.AuditAttributeSanitizer` / `DefaultAuditAttributeSanitizer`，
+日志发布器和 JDBC 发布器共用。`com.chaos.audit.jdbc` 包下的同名类型保留为废弃兼容类型。
 
 默认规则（任一命中即脱敏）：
 

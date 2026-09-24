@@ -6,18 +6,18 @@
 
 | 接口（模块） | Redis 实现 |
 | --- | --- |
-| `com.michael.chaos.core.lock.DistributedLock`（chaos-core） | `RedissonDistributedLock` |
-| `com.michael.chaos.core.idempotent.IdempotentRepository`（chaos-core） | `RedissonIdempotentRepository` |
-| `com.michael.chaos.core.idempotent.IdempotentRecordStore`（chaos-core） | `RedissonIdempotentRecordStore` |
-| `com.michael.chaos.core.ratelimit.RateLimiter`（chaos-core） | `RedissonRateLimiter` |
-| `com.michael.chaos.domain.cache.CacheKeyStrategy`（chaos-domain） | `PrefixedCacheKeyStrategy` |
+| `com.chaos.core.lock.DistributedLock`（chaos-core） | `RedissonDistributedLock` |
+| `com.chaos.core.idempotent.IdempotentRepository`（chaos-core） | `RedissonIdempotentRepository` |
+| `com.chaos.core.idempotent.IdempotentRecordStore`（chaos-core） | `RedissonIdempotentRecordStore` |
+| `com.chaos.core.ratelimit.RateLimiter`（chaos-core） | `RedissonRateLimiter` |
+| `com.chaos.domain.cache.CacheKeyStrategy`（chaos-domain） | `PrefixedCacheKeyStrategy` |
 | `JwtRevocationService`（chaos-security-api） | 不在本模块：统一实现 `RedisJwtRevocationService` 位于 chaos-security-redis，由 `ChaosSecurityRedisAutoConfiguration` 装配 |
 
 ## 依赖方式
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-redis-starter</artifactId>
 </dependency>
 ```

@@ -1,6 +1,6 @@
 # 缓存 key 策略（chaos-domain + chaos-redis）
 
-> 仓库中不存在 `chaos-cache` 模块。缓存 key 策略接口位于 `chaos-domain`（包 `com.michael.chaos.domain.cache`），带前缀的实现位于 `chaos-redis`。
+> 仓库中不存在 `chaos-cache` 模块。缓存 key 策略接口位于 `chaos-domain`（包 `com.chaos.domain.cache`），带前缀的实现位于 `chaos-redis`。
 
 ## 组成
 

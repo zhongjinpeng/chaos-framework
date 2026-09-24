@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Chaos is a Java 21 multi-module Maven framework built on Spring Boot 3.5 and Spring Cloud 2025.0. It provides enterprise building blocks following DDD and Hexagonal Architecture patterns. The base package is `com.michael.chaos.<module>`.
+Chaos is a Java 21 multi-module Maven framework built on Spring Boot 3.5 and Spring Cloud 2025.0. It provides enterprise building blocks following DDD and Hexagonal Architecture patterns. The base package is `com.chaos.<module>`.
 
 ## Build Commands
 
@@ -58,8 +58,8 @@ When reproducing CI locally, add `-s .mvn/settings-central.xml -gs .mvn/settings
 The module dependency flows top-down. Directory layout (directory name = artifactId unless noted):
 
 - **chaos-dependencies** — Public BOM and version source of truth.
-- **chaos-foundation/** — `chaos-core` (request context `RequestContext`/`RequestContextSnapshot`, error codes `ErrorCode`/`ChaosException`/`BizException`, `ChaosHeaders`, idempotency contracts `core.idempotent` with dev-only in-memory impl in `core.idempotent.support`, `core.lock`, rate limiter SPI + in-memory impl `core.ratelimit`, governance metrics SPI `core.metrics` (`ChaosMetrics`/`ChaosMeterNames`, Micrometer impl lives in `chaos-trace`), framework message bundles `com/michael/chaos/core/i18n/messages/`, trusted-proxy client IP resolution `core.net.ForwardedClientIpResolver`) and `chaos-domain` (DDD primitives `domain.model.AggregateRoot`/`DomainEvent`, `domain.dto.PageQuery`/`PageResult`, `domain.cache` key strategy). `chaos-core` depends on no chaos module.
-- **chaos-observability/chaos-trace** — W3C trace context propagation, MDC keys/`MdcSupport` and logback/log4j2 templates (`com.michael.chaos.trace.log`), OpenFeign trace interceptor (`trace.feign`), Micrometer observation filter and `MicrometerChaosMetrics` (`trace.monitor`; micrometer is optional).
+- **chaos-foundation/** — `chaos-core` (request context `RequestContext`/`RequestContextSnapshot`, error codes `ErrorCode`/`ChaosException`/`BizException`, `ChaosHeaders`, idempotency contracts `core.idempotent` with dev-only in-memory impl in `core.idempotent.support`, `core.lock`, rate limiter SPI + in-memory impl `core.ratelimit`, governance metrics SPI `core.metrics` (`ChaosMetrics`/`ChaosMeterNames`, Micrometer impl lives in `chaos-trace`), framework message bundles `com/chaos/core/i18n/messages/`, trusted-proxy client IP resolution `core.net.ForwardedClientIpResolver`) and `chaos-domain` (DDD primitives `domain.model.AggregateRoot`/`DomainEvent`, `domain.dto.PageQuery`/`PageResult`, `domain.cache` key strategy). `chaos-core` depends on no chaos module.
+- **chaos-observability/chaos-trace** — W3C trace context propagation, MDC keys/`MdcSupport` and logback/log4j2 templates (`com.chaos.trace.log`), OpenFeign trace interceptor (`trace.feign`), Micrometer observation filter and `MicrometerChaosMetrics` (`trace.monitor`; micrometer is optional).
 - **chaos-audit/** — `chaos-audit` (audit events, incl. `AsyncAuditEventPublisher`) and `chaos-audit-jdbc` (JDBC audit persistence).
 - **chaos-service** — Application-layer utilities: `TransactionExecutor`, `RetryExecutor`, `DomainEventPublisher`, `TraceContextTaskDecorator`.
 - **chaos-web** — Servlet-layer: unified `Result` response wrapper, `GlobalExceptionHandler`, `TraceFilter`, `XssFilter`, `RateLimitInterceptor`, `IdempotentInterceptor`, `IdempotentResponseReplayFilter`, error message i18n (`web.i18n`). Requires `chaos-trace` (compile scope).
@@ -69,10 +69,10 @@ The module dependency flows top-down. Directory layout (directory name = artifac
 - **chaos-data/** — `chaos-mybatis` (MyBatis-Plus: tenant line, data scope, audit fill) and `chaos-redis` (Redisson: `DistributedLock` and `IdempotentRepository` implementations, rate limiter, bloom filter, delay queue).
 - **chaos-mq/** — Reliable messaging with outbox pattern: `chaos-mq` (abstractions, outbox health in adapter package `mq.reliable.actuate`), `chaos-mq-kafka`, `chaos-mq-rocketmq`, `chaos-mq-jdbc` (outbox repository).
 - **chaos-job** — Scheduled job support (`DistributedJobRunner`).
-- **chaos-storage/** — Object storage: `chaos-storage` (port `ObjectStorageClient`, package `com.michael.chaos.storage`), `chaos-storage-minio`, `chaos-storage-oss`.
+- **chaos-storage/** — Object storage: `chaos-storage` (port `ObjectStorageClient`, package `com.chaos.storage`), `chaos-storage-minio`, `chaos-storage-oss`.
 - **chaos-autoconfigure**, **chaos-starters/** — see below.
-- **chaos-test-support** — Published test fixtures for business projects (`com.michael.chaos.test`): `@WithChaosContext`/`ChaosTestContext`, `TestLoginUsers`/`ChaosSecurityTestSupport`/`ChaosMockMvcSecurity`, `InMemoryRedisTemplates`, `ChaosContainers`, `ProductionSafetyTestSupport`. All framework deps optional; may only be depended on in `test` scope. Reuse it in framework tests instead of copying helpers.
-- **chaos-architecture-tests** — Repository-level architecture tests (package `com.michael.chaos.architecture`; `LayerBoundaryArchitectureTest`, `DependencyDirectionArchitectureTest`, formerly `chaos-test`); not published.
+- **chaos-test-support** — Published test fixtures for business projects (`com.chaos.test`): `@WithChaosContext`/`ChaosTestContext`, `TestLoginUsers`/`ChaosSecurityTestSupport`/`ChaosMockMvcSecurity`, `InMemoryRedisTemplates`, `ChaosContainers`, `ProductionSafetyTestSupport`. All framework deps optional; may only be depended on in `test` scope. Reuse it in framework tests instead of copying helpers.
+- **chaos-architecture-tests** — Repository-level architecture tests (package `com.chaos.architecture`; `LayerBoundaryArchitectureTest`, `DependencyDirectionArchitectureTest`, formerly `chaos-test`); not published.
 - **chaos-python/chaos-tracing** — Standalone pip package (W3C trace context, gRPC interceptor, ASGI/WSGI HTTP middleware) for Python services; tested by the CI `python` job (ruff + mypy strict + pytest), not part of the Maven build. Its version must equal the Maven `revision`; `scripts/check-python-version.py` enforces this.
 
 There are no `chaos-lock`, `chaos-idempotent`, `chaos-cache`, `chaos-feign`, `chaos-nacos`, `chaos-log`, `chaos-iam`, `chaos-common`, `chaos-file` or `chaos-monitor` modules. The OpenFeign trace interceptor lives in `chaos-trace` (`trace.feign`) and is registered by `chaos-autoconfigure` (`autoconfigure.cloud`); Nacos discovery/config conventions live in `autoconfigure.cloud.nacos`.
@@ -89,12 +89,12 @@ Enforced by `DependencyDirectionArchitectureTest` / `LayerBoundaryArchitectureTe
 6. Starters have no Java code and never depend on examples, `chaos-test-support` or `chaos-architecture-tests`.
 7. Only starters depend on `chaos-autoconfigure`.
 8. `chaos-test-support` is only used in `test` scope.
-9. Every module's packages live under its own base package `com.michael.chaos.<module>`; register the base package of any new module in `DependencyDirectionArchitectureTest.BASE_PACKAGES`.
+9. Every module's packages live under its own base package `com.chaos.<module>`; register the base package of any new module in `DependencyDirectionArchitectureTest.BASE_PACKAGES`.
 10. Scenario starters (`chaos-web-service-starter`, `chaos-auth-server-starter`) aggregate capability starters only (plus Actuator/Prometheus); capability starters never depend on scenario starters.
 
 ### Auto-configuration And Starter Pattern
 
-- **chaos-autoconfigure** — the single auto-configuration module (like `spring-boot-autoconfigure`). One package per feature: `com.michael.chaos.autoconfigure.<feature>` (`web`, `service`, `tenant`, `audit`, `audit.jdbc`, `security`, `security.redis`, `authorization`, `gateway`, `gateway.nacos`, `cloud`, `cloud.nacos`, `job`, `metrics`, `mq`, `mybatis`, `redis`, `storage`) plus `support` (`ProductionSafety`, `ProductionSafetyEnforcer`, `@UnsafeForProduction`). No classes in the root package. One `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`; do not use `spring.factories`.
+- **chaos-autoconfigure** — the single auto-configuration module (like `spring-boot-autoconfigure`). One package per feature: `com.chaos.autoconfigure.<feature>` (`web`, `service`, `tenant`, `audit`, `audit.jdbc`, `security`, `security.redis`, `authorization`, `gateway`, `gateway.nacos`, `cloud`, `cloud.nacos`, `job`, `metrics`, `mq`, `mybatis`, `redis`, `storage`) plus `support` (`ProductionSafety`, `ProductionSafetyEnforcer`, `@UnsafeForProduction`). No classes in the root package. One `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`; do not use `spring.factories`.
 - Every `@AutoConfiguration` must be guarded with class-level `@ConditionalOnClass` for its feature library and frameworks. `@Bean` method signatures (including `ObjectProvider<T>` generics) must not reference optional types: put such beans in nested `@Configuration` classes with their own `@ConditionalOnClass`, or route through a helper class only called when the types are present (see `AuthorizationRedisStores`). Servlet-only / reactive-only configurations declare `@ConditionalOnWebApplication`. `OptionalDependencyIsolationTest` physically removes jars and boots all auto-configurations — keep it green.
 - `chaos-starters/chaos-<feature>-starter` — dependency-only POMs: `chaos-autoconfigure` + feature library + frameworks. Starters must not contain Java source. Library modules and examples must not depend on `chaos-autoconfigure` directly.
 
@@ -109,7 +109,7 @@ Starters come in two layers:
 - Property descriptions come from field Javadoc on `@ConfigurationProperties` classes; value hints and Environment-only properties (e.g. `chaos.production-safety.*`) go in `src/main/resources/META-INF/additional-spring-configuration-metadata.json` of the module that owns the property.
 - `chaos-docs/.../docs/configuration-reference.md` is generated by `scripts/generate-configuration-reference.py`; never edit it by hand.
 - `chaos-docs/.../docs/templates/**/*.yml` are copy-paste config templates validated by `ConfigurationTemplatesTest` (keys must exist in metadata and bind to properties classes); keep scenario dev templates at ≤ 10 `chaos.*` keys.
-- Startup diagnostics (`com.michael.chaos.autoconfigure.diagnostics`): the startup report and `/actuator/chaos` endpoint read `ChaosFeatureCatalog`; register every new auto-configuration there (`ChaosBuiltInDiagnosticRulesTest` checks). Custom checks implement `ChaosDiagnosticRule`.
+- Startup diagnostics (`com.chaos.autoconfigure.diagnostics`): the startup report and `/actuator/chaos` endpoint read `ChaosFeatureCatalog`; register every new auto-configuration there (`ChaosBuiltInDiagnosticRulesTest` checks). Custom checks implement `ChaosDiagnosticRule`.
 - Configuration/startup errors thrown by framework code should be `ChaosDiagnosticException` (chaos-core) with a `ChaosDiagnostic` of problem / causes / fixes naming concrete starters or properties. `FailureAnalyzer` is not used because it requires `spring.factories`. See `docs/diagnostics.md`.
 
 ### Archetypes

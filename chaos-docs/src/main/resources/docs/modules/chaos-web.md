@@ -12,7 +12,7 @@ Servlet MVC 增强：统一返回、异常处理、校验、Trace、访问日志
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-web-starter</artifactId>
 </dependency>
 ```

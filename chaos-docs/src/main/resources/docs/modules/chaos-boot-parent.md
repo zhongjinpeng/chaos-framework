@@ -16,7 +16,7 @@
 
 ```xml
 <parent>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-boot-parent</artifactId>
     <version>1.0.0</version>
     <relativePath/>
@@ -24,7 +24,7 @@
 
 <dependencies>
     <dependency>
-        <groupId>com.michael</groupId>
+        <groupId>com.chaos</groupId>
         <artifactId>chaos-web-service-starter</artifactId>
     </dependency>
 </dependencies>
@@ -49,7 +49,7 @@
 <dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.michael</groupId>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-dependencies</artifactId>
             <version>1.0.0</version>
             <type>pom</type>

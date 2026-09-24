@@ -1,7 +1,7 @@
 # 访问控制：RBAC + ABAC（chaos-security-api + chaos-security）
 
 > 仓库中不存在 `chaos-rbac` / `chaos-abac` 模块。授权模型位于 `chaos-security-api`（包
-> `com.michael.chaos.security.api.access`，不依赖 Spring），注解与切面位于 `chaos-security`，装配位于 `chaos-autoconfigure`。
+> `com.chaos.security.api.access`，不依赖 Spring），注解与切面位于 `chaos-security`，装配位于 `chaos-autoconfigure`。
 
 ## 组成
 

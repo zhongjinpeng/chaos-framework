@@ -12,7 +12,7 @@
 
 所有生成项目：
 
-- 以 `com.michael:chaos-boot-parent` 为 parent，版本等于生成时使用的 archetype 版本（`chaosVersion`，可覆盖）；
+- 以 `com.chaos:chaos-boot-parent` 为 parent，版本等于生成时使用的 archetype 版本（`chaosVersion`，可覆盖）；
 - 包含 `application.yml`（开发）与 `application-prod.yml`（生产），内容与 [配置模板](../templates/README.md) 一致；
 - 包含中文 README（本地运行、调用示例、上线前清单）。
 
@@ -22,7 +22,7 @@ archetype 不是运行时依赖，不进入 `chaos-dependencies` BOM。
 
 ```bash
 mvn archetype:generate -B \
-  -DarchetypeGroupId=com.michael \
+  -DarchetypeGroupId=com.chaos \
   -DarchetypeArtifactId=chaos-archetype-web-service \
   -DarchetypeVersion=1.0.0 \
   -DgroupId=com.acme -DartifactId=todo-service -Dpackage=com.acme.todo

@@ -13,7 +13,7 @@ Nacos discovery/config 依赖边界和约定。
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-cloud-nacos-starter</artifactId>
 </dependency>
 ```

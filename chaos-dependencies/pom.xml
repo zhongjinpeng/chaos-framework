@@ -17,7 +17,7 @@
         4. 新增对外模块时必须同步在这里登记，chaos-architecture-tests 中的架构测试会双向校验：
            BOM 不得缺少真实模块，也不得声明仓库里不存在的模块。
     -->
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-dependencies</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
@@ -178,238 +178,238 @@
             </dependency>
             <!-- 基础库模块 -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- chaos-core 的测试替身（RecordingChaosMetrics 等），仅供框架内部模块以 test 作用域复用。 -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-core</artifactId>
                 <version>${revision}</version>
                 <type>test-jar</type>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-domain</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-trace</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-audit</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-audit-jdbc</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-tenant</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-security-api</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-security</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-security-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-authorization</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-web</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-service</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mybatis</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mq</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mq-jdbc</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mq-kafka</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mq-rocketmq</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-gateway</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-gateway-nacos</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-job</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-storage</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-storage-minio</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-storage-oss</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 统一自动装配模块：业务方通常不直接依赖，优先使用对应 starter。 -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 测试支持：使用方以 test scope 引入 -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-test-support</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 场景 starter：按要搭建的服务类型选择一个 -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-web-service-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-auth-server-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 能力 starter：按需追加（chaos-gateway-starter 同时是网关场景 starter） -->
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-audit-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-audit-jdbc-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-authorization-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-cloud-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-cloud-nacos-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-cloud-reactive-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-gateway-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-gateway-nacos-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-job-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mq-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-mybatis-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-redis-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-security-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-application-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-storage-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-tenant-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
-                <groupId>com.michael</groupId>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-web-starter</artifactId>
                 <version>${revision}</version>
             </dependency>

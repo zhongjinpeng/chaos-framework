@@ -10,7 +10,7 @@ MyBatis Plus 分页、多租户、数据权限、审计字段、逻辑删除、�
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-mybatis-starter</artifactId>
 </dependency>
 ```

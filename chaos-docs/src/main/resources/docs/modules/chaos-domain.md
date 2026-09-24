@@ -5,14 +5,14 @@
 DDD 聚合、领域事件、分页请求和分页结果等纯模型。源码目录为 `chaos-foundation/chaos-domain`，只依赖 `chaos-core`。
 
 > DDD 原语模块（目录 `chaos-foundation/chaos-domain`），
-> Java 包 `com.michael.chaos.common.*` 更名为 `com.michael.chaos.domain.*`，其中原 `common.domain` 子包改为 `domain.model`
+> Java 包 `com.chaos.common.*` 更名为 `com.chaos.domain.*`，其中原 `common.domain` 子包改为 `domain.model`
 > （避免出现 `domain.domain`）。
 
 | 包 | 类型 |
 | --- | --- |
-| `com.michael.chaos.domain.model` | `AggregateRoot`、`DomainEvent` |
-| `com.michael.chaos.domain.dto` | `PageQuery`、`PageResult` |
-| `com.michael.chaos.domain.cache` | `CacheKeyStrategy`、`DefaultCacheKeyStrategy` |
+| `com.chaos.domain.model` | `AggregateRoot`、`DomainEvent` |
+| `com.chaos.domain.dto` | `PageQuery`、`PageResult` |
+| `com.chaos.domain.cache` | `CacheKeyStrategy`、`DefaultCacheKeyStrategy` |
 
 ## 依赖方式
 
@@ -20,7 +20,7 @@ DDD 聚合、领域事件、分页请求和分页结果等纯模型。源码目�
 
 ```xml
 <dependency>
-    <groupId>com.michael</groupId>
+    <groupId>com.chaos</groupId>
     <artifactId>chaos-domain</artifactId>
 </dependency>
 ```
