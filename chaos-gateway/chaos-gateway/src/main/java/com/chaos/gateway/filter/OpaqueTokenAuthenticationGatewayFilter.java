@@ -41,6 +41,8 @@ public class OpaqueTokenAuthenticationGatewayFilter implements GlobalFilter, Ord
 
     private final AuditEventPublisher auditEventPublisher;
 
+    private final boolean opaqueTokenEnabled;
+
     /**
      * 创建 opaque token 鉴权过滤器。
      */
@@ -57,9 +59,26 @@ public class OpaqueTokenAuthenticationGatewayFilter implements GlobalFilter, Ord
             ChaosGatewayProperties properties,
             ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector,
             AuditEventPublisher auditEventPublisher) {
+        this(
+                properties,
+                opaqueTokenIntrospector,
+                auditEventPublisher,
+                properties.getToken().getType() == ChaosGatewayProperties.TokenType.OPAQUE
+        );
+    }
+
+    /**
+     * 创建 opaque token 鉴权过滤器，并由自动装配传入统一资源服务器 token 模式。
+     */
+    public OpaqueTokenAuthenticationGatewayFilter(
+            ChaosGatewayProperties properties,
+            ReactiveOpaqueTokenIntrospector opaqueTokenIntrospector,
+            AuditEventPublisher auditEventPublisher,
+            boolean opaqueTokenEnabled) {
         this.properties = Objects.requireNonNull(properties);
         this.opaqueTokenIntrospector = opaqueTokenIntrospector;
         this.auditEventPublisher = Objects.requireNonNull(auditEventPublisher);
+        this.opaqueTokenEnabled = opaqueTokenEnabled;
     }
 
     /**
@@ -68,7 +87,7 @@ public class OpaqueTokenAuthenticationGatewayFilter implements GlobalFilter, Ord
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         if (!properties.isAuthEnabled()
-                || properties.getToken().getType() != ChaosGatewayProperties.TokenType.OPAQUE
+                || !opaqueTokenEnabled
                 || GatewayWhitelistMatcher.isWhitelisted(exchange, properties)) {
             return chain.filter(exchange);
         }

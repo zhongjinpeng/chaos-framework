@@ -75,6 +75,39 @@ class ChaosAuthorizationAutoConfigurationTest {
     }
 
     /**
+     * Chaos 配置中的多个客户端和授权类型必须由同一个仓储统一注册。
+     */
+    @Test
+    void shouldRegisterMultipleStandardClientsWithConfiguredGrantTypes() {
+        contextRunner
+                .withPropertyValues(
+                        "chaos.authorization.client.registrations.management.secret={noop}management-secret",
+                        "chaos.authorization.client.registrations.management.grant-types[0]=password",
+                        "chaos.authorization.client.registrations.management.grant-types[1]=refresh_token",
+                        "chaos.authorization.client.registrations.management.grant-types[2]=client_credentials",
+                        "chaos.authorization.client.registrations.management.scopes[0]=read",
+                        "chaos.authorization.client.registrations.web.secret={noop}web-secret",
+                        "chaos.authorization.client.registrations.web.grant-types[0]=password",
+                        "chaos.authorization.client.registrations.web.grant-types[1]=refresh_token",
+                        "chaos.authorization.client.registrations.web.scopes[0]=read")
+                .run(context -> {
+                    RegisteredClientRepository repository = context.getBean(RegisteredClientRepository.class);
+                    RegisteredClient management = repository.findByClientId("management");
+                    RegisteredClient web = repository.findByClientId("web");
+
+                    assertThat(management).isNotNull();
+                    assertThat(management.getId()).isEqualTo(RegisteredClientIds.stableId("management"));
+                    assertThat(management.getAuthorizationGrantTypes()).contains(
+                            new AuthorizationGrantType("password"),
+                            AuthorizationGrantType.REFRESH_TOKEN,
+                            AuthorizationGrantType.CLIENT_CREDENTIALS);
+                    assertThat(web).isNotNull();
+                    assertThat(web.getId()).isEqualTo(RegisteredClientIds.stableId("web"));
+                    assertThat(repository.findByClientId("chaos-client")).isNull();
+                });
+    }
+
+    /**
      * store-type=redis 时注册 Redis 客户端仓储，并把配置里的默认客户端写进去。
      */
     @Test

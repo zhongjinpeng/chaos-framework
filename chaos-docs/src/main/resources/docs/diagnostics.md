@@ -220,7 +220,7 @@ ChaosDiagnosticRule orderTimeoutRule() {
 | Servlet 与 WebFlux 运行栈混用 | Servlet 应用的类路径中存在 chaos-gateway（通常是同时引入了网关与业务服务 starter） | 阻断启动；说明网关/业务服务分别应移除哪个 starter；`chaos.diagnostics.web-stack-check.enabled=false` 可关闭 |
 | 网关缺少 JWT 解码器 | `chaos.gateway.auth-enabled=true`、token 类型 JWT、开启验签，但未配置 `chaos.gateway.jwt.jwk-set-uri` 也没有自定义 `ReactiveJwtDecoder` | 阻断启动（此前会在运行期对所有请求返回 401） |
 | 网关未限定签发方或受众 | 未配置 `chaos.gateway.jwt.issuer-uri` / `audiences` | 启动 WARN |
-| opaque introspection 缺少凭据 | 配置了 `introspection-uri` 但缺少 `client-id` / `client-secret`（网关 `chaos.gateway.opaque-token.*`、资源服务 `chaos.security.opaque-token.*`） | 阻断启动，指出缺少的配置项 |
+| opaque introspection 缺少凭据 | `chaos.security.opaque-token.*` 配置了 `introspection-uri` 但缺少 `client-id` / `client-secret` | 阻断启动，指出缺少的配置项 |
 | outbox 表不可访问 | 存在 JDBC outbox 仓储，但表不存在或无权限 | 启动 WARN（不阻断），给出按数据库方言选择的建表脚本路径 `classpath:db/chaos-mq-outbox-schema-{mysql,postgresql,h2}.sql`；`chaos.diagnostics.outbox-schema-check.enabled=false` 可关闭 |
 | 缺少租户上下文 | 多租户 SQL 执行时当前线程没有租户（默认 `missing-tenant-behavior=DENY`） | SQL 执行失败；说明常见来源（未认证、任务/消息线程未建立上下文）与处理方式 |
 | 租户 ID 格式非法 | 租户 ID 不匹配 `chaos.mybatis.tenant.id-pattern` | SQL 执行失败；**不回显租户值本身**（可能是注入载荷），只给出长度与白名单 |

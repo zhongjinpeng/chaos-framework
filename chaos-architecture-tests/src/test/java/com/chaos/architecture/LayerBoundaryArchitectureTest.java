@@ -107,6 +107,30 @@ class LayerBoundaryArchitectureTest {
     }
 
     /**
+     * chaos-domain 只提供领域机制，不得定义 PO/DO/Mapper 等持久化层对象或持久化转换契约。
+     */
+    @Test
+    void domainFoundationShouldNotExposePersistenceVocabulary() throws IOException {
+        Path domainRoot = projectRoot().resolve("chaos-foundation/chaos-domain/src/main/java");
+        List<String> forbiddenSuffixes = List.of("PO", "DO", "Mapper", "RepositoryImpl", "PersistenceConverter");
+        List<String> violations = new ArrayList<>();
+
+        for (Path javaFile : javaFiles(domainRoot)) {
+            String fileName = javaFile.getFileName().toString().replaceFirst("\\.java$", "");
+            forbiddenSuffixes.stream()
+                    .filter(fileName::endsWith)
+                    .forEach(suffix -> violations.add(projectRoot().relativize(javaFile)
+                            + " 领域基础模块不应暴露持久化类型后缀 " + suffix));
+            String source = Files.readString(javaFile, StandardCharsets.UTF_8);
+            if (source.contains("toPO(") || source.contains("toDO(") || source.contains("toEntity(")) {
+                violations.add(projectRoot().relativize(javaFile) + " 领域基础模块不应定义持久化模型转换方法");
+            }
+        }
+
+        assertTrue(violations.isEmpty(), () -> "chaos-domain 出现持久化实现语义:\n" + String.join("\n", violations));
+    }
+
+    /**
      * starter 只做依赖聚合，不承载 Java 代码。
      */
     @Test

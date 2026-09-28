@@ -15,6 +15,7 @@ import com.chaos.security.redis.authorization.RedisOAuth2AuthorizationConsentSer
 import com.chaos.security.redis.authorization.RedisOAuth2AuthorizationService;
 import com.chaos.security.redis.authorization.RedisRegisteredClientRepository;
 import com.chaos.security.redis.token.RedisJwtRevocationService;
+import java.util.List;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.core.ResolvableType;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -69,10 +70,10 @@ final class AuthorizationRedisStores {
     static RegisteredClientRepository registeredClientRepository(
             BeanFactory beanFactory,
             ChaosAuthorizationProperties properties,
-            RegisteredClient defaultClient) {
+            List<RegisteredClient> clients) {
         RedisRegisteredClientRepository repository =
                 new RedisRegisteredClientRepository(requireObjectRedisTemplate(beanFactory, "Redis client store mode"), properties);
-        repository.save(defaultClient);
+        clients.forEach(repository::save);
         return repository;
     }
 

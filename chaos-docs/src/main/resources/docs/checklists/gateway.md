@@ -20,7 +20,7 @@
 - [ ] `chaos.gateway.auth-enabled=true`（默认）。
 - [ ] JWT 模式：已配置 `chaos.gateway.jwt.jwk-set-uri`（缺失 **[启动拦截]**），并配置 `issuer-uri` 与 `audiences`
       （缺失时启动 WARN，同一授权服务器签发给其他客户端的 token 也会被接受）。
-- [ ] opaque 模式：`chaos.gateway.opaque-token.client-id` / `client-secret` 已配置（缺失 **[启动拦截]**），
+- [ ] opaque 模式：`chaos.security.opaque-token.client-id` / `client-secret` 已配置（缺失 **[启动拦截]**），
       评估 `cache-ttl`（撤销生效的最大延迟）与 `timeout`。
 - [ ] `chaos.gateway.whitelist` 只包含真正公开的路径；登录、验证码等接口虽然在白名单中，仍参与限流。
 

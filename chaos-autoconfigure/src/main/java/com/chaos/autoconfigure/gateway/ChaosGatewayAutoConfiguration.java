@@ -4,6 +4,7 @@ import com.chaos.audit.AuditEventPublisher;
 import com.chaos.audit.NoopAuditEventPublisher;
 import com.chaos.autoconfigure.support.ProductionSafetyEnforcer;
 import com.chaos.autoconfigure.support.UnsafeForProduction;
+import com.chaos.autoconfigure.security.ChaosResourceServerProperties;
 import com.chaos.autoconfigure.tenant.ChaosTenantAutoConfiguration;
 import com.chaos.core.diagnostic.ChaosDiagnostic;
 import com.chaos.core.diagnostic.ChaosDiagnosticException;
@@ -40,6 +41,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -48,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -74,7 +77,7 @@ import reactor.core.scheduler.Schedulers;
 @EnableWebFluxSecurity
 // @EnableWebFluxSecurity 与 Servlet 安全配置冲突，网关治理只在响应式应用中装配。
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@EnableConfigurationProperties(ChaosGatewayProperties.class)
+@EnableConfigurationProperties({ChaosGatewayProperties.class, ChaosResourceServerProperties.class})
 public class ChaosGatewayAutoConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChaosGatewayAutoConfiguration.class);
@@ -175,10 +178,11 @@ public class ChaosGatewayAutoConfiguration {
     @ConditionalOnMissingBean(name = "chaosGatewayJwtDecoderVerifier")
     public SmartInitializingSingleton chaosGatewayJwtDecoderVerifier(
             ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties,
             ObjectProvider<ReactiveJwtDecoder> jwtDecoderProvider) {
         return () -> {
             if (properties.isAuthEnabled()
-                    && properties.getToken().getType() == ChaosGatewayProperties.TokenType.JWT
+                    && usesJwt(properties, resourceServerProperties)
                     && properties.getJwt().isValidationEnabled()
                     && jwtDecoderProvider.getIfAvailable() == null) {
                 throw new ChaosDiagnosticException(missingJwtDecoderDiagnostic());
@@ -193,11 +197,11 @@ public class ChaosGatewayAutoConfiguration {
         return new ChaosDiagnostic(
                 "网关开启了 JWT 鉴权，但没有可用的 JWT 解码器",
                 List.of(
-                        "chaos.gateway.auth-enabled=true 且 chaos.gateway.token.type=JWT（默认值）",
+                        "chaos.gateway.auth-enabled=true 且 chaos.security.token.type=JWT（默认值）",
                         "未配置 chaos.gateway.jwt.jwk-set-uri，也没有自定义 ReactiveJwtDecoder Bean，所有需要鉴权的请求都会返回 401"),
                 List.of(
                         "配置 chaos.gateway.jwt.jwk-set-uri（授权服务器的 /oauth2/jwks 地址），并建议同时配置 issuer-uri 与 audiences",
-                        "使用引用 token 时改为 chaos.gateway.token.type=OPAQUE 并配置 chaos.gateway.opaque-token.*",
+                        "使用引用 token 时配置 chaos.security.token.type=OPAQUE 与 chaos.security.opaque-token.*",
                         "网关不负责验签（由下游资源服务验签）时设置 chaos.gateway.jwt.validation-enabled=false"));
     }
 
@@ -264,6 +268,7 @@ public class ChaosGatewayAutoConfiguration {
     @ConditionalOnMissingBean
     public JwtAuthenticationGatewayFilter jwtAuthenticationGatewayFilter(
             ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties,
             ObjectProvider<ReactiveJwtDecoder> jwtDecoderProvider,
             ObjectProvider<JwtRevocationService> jwtRevocationServiceProvider,
             ObjectProvider<AuditEventPublisher> auditEventPublisherProvider,
@@ -273,7 +278,8 @@ public class ChaosGatewayAutoConfiguration {
                 jwtDecoderProvider.getIfAvailable(),
                 jwtRevocationServiceProvider.getIfAvailable(),
                 auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
-                metricsProvider.getIfAvailable()
+                metricsProvider.getIfAvailable(),
+                usesJwt(properties, resourceServerProperties)
         );
     }
 
@@ -327,12 +333,14 @@ public class ChaosGatewayAutoConfiguration {
     @ConditionalOnMissingBean
     public OpaqueTokenAuthenticationGatewayFilter opaqueTokenAuthenticationGatewayFilter(
             ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties,
             ObjectProvider<ReactiveOpaqueTokenIntrospector> opaqueTokenIntrospectorProvider,
             ObjectProvider<AuditEventPublisher> auditEventPublisherProvider) {
         return new OpaqueTokenAuthenticationGatewayFilter(
                 properties,
                 opaqueTokenIntrospectorProvider.getIfAvailable(),
-                auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new)
+                auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
+                usesOpaque(properties, resourceServerProperties)
         );
     }
 
@@ -361,28 +369,99 @@ public class ChaosGatewayAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(NimbusReactiveOpaqueTokenIntrospector.class)
-    @ConditionalOnProperty(prefix = "chaos.gateway.opaque-token", name = "introspection-uri")
-    public ReactiveOpaqueTokenIntrospector reactiveOpaqueTokenIntrospector(ChaosGatewayProperties properties) {
-        ChaosGatewayProperties.OpaqueToken opaqueToken = properties.getOpaqueToken();
-        if (opaqueToken.getClientId() == null || opaqueToken.getClientId().isBlank()
-                || opaqueToken.getClientSecret() == null || opaqueToken.getClientSecret().isBlank()) {
+    @Conditional(OpaqueTokenModeCondition.class)
+    public ReactiveOpaqueTokenIntrospector reactiveOpaqueTokenIntrospector(
+            ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties) {
+        OpaqueTokenSettings opaqueToken = opaqueTokenSettings(properties, resourceServerProperties);
+        if (opaqueToken.introspectionUri() == null || opaqueToken.introspectionUri().isBlank()
+                || opaqueToken.clientId() == null || opaqueToken.clientId().isBlank()
+                || opaqueToken.clientSecret() == null || opaqueToken.clientSecret().isBlank()) {
             throw new ChaosDiagnosticException(ChaosDiagnostic.of(
                     "网关 opaque token introspection 缺少客户端凭据",
-                    "已配置 chaos.gateway.opaque-token.introspection-uri，但 client-id 或 client-secret 为空，无法调用授权服务器校验 token",
-                    "配置 chaos.gateway.opaque-token.client-id 与 chaos.gateway.opaque-token.client-secret"
+                    "已启用 opaque token，但 " + opaqueToken.configurationPrefix()
+                            + " 的 introspection-uri、client-id 或 client-secret 为空，无法调用授权服务器校验 token",
+                    "配置 " + opaqueToken.configurationPrefix() + ".introspection-uri/client-id/client-secret"
                             + "（建议通过环境变量注入密钥，例如 client-secret: ${GATEWAY_INTROSPECTION_SECRET}）"));
         }
         NimbusReactiveOpaqueTokenIntrospector delegate = new NimbusReactiveOpaqueTokenIntrospector(
-                opaqueToken.getIntrospectionUri(),
-                opaqueToken.getClientId(),
-                opaqueToken.getClientSecret()
+                opaqueToken.introspectionUri(),
+                opaqueToken.clientId(),
+                opaqueToken.clientSecret()
         );
         return new CachingReactiveOpaqueTokenIntrospector(
                 delegate,
+                opaqueToken.cacheTtl(),
+                opaqueToken.cacheMaxSize(),
+                opaqueToken.timeout()
+        );
+    }
+
+    private static boolean usesJwt(
+            ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties) {
+        ChaosResourceServerProperties.TokenType type = resourceServerProperties.getToken().getType();
+        return type == null
+                ? properties.getToken().getType() == ChaosGatewayProperties.TokenType.JWT
+                : type == ChaosResourceServerProperties.TokenType.JWT;
+    }
+
+    private static boolean usesOpaque(
+            ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties) {
+        return !usesJwt(properties, resourceServerProperties);
+    }
+
+    private static OpaqueTokenSettings opaqueTokenSettings(
+            ChaosGatewayProperties properties,
+            ChaosResourceServerProperties resourceServerProperties) {
+        if (resourceServerProperties.getToken().getType() != null) {
+            ChaosResourceServerProperties.OpaqueToken opaqueToken = resourceServerProperties.getOpaqueToken();
+            return new OpaqueTokenSettings(
+                    opaqueToken.getIntrospectionUri(),
+                    opaqueToken.getClientId(),
+                    opaqueToken.getClientSecret(),
+                    opaqueToken.getCacheTtl(),
+                    opaqueToken.getCacheMaxSize(),
+                    opaqueToken.getReadTimeout(),
+                    "chaos.security.opaque-token"
+            );
+        }
+        ChaosGatewayProperties.OpaqueToken opaqueToken = properties.getOpaqueToken();
+        return new OpaqueTokenSettings(
+                opaqueToken.getIntrospectionUri(),
+                opaqueToken.getClientId(),
+                opaqueToken.getClientSecret(),
                 opaqueToken.getCacheTtl(),
                 opaqueToken.getCacheMaxSize(),
-                opaqueToken.getTimeout()
+                opaqueToken.getTimeout(),
+                "chaos.gateway.opaque-token"
         );
+    }
+
+    private record OpaqueTokenSettings(
+            String introspectionUri,
+            String clientId,
+            String clientSecret,
+            java.time.Duration cacheTtl,
+            int cacheMaxSize,
+            java.time.Duration timeout,
+            String configurationPrefix) {
+    }
+
+    private static final class OpaqueTokenModeCondition extends AnyNestedCondition {
+
+        private OpaqueTokenModeCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnProperty(prefix = "chaos.security.token", name = "type", havingValue = "opaque")
+        static class UnifiedOpaqueToken {
+        }
+
+        @ConditionalOnProperty(prefix = "chaos.gateway.token", name = "type", havingValue = "opaque")
+        static class LegacyGatewayOpaqueToken {
+        }
     }
 
     /**

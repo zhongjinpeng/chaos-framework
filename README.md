@@ -2,7 +2,7 @@
 
 基于 Java 21、Spring Boot 3.5、Spring Cloud 2025.0 的企业级服务脚手架，按 DDD 与六边形架构提供开箱即用的基础能力：
 统一响应与异常、JWT / opaque 资源服务器与 OAuth2 授权服务器、API 网关治理、多租户、审计、可靠消息（outbox）、
-分布式锁与限流、对象存储、W3C Trace，以及启动诊断与生产安全检查。
+分布式锁与限流、Excel 导入导出、对象存储、W3C Trace，以及启动诊断与生产安全检查。
 
 ## 我要……
 
@@ -15,6 +15,7 @@
 
 按需追加能力 starter：`chaos-mybatis-starter`（数据库、多租户）、`chaos-redis-starter`（生产必需：集群限流、幂等、token 黑名单）、
 `chaos-mq-starter`、`chaos-job-starter`、`chaos-storage-starter`、`chaos-cloud-starter`、`chaos-cloud-nacos-starter`。
+Excel 文件处理直接引入 `com.chaos:chaos-excel`。
 
 ## 快速开始
 

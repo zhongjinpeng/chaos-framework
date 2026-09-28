@@ -52,7 +52,8 @@ public final class ChaosFeatureCatalog {
                     "token.type", value(context, "chaos.authorization.token.type", "JWT"),
                     "client.store-type", value(context, "chaos.authorization.client.store-type", "MEMORY"))),
             entry("gateway", "gateway.ChaosGatewayAutoConfiguration", context -> settings(
-                    "token.type", value(context, "chaos.gateway.token.type", "JWT"),
+                    "token.type", value(context, "chaos.security.token.type",
+                            value(context, "chaos.gateway.token.type", "JWT")),
                     "jwk-set-uri", endpoint(context, "chaos.gateway.jwt.jwk-set-uri"),
                     "issuer-uri", endpoint(context, "chaos.gateway.jwt.issuer-uri"),
                     "audiences", count(context, "chaos.gateway.jwt.audiences"),

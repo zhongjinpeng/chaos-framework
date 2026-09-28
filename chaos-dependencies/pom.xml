@@ -76,6 +76,7 @@
         <!-- nimbus-jose-jwt 与 oauth2-oidc-sdk 必须成对升级，否则 dependencyConvergence 会失败。 -->
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
         <oauth2-oidc-sdk.version>11.23.1</oauth2-oidc-sdk.version>
+        <fastexcel.version>1.3.0</fastexcel.version>
 
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     </properties>
@@ -125,6 +126,11 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
@@ -252,6 +258,11 @@
             <dependency>
                 <groupId>com.chaos</groupId>
                 <artifactId>chaos-mybatis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-excel</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

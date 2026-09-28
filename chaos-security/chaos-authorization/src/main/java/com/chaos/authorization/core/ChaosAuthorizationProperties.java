@@ -6,7 +6,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -804,6 +806,13 @@ public class ChaosAuthorizationProperties {
         @NotBlank(message = "chaos.authorization.client.redis-key-prefix must not be blank")
         private String redisKeyPrefix = "chaos:authorization:client";
 
+        /**
+         * 多客户端注册配置；非空时替代旧版的单客户端 id/secret/scopes 配置。
+         */
+        @Valid
+        @NotNull(message = "chaos.authorization.client.registrations must not be null")
+        private Map<String, ClientRegistration> registrations = new LinkedHashMap<>();
+
         public ClientStoreType getStoreType() {
             return storeType;
         }
@@ -842,6 +851,90 @@ public class ChaosAuthorizationProperties {
 
         public void setRedisKeyPrefix(String redisKeyPrefix) {
             this.redisKeyPrefix = redisKeyPrefix;
+        }
+
+        public Map<String, ClientRegistration> getRegistrations() {
+            return Map.copyOf(registrations);
+        }
+
+        public void setRegistrations(Map<String, ClientRegistration> registrations) {
+            this.registrations = registrations == null
+                    ? new LinkedHashMap<>()
+                    : new LinkedHashMap<>(registrations);
+        }
+    }
+
+    /**
+     * 单个 OAuth2 客户端注册。
+     */
+    public static class ClientRegistration {
+
+        /**
+         * 客户端 ID；未配置时使用 registrations 下的键名。
+         */
+        private String clientId;
+
+        /**
+         * 已编码的客户端密钥。
+         */
+        @NotBlank(message = "chaos.authorization.client.registrations.*.secret must not be blank")
+        private String secret;
+
+        /**
+         * 客户端认证方式。
+         */
+        private String[] authenticationMethods = {"client_secret_basic", "client_secret_post"};
+
+        /**
+         * 允许使用的授权类型。
+         */
+        private String[] grantTypes = {"password", "refresh_token"};
+
+        /**
+         * 允许申请的 scopes。
+         */
+        private String[] scopes = {"read", "write"};
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(String clientId) {
+            this.clientId = clientId;
+        }
+
+        public String getSecret() {
+            return secret;
+        }
+
+        public void setSecret(String secret) {
+            this.secret = secret;
+        }
+
+        public String[] getAuthenticationMethods() {
+            return authenticationMethods.clone();
+        }
+
+        public void setAuthenticationMethods(String[] authenticationMethods) {
+            this.authenticationMethods = authenticationMethods == null
+                    ? new String[0]
+                    : authenticationMethods.clone();
+        }
+
+        public String[] getGrantTypes() {
+            return grantTypes.clone();
+        }
+
+        public void setGrantTypes(String[] grantTypes) {
+            this.grantTypes = grantTypes == null ? new String[0] : grantTypes.clone();
+        }
+
+        public String[] getScopes() {
+            return scopes.clone();
+        }
+
+        public void setScopes(String[] scopes) {
+            this.scopes = scopes == null ? new String[0] : scopes.clone();
         }
     }
 

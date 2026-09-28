@@ -13,7 +13,6 @@ import com.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.chaos.authorization.core.ChaosAuthorizationUserService;
 import com.chaos.authorization.core.RegisteredClientIds;
 import com.chaos.authorization.core.RejectingChaosAuthorizationUserService;
-import com.chaos.authorization.grant.ChaosAuthorizationGrantTypes;
 import com.chaos.authorization.grant.ChaosGrantAuthenticationConverter;
 import com.chaos.authorization.grant.ChaosGrantAuthenticationHandler;
 import com.chaos.authorization.grant.ChaosGrantAuthenticationProvider;
@@ -72,19 +71,14 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator;
@@ -356,7 +350,7 @@ public class ChaosAuthorizationAutoConfiguration {
             ChaosAuthorizationProperties properties,
             ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
         return new InMemoryRegisteredClientRepository(
-                defaultRegisteredClient(properties, grantHandlers));
+                AuthorizationRegisteredClients.configuredOrDefault(properties, grantHandlers));
     }
 
     /**
@@ -377,7 +371,9 @@ public class ChaosAuthorizationAutoConfiguration {
             ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
         requireRedis("Redis client store mode");
         return AuthorizationRedisStores.registeredClientRepository(
-                beanFactory, properties, defaultRegisteredClient(properties, grantHandlers));
+                beanFactory,
+                properties,
+                AuthorizationRegisteredClients.configuredOrDefault(properties, grantHandlers));
     }
 
     /**
@@ -389,44 +385,6 @@ public class ChaosAuthorizationAutoConfiguration {
     public RegisteredClientRepository jdbcRegisteredClientRepository(BeanFactory beanFactory) {
         requireJdbc("JDBC client store mode");
         return AuthorizationJdbcStores.registeredClientRepository(beanFactory);
-    }
-
-    /**
-     * 按配置构建默认 OAuth2 客户端。
-     *
-     * <p>主键**必须**是确定性的，不能用 {@code UUID.randomUUID()}：授权记录里存着签发时的
-     * registeredClientId，主键每次启动都变的话，重启后 introspect / refresh_token 都会
-     * 反查不到客户端，把还没过期的令牌判成 inactive —— 表现就是「重启一次，全员重新登录」。</p>
-     */
-    private RegisteredClient defaultRegisteredClient(
-            ChaosAuthorizationProperties properties,
-            ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
-        OAuth2TokenFormat accessTokenFormat = properties.getToken().getType() == ChaosAuthorizationProperties.TokenType.REDIS
-                ? OAuth2TokenFormat.REFERENCE
-                : OAuth2TokenFormat.SELF_CONTAINED;
-        return RegisteredClient.withId(RegisteredClientIds.stableId(properties.getClient().getId()))
-                .clientId(properties.getClient().getId())
-                .clientSecret(properties.getClient().getSecret())
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-                .authorizationGrantType(ChaosAuthorizationGrantTypes.PASSWORD)
-                .authorizationGrantType(ChaosAuthorizationGrantTypes.SMS_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                // 应用注册的自定义 grant 处理器也要落到客户端的授权类型上，否则 token 端点会以
-                // unauthorized_client 拒掉 —— ChaosGrantAuthenticationHandler 这个 SPI
-                // 本来就是给应用扩展登录方式用的，客户端不认它等于 SPI 形同虚设。
-                .authorizationGrantTypes(types -> grantHandlers.orderedStream()
-                        .map(ChaosGrantAuthenticationHandler::grantType)
-                        .forEach(types::add))
-                .scopes(scopes -> scopes.addAll(List.of(properties.getClient().getScopes())))
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
-                .tokenSettings(TokenSettings.builder()
-                        .accessTokenTimeToLive(properties.getAccessTokenTtl())
-                        .accessTokenFormat(accessTokenFormat)
-                        .refreshTokenTimeToLive(properties.getRefreshTokenTtl())
-                        .reuseRefreshTokens(properties.isReuseRefreshTokens())
-                        .build())
-                .build();
     }
 
     /**

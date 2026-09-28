@@ -208,6 +208,21 @@ class AuthorizationProductionSafetyCheckerTest {
     }
 
     /**
+     * Redis 引用 token 不使用 JWK，生产环境不应要求配置固定签名密钥。
+     */
+    @Test
+    void shouldNotRequireJwkForRedisToken() {
+        ChaosAuthorizationProperties properties = productionSafeProperties();
+        properties.getToken().setType(ChaosAuthorizationProperties.TokenType.REDIS);
+        properties.getJwk().setPublicKeyLocation(null);
+        properties.getJwk().setPrivateKeyLocation(null);
+        MockEnvironment environment = new MockEnvironment().withProperty("spring.profiles.active", "prod");
+        AuthorizationProductionSafetyChecker checker = new AuthorizationProductionSafetyChecker(properties, environment);
+
+        assertThatCode(() -> checker.run(new DefaultApplicationArguments())).doesNotThrowAnyException();
+    }
+
+    /**
      * 嵌套配置被设置为 null 时恢复默认对象，避免自动装配阶段出现 NPE。
      */
     @Test

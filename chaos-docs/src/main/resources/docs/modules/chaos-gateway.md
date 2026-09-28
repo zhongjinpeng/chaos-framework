@@ -190,7 +190,8 @@ curl -H 'Authorization: Bearer eyJ...' \
 - 覆盖 `GatewayRateLimitKeyResolver` 可自定义 route、租户、用户、IP、路径等 key 生成策略。
 - 覆盖 `TenantStatusProvider` 可接入租户中心、数据库或配置中心。
 - 设置 `chaos.gateway.jwt.validation-enabled=false` 可只做 Authorization 头存在性校验，适合迁移期。
-- 设置 `chaos.gateway.token.type=opaque` 可让 Gateway 通过授权服务器 introspection 校验 Redis/reference token。
+- 设置 `chaos.security.token.type=opaque` 可让 Gateway 与普通资源服务使用同一套配置，
+  通过授权服务器 introspection 校验 Redis/reference token。旧的 `chaos.gateway.token/opaque-token` 配置继续兼容。
 - 引入 `chaos-gateway-nacos-starter` 并设置 `chaos.gateway.nacos-routes.enabled=true` 后，Gateway 从 Nacos `dataId` 读取动态路由。
 - `GatewayTraceFilter` 优先解析 W3C `traceparent`，并向下游同时写入 legacy header 和 W3C header。
 

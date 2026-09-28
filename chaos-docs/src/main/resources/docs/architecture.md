@@ -28,7 +28,8 @@ chaos-framework
 ├── chaos-service                     应用层：事务、重试、领域事件、上下文 TaskDecorator
 ├── chaos-data
 │   ├── chaos-mybatis                 MyBatis-Plus 租户/数据权限/审计填充
-│   └── chaos-redis                   Redisson 锁、幂等仓储、限流、布隆过滤器、延迟队列
+│   ├── chaos-redis                   Redisson 锁、幂等仓储、限流、布隆过滤器、延迟队列
+│   └── chaos-excel                   基于 FastExcel 的统一流式导入导出
 ├── chaos-mq
 │   ├── chaos-mq                      消息与可靠投递（outbox）契约
 │   ├── chaos-mq-jdbc                 JDBC outbox 仓储
@@ -77,6 +78,7 @@ flowchart TB
         gateway["chaos-gateway / gateway-nacos"]
         mybatis["chaos-mybatis"]
         redis["chaos-redis"]
+        excel["chaos-excel"]
         mq["chaos-mq / mq-*"]
         storage["chaos-storage / storage-*"]
         job["chaos-job"]
@@ -166,6 +168,7 @@ flowchart TB
 | chaos-service | Application layer utilities: transaction, retry, domain events, async context propagation. |
 | chaos-data/chaos-mybatis | MyBatis Plus pagination, audit fill, tenant plugin, data scope, logic delete base entity. |
 | chaos-data/chaos-redis | Redisson lock, bloom filter, delay queue, Redis idempotency, cluster rate limit and Lua script support. |
+| chaos-data/chaos-excel | FastExcel based XLSX import/export with batching and row limits. |
 | chaos-mq/chaos-mq | Message envelope, publisher, consumer, idempotent consumer and reliable outbox contracts. |
 | chaos-mq/chaos-mq-jdbc | JDBC outbox persistence adapter. |
 | chaos-mq/chaos-mq-kafka | Kafka adapter. |

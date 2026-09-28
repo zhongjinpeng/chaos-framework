@@ -190,13 +190,15 @@ public class AuthorizationProductionSafetyChecker implements ApplicationRunner {
         if (!safety.isAllowLocalhostIssuer() && isLocalhostIssuer(properties.getIssuer())) {
             violations.add("chaos.authorization.issuer 不能使用 localhost/127.0.0.1");
         }
-        if (!safety.isAllowNoopClientSecret() && isNoopSecret(properties.getClient().getSecret())) {
-            violations.add("chaos.authorization.client.secret 不能使用 {noop} 明文密钥");
+        if (!safety.isAllowNoopClientSecret() && hasNoopClientSecret()) {
+            violations.add("chaos.authorization.client.secret/registrations.*.secret 不能使用 {noop} 明文密钥");
         }
         if (beanTypeChecksEnabled) {
             beanViolations(safety, violations);
         }
-        if (!safety.isAllowGeneratedJwk() && usesGeneratedJwk(properties.getJwk())) {
+        if (properties.getToken().getType() == ChaosAuthorizationProperties.TokenType.JWT
+                && !safety.isAllowGeneratedJwk()
+                && usesGeneratedJwk(properties.getJwk())) {
             violations.add("chaos.authorization.jwk.public-key-location/private-key-location 必须配置固定密钥");
         }
         return violations;
@@ -262,6 +264,15 @@ public class AuthorizationProductionSafetyChecker implements ApplicationRunner {
 
     private boolean isNoopSecret(String secret) {
         return secret == null || secret.isBlank() || secret.trim().startsWith("{noop}");
+    }
+
+    private boolean hasNoopClientSecret() {
+        if (properties.getClient().getRegistrations().isEmpty()) {
+            return isNoopSecret(properties.getClient().getSecret());
+        }
+        return properties.getClient().getRegistrations().values().stream()
+                .map(ChaosAuthorizationProperties.ClientRegistration::getSecret)
+                .anyMatch(this::isNoopSecret);
     }
 
     private boolean usesGeneratedJwk(ChaosAuthorizationProperties.Jwk jwk) {

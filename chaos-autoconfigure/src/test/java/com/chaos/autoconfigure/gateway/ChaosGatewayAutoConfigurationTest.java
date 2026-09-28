@@ -2,6 +2,7 @@ package com.chaos.autoconfigure.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chaos.autoconfigure.security.ChaosResourceServerProperties;
 import com.chaos.autoconfigure.tenant.ChaosTenantAutoConfiguration;
 import com.chaos.core.diagnostic.ChaosDiagnosticException;
 import com.chaos.core.ratelimit.RateLimiter;
@@ -56,6 +57,7 @@ class ChaosGatewayAutoConfigurationTest {
     void shouldRegisterGatewayFilters() {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(ChaosGatewayProperties.class);
+            assertThat(context).hasSingleBean(ChaosResourceServerProperties.class);
             assertThat(context).hasSingleBean(GatewayAccessLogFilter.class);
             assertThat(context).hasSingleBean(GatewayDownstreamTimingFilter.class);
             assertThat(context).hasSingleBean(GatewayTraceFilter.class);
@@ -74,6 +76,22 @@ class ChaosGatewayAutoConfigurationTest {
      */
     @Test
     void shouldWrapOpaqueTokenIntrospectorWithCacheAndTimeout() {
+        new ReactiveWebApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(ChaosGatewayAutoConfiguration.class))
+                .withPropertyValues(
+                        "chaos.security.token.type=opaque",
+                        "chaos.security.opaque-token.introspection-uri=http://auth-server:9000/oauth2/introspect",
+                        "chaos.security.opaque-token.client-id=gateway",
+                        "chaos.security.opaque-token.client-secret=secret")
+                .run(context -> assertThat(context.getBean(ReactiveOpaqueTokenIntrospector.class))
+                        .isInstanceOf(com.chaos.gateway.security.CachingReactiveOpaqueTokenIntrospector.class));
+    }
+
+    /**
+     * 旧的 Gateway token 配置在迁移期继续生效。
+     */
+    @Test
+    void legacyGatewayOpaqueConfigurationShouldRemainSupported() {
         new ReactiveWebApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(ChaosGatewayAutoConfiguration.class))
                 .withPropertyValues(
@@ -118,13 +136,13 @@ class ChaosGatewayAutoConfigurationTest {
         new ReactiveWebApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(ChaosGatewayAutoConfiguration.class))
                 .withPropertyValues(
-                        "chaos.gateway.token.type=opaque",
-                        "chaos.gateway.opaque-token.introspection-uri=http://auth-server:9000/oauth2/introspect")
+                        "chaos.security.token.type=opaque",
+                        "chaos.security.opaque-token.introspection-uri=http://auth-server:9000/oauth2/introspect")
                 .run(context -> assertThat(context).hasFailed()
                         .getFailure()
                         .rootCause()
                         .isInstanceOf(ChaosDiagnosticException.class)
-                        .hasMessageContaining("chaos.gateway.opaque-token.client-secret"));
+                        .hasMessageContaining("chaos.security.opaque-token"));
     }
 
     /**

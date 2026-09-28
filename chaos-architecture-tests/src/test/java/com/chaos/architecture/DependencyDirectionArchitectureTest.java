@@ -90,6 +90,7 @@ class DependencyDirectionArchitectureTest {
             Map.entry("chaos-service", "com.chaos.service"),
             Map.entry("chaos-mybatis", "com.chaos.mybatis"),
             Map.entry("chaos-redis", "com.chaos.redis"),
+            Map.entry("chaos-excel", "com.chaos.excel"),
             Map.entry("chaos-mq", "com.chaos.mq"),
             Map.entry("chaos-mq-jdbc", "com.chaos.mq.jdbc"),
             Map.entry("chaos-mq-kafka", "com.chaos.mq.kafka"),

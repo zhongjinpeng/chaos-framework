@@ -66,7 +66,7 @@ class ChaosBuiltInDiagnosticRulesTest {
         environment.setProperty("chaos.gateway.jwt.audiences[0]", "gateway");
         assertThat(ChaosBuiltInDiagnosticRules.gatewayJwtIssuerAndAudience(context(false, "gateway"))).isEmpty();
 
-        MockEnvironment opaque = new MockEnvironment().withProperty("chaos.gateway.token.type", "opaque");
+        MockEnvironment opaque = new MockEnvironment().withProperty("chaos.security.token.type", "opaque");
         assertThat(ChaosBuiltInDiagnosticRules.gatewayJwtIssuerAndAudience(
                 new ChaosDiagnosticContext(opaque, beanFactory, false, Set.of("gateway")))).isEmpty();
     }

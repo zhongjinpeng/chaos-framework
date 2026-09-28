@@ -12,10 +12,11 @@
     <artifactId>chaos-data-parent</artifactId>
     <packaging>pom</packaging>
     <name>chaos-data-parent</name>
-    <description>Data access capability domain aggregator: MyBatis-Plus and Redis/Redisson.</description>
-    <!-- 数据访问层聚合：chaos-mybatis 与 chaos-redis 只依赖 chaos-security-api，不依赖安全实现；坐标保持不变。 -->
+    <description>Data capability domain aggregator: MyBatis-Plus, Redis/Redisson and Excel import/export.</description>
+    <!-- 数据能力聚合：数据库、Redis 与表格文件读写保持独立模块。 -->
     <modules>
         <module>chaos-mybatis</module>
         <module>chaos-redis</module>
+        <module>chaos-excel</module>
     </modules>
 </project>

@@ -122,10 +122,14 @@ public final class ChaosBuiltInDiagnosticRules {
      * 网关开启 JWT 验签但没有限定签发方或受众。
      */
     static List<Finding> gatewayJwtIssuerAndAudience(ChaosDiagnosticContext context) {
+        String tokenType = context.property("chaos.security.token.type");
+        if (tokenType.isEmpty()) {
+            tokenType = context.property("chaos.gateway.token.type");
+        }
         if (!context.isEnabled("gateway")
                 || !context.booleanProperty("chaos.gateway.auth-enabled", true)
                 || !context.booleanProperty("chaos.gateway.jwt.validation-enabled", true)
-                || !"JWT".equals(normalize(context.property("chaos.gateway.token.type"), "JWT"))) {
+                || !"JWT".equals(normalize(tokenType, "JWT"))) {
             return List.of();
         }
         if (!context.property("chaos.gateway.jwt.issuer-uri").isEmpty()

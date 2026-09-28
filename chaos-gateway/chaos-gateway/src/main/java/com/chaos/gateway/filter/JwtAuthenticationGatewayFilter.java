@@ -41,6 +41,8 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
 
     private final ChaosMetrics metrics;
 
+    private final boolean jwtTokenEnabled;
+
     /**
      * 创建 Gateway 鉴权过滤器。
      */
@@ -73,11 +75,32 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
             JwtRevocationService jwtRevocationService,
             AuditEventPublisher auditEventPublisher,
             ChaosMetrics metrics) {
+        this(
+                properties,
+                jwtDecoder,
+                jwtRevocationService,
+                auditEventPublisher,
+                metrics,
+                properties.getToken().getType() == ChaosGatewayProperties.TokenType.JWT
+        );
+    }
+
+    /**
+     * 创建 Gateway 鉴权过滤器，并由自动装配传入统一资源服务器 token 模式。
+     */
+    public JwtAuthenticationGatewayFilter(
+            ChaosGatewayProperties properties,
+            ReactiveJwtDecoder jwtDecoder,
+            JwtRevocationService jwtRevocationService,
+            AuditEventPublisher auditEventPublisher,
+            ChaosMetrics metrics,
+            boolean jwtTokenEnabled) {
         this.properties = properties;
         this.jwtDecoder = jwtDecoder;
         this.jwtRevocationService = jwtRevocationService;
         this.auditEventPublisher = auditEventPublisher;
         this.metrics = metrics == null ? NoopChaosMetrics.instance() : metrics;
+        this.jwtTokenEnabled = jwtTokenEnabled;
     }
 
     /**
@@ -86,7 +109,7 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         if (!properties.isAuthEnabled()
-                || properties.getToken().getType() != ChaosGatewayProperties.TokenType.JWT
+                || !jwtTokenEnabled
                 || isWhitelisted(exchange)) {
             return chain.filter(exchange);
         }
