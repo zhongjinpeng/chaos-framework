@@ -8,7 +8,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
- * Spring Security 上下文访问辅助类。
+ * Spring Security 上下文与权限判断辅助类。
+ *
+ * <p>本类负责解析认证上下文和执行权限判断。业务代码读取用户字段时应使用
+ * {@link LoginUserUtils}，避免把认证上下文细节扩散到业务层。</p>
  */
 public final class SecurityUtils {
 
@@ -33,20 +36,6 @@ public final class SecurityUtils {
             return Optional.of(opaqueTokenPrincipal.loginUser());
         }
         return Optional.empty();
-    }
-
-    /**
-     * 获取当前用户 ID；未认证时返回空字符串。
-     */
-    public static String userId() {
-        return currentUser().map(LoginUser::userId).orElse("");
-    }
-
-    /**
-     * 获取当前租户 ID；未认证时返回空字符串。
-     */
-    public static String tenantId() {
-        return currentUser().map(LoginUser::tenantId).orElse("");
     }
 
     /**

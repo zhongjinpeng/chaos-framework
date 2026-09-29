@@ -32,6 +32,7 @@ import com.chaos.authorization.sms.SmsCodeVerifier;
 import com.chaos.authorization.token.ChaosRefreshTokenAuthenticationProvider;
 import com.chaos.authorization.token.ChaosTokenCustomizer;
 import com.chaos.authorization.token.ChaosTokenRevocationAuthenticationProvider;
+import com.chaos.autoconfigure.redis.RedisSerializationSupport;
 import com.chaos.autoconfigure.security.ChaosSecurityAutoConfiguration;
 import com.chaos.security.api.token.JwtRevocationService;
 import com.chaos.security.api.token.NoopJwtRevocationService;
@@ -60,6 +61,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -180,7 +182,17 @@ public class ChaosAuthorizationAutoConfiguration {
     }
 
     /**
-     * 注册默认用户服务，业务系统未提供实现时拒绝所有登录。
+     * 授权服务器即使不引入 chaos-redis-starter，也必须使用统一的 Redis key/value 序列化策略。
+     */
+    @Bean(name = "chaosAuthorizationRedisTemplateSerializationPostProcessor")
+    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
+    @ConditionalOnMissingBean(name = "chaosAuthorizationRedisTemplateSerializationPostProcessor")
+    public BeanPostProcessor chaosRedisTemplateSerializationPostProcessor() {
+        return RedisSerializationSupport.postProcessor();
+    }
+
+    /**
+     * 注册用户服务，业务系统未提供实现时拒绝所有登录。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -211,7 +223,7 @@ public class ChaosAuthorizationAutoConfiguration {
     }
 
     /**
-     * 注册生产安全检查器，提示授权服务器仍在使用开发默认值。
+     * 注册生产安全检查器，提示授权服务器仍在使用不安全的开发实现。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -341,20 +353,19 @@ public class ChaosAuthorizationAutoConfiguration {
     }
 
     /**
-     * 注册内存 OAuth2 客户端仓储。
+     * 注册内存 OAuth2 客户端仓储，客户端完全由 registrations 配置驱动。
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "chaos.authorization.client", name = "store-type", havingValue = "memory", matchIfMissing = true)
     public RegisteredClientRepository inMemoryRegisteredClientRepository(
-            ChaosAuthorizationProperties properties,
-            ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
+            ChaosAuthorizationProperties properties) {
         return new InMemoryRegisteredClientRepository(
-                AuthorizationRegisteredClients.configuredOrDefault(properties, grantHandlers));
+                AuthorizationRegisteredClients.configured(properties));
     }
 
     /**
-     * 注册 Redis OAuth2 客户端仓储，并把配置里的默认客户端写入 Redis。
+     * 注册 Redis OAuth2 客户端仓储，并把 registrations 配置里的客户端写入 Redis。
      *
      * <p>写入是幂等的：主键由 clientId 确定性推导（{@link RegisteredClientIds}），
      * 每次启动落在同一条记录上，改了密钥或作用域也会原地覆盖，不会堆出多份客户端。</p>
@@ -367,13 +378,12 @@ public class ChaosAuthorizationAutoConfiguration {
     @ConditionalOnProperty(prefix = "chaos.authorization.client", name = "store-type", havingValue = "redis")
     public RegisteredClientRepository redisRegisteredClientRepository(
             ChaosAuthorizationProperties properties,
-            BeanFactory beanFactory,
-            ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
+            BeanFactory beanFactory) {
         requireRedis("Redis client store mode");
         return AuthorizationRedisStores.registeredClientRepository(
                 beanFactory,
                 properties,
-                AuthorizationRegisteredClients.configuredOrDefault(properties, grantHandlers));
+                AuthorizationRegisteredClients.configured(properties));
     }
 
     /**

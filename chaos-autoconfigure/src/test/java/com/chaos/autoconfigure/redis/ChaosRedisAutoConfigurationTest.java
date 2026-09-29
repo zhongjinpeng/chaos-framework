@@ -11,11 +11,15 @@ import com.chaos.core.ratelimit.RateLimiter;
 import com.chaos.redis.idempotent.RedissonIdempotentRepository;
 import com.chaos.redis.key.RedisKeyPrefix;
 import com.chaos.redis.ratelimit.RedissonRateLimiter;
+import com.chaos.test.redis.InMemoryRedisTemplates;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * Redis 自动装配测试。
@@ -54,6 +58,22 @@ class ChaosRedisAutoConfigurationTest {
                     assertThat(context.getBean(RedisKeyPrefix.class).value()).isEqualTo("order-service:");
                     assertThat(context.getBean(CacheKeyStrategy.class).build("user", "1"))
                             .isEqualTo("order-service:user:1");
+                });
+    }
+
+    /**
+     * 普通 RedisTemplate 的 key 必须可读，value 与 hash value 必须显式配置序列化器。
+     */
+    @Test
+    void shouldConfigureRedisTemplateSerializers() {
+        contextRunner
+                .withBean("redisTemplate", RedisTemplate.class, InMemoryRedisTemplates::create)
+                .run(context -> {
+                    RedisTemplate<?, ?> template = context.getBean("redisTemplate", RedisTemplate.class);
+                    assertThat(template.getKeySerializer()).isInstanceOf(StringRedisSerializer.class);
+                    assertThat(template.getHashKeySerializer()).isInstanceOf(StringRedisSerializer.class);
+                    assertThat(template.getValueSerializer()).isInstanceOf(JdkSerializationRedisSerializer.class);
+                    assertThat(template.getHashValueSerializer()).isInstanceOf(JdkSerializationRedisSerializer.class);
                 });
     }
 

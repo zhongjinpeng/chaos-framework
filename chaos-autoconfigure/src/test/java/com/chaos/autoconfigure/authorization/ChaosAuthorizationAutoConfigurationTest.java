@@ -13,12 +13,10 @@ import com.chaos.authorization.captcha.CaptchaStore;
 import com.chaos.authorization.core.AuthorizationProductionSafetyChecker;
 import com.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.chaos.authorization.core.RegisteredClientIds;
-import com.chaos.authorization.grant.ChaosGrantAuthenticationHandler;
 import com.chaos.authorization.kickout.AuthorizationKickoutService;
 import com.chaos.authorization.kickout.AuthorizationSessionRegistry;
 import com.chaos.authorization.kickout.InMemoryAuthorizationSessionRegistry;
 import com.chaos.authorization.kickout.NoopAuthorizationKickoutService;
-import com.chaos.security.api.auth.LoginUser;
 import com.chaos.security.api.token.JwtRevocationService;
 import com.chaos.security.api.token.NoopJwtRevocationService;
 import com.chaos.security.redis.authorization.RedisRegisteredClientRepository;
@@ -48,6 +46,8 @@ class ChaosAuthorizationAutoConfigurationTest {
 
     private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(ChaosAuthorizationAutoConfiguration.class))
+            .withPropertyValues(
+                    "chaos.authorization.client.registrations.management.secret={noop}management-secret")
             .withBean("authorizationServerSecurityFilterChain", Object.class, Object::new);
 
     /**
@@ -60,17 +60,19 @@ class ChaosAuthorizationAutoConfigurationTest {
     @Test
     void shouldKeepRegisteredClientIdStableAcrossRestarts() {
         contextRunner
-                .withPropertyValues("chaos.authorization.client.id=iam-client")
+                .withPropertyValues(
+                        "chaos.authorization.client.registrations.iam.secret={noop}iam-secret")
                 .run(first -> {
                     String firstId = first.getBean(RegisteredClientRepository.class)
-                            .findByClientId("iam-client").getId();
-                    assertThat(firstId).isEqualTo(RegisteredClientIds.stableId("iam-client"));
+                            .findByClientId("iam").getId();
+                    assertThat(firstId).isEqualTo(RegisteredClientIds.stableId("iam"));
 
                     // 再跑一次上下文 = 重启一次进程。
                     contextRunner
-                            .withPropertyValues("chaos.authorization.client.id=iam-client")
+                            .withPropertyValues(
+                                    "chaos.authorization.client.registrations.iam.secret={noop}iam-secret")
                             .run(second -> assertThat(second.getBean(RegisteredClientRepository.class)
-                                    .findByClientId("iam-client").getId()).isEqualTo(firstId));
+                                    .findByClientId("iam").getId()).isEqualTo(firstId));
                 });
     }
 
@@ -108,57 +110,60 @@ class ChaosAuthorizationAutoConfigurationTest {
     }
 
     /**
-     * store-type=redis 时注册 Redis 客户端仓储，并把配置里的默认客户端写进去。
+     * store-type=redis 时注册 Redis 客户端仓储，并把 registrations 中的客户端写进去。
      */
     @Test
-    void shouldRegisterRedisClientRepositoryAndSeedTheDefaultClient() {
+    void shouldRegisterRedisClientRepositoryAndSeedConfiguredClients() {
         contextRunner
                 .withPropertyValues(
                         "chaos.authorization.client.store-type=redis",
-                        "chaos.authorization.client.id=iam-client")
+                        "chaos.authorization.client.registrations.redis-client.secret={noop}redis-secret")
                 .withBean("redisTemplate", org.springframework.data.redis.core.RedisTemplate.class,
                         InMemoryRedisTemplates::create)
                 .run(context -> {
                     RegisteredClientRepository repository =
                             context.getBean(RegisteredClientRepository.class);
                     assertThat(repository).isInstanceOf(RedisRegisteredClientRepository.class);
-                    assertThat(repository.findByClientId("iam-client")).isNotNull();
-                    assertThat(repository.findById(RegisteredClientIds.stableId("iam-client")))
+                    assertThat(repository.findByClientId("redis-client")).isNotNull();
+                    assertThat(repository.findById(RegisteredClientIds.stableId("redis-client")))
                             .isNotNull();
                 });
     }
 
     /**
-     * 应用注册的自定义 grant 处理器必须出现在默认客户端的授权类型里。
+     * 客户端配置中声明的自定义 grant 必须出现在该客户端的授权类型里。
      *
-     * <p>否则 token 端点会以 unauthorized_client 拒掉 —— ChaosGrantAuthenticationHandler
-     * 这个 SPI 本来就是给应用扩展登录方式用的，客户端不认它等于 SPI 形同虚设。
+     * <p>否则 token 端点会以 unauthorized_client 拒掉。grant handler 只负责处理请求，
+     * 是否允许使用仍由客户端 registrations 配置决定。
      */
     @Test
-    void shouldAllowGrantTypesContributedByApplicationHandlers() {
+    void shouldRegisterConfiguredCustomGrantTypes() {
         AuthorizationGrantType custom = new AuthorizationGrantType("wechat_ticket");
 
         contextRunner
-                .withPropertyValues("chaos.authorization.client.id=iam-client")
-                .withBean("customGrantHandler", ChaosGrantAuthenticationHandler.class,
-                        () -> new ChaosGrantAuthenticationHandler() {
-                            @Override
-                            public AuthorizationGrantType grantType() {
-                                return custom;
-                            }
-
-                            @Override
-                            public LoginUser authenticate(java.util.Map<String, Object> parameters) {
-                                throw new UnsupportedOperationException();
-                            }
-                        })
+                .withPropertyValues(
+                        "chaos.authorization.client.registrations.custom.secret={noop}custom-secret",
+                        "chaos.authorization.client.registrations.custom.grant-types[0]=wechat_ticket")
                 .run(context -> {
                     RegisteredClient client = context.getBean(RegisteredClientRepository.class)
-                            .findByClientId("iam-client");
+                            .findByClientId("custom");
                     assertThat(client.getAuthorizationGrantTypes()).contains(custom);
-                    // 内置的三种不能因此丢掉。
-                    assertThat(client.getAuthorizationGrantTypes())
-                            .contains(AuthorizationGrantType.REFRESH_TOKEN);
+                });
+    }
+
+    /**
+     * 未声明客户端时必须快速失败，不能隐式生成 chaos-client。
+     */
+    @Test
+    void shouldFailWhenNoClientRegistrationIsConfigured() {
+        new WebApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(ChaosAuthorizationAutoConfiguration.class))
+                .withBean("authorizationServerSecurityFilterChain", Object.class, Object::new)
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(IllegalStateException.class)
+                            .hasMessageContaining("client.registrations");
                 });
     }
 

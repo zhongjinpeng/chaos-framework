@@ -578,6 +578,23 @@ class LayerBoundaryArchitectureTest {
     }
 
     /**
+     * Opaque token 资源服务器必须携带 Nimbus introspection 运行时依赖。
+     */
+    @Test
+    void resourceServerStartersShouldProvideNimbusIntrospectionRuntime() throws IOException {
+        ProjectModel project = ProjectModel.load();
+        for (String starter : List.of("chaos-security-starter", "chaos-gateway-starter")) {
+            assertTrue(
+                    project.module(starter).dependencies().stream().anyMatch(dependency ->
+                            Objects.equals(dependency.groupId(), "com.nimbusds")
+                                    && Objects.equals(dependency.artifactId(), "oauth2-oidc-sdk")
+                                    && !dependency.isTest()),
+                    starter + " 必须提供 Nimbus OAuth SDK，否则 opaque token introspection 会在运行时报错"
+            );
+        }
+    }
+
+    /**
      * 数据权限空条件默认必须拒绝，避免权限服务异常时误放行。
      */
     @Test

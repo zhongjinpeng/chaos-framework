@@ -2,12 +2,9 @@ package com.chaos.autoconfigure.authorization;
 
 import com.chaos.authorization.core.ChaosAuthorizationProperties;
 import com.chaos.authorization.core.RegisteredClientIds;
-import com.chaos.authorization.grant.ChaosAuthorizationGrantTypes;
-import com.chaos.authorization.grant.ChaosGrantAuthenticationHandler;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -22,13 +19,12 @@ final class AuthorizationRegisteredClients {
     private AuthorizationRegisteredClients() {
     }
 
-    static List<RegisteredClient> configuredOrDefault(
-            ChaosAuthorizationProperties properties,
-            ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
+    static List<RegisteredClient> configured(ChaosAuthorizationProperties properties) {
         Map<String, ChaosAuthorizationProperties.ClientRegistration> registrations =
                 properties.getClient().getRegistrations();
         if (registrations.isEmpty()) {
-            return List.of(defaultClient(properties, grantHandlers));
+            throw new IllegalStateException(
+                    "chaos.authorization.client.registrations 至少需要配置一个 OAuth 客户端");
         }
         return registrations.entrySet().stream()
                 .map(entry -> configuredClient(entry, properties))
@@ -53,26 +49,6 @@ final class AuthorizationRegisteredClients {
                 .forEach(builder::authorizationGrantType);
         Arrays.stream(registration.getScopes()).forEach(builder::scope);
         return builder
-                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
-                .tokenSettings(tokenSettings(properties))
-                .build();
-    }
-
-    private static RegisteredClient defaultClient(
-            ChaosAuthorizationProperties properties,
-            ObjectProvider<ChaosGrantAuthenticationHandler> grantHandlers) {
-        return RegisteredClient.withId(RegisteredClientIds.stableId(properties.getClient().getId()))
-                .clientId(properties.getClient().getId())
-                .clientSecret(properties.getClient().getSecret())
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-                .authorizationGrantType(ChaosAuthorizationGrantTypes.PASSWORD)
-                .authorizationGrantType(ChaosAuthorizationGrantTypes.SMS_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .authorizationGrantTypes(types -> grantHandlers.orderedStream()
-                        .map(ChaosGrantAuthenticationHandler::grantType)
-                        .forEach(types::add))
-                .scopes(scopes -> scopes.addAll(List.of(properties.getClient().getScopes())))
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
                 .tokenSettings(tokenSettings(properties))
                 .build();

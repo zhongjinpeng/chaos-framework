@@ -95,6 +95,14 @@ chaos:
 
 ## 示例
 
+业务代码读取当前登录用户时统一使用 `LoginUserUtils`；`SecurityUtils` 仅用于安全框架内部读取认证上下文和执行权限判断。
+
+```java
+LoginUser user = LoginUserUtils.requiredUser();
+String userId = LoginUserUtils.userId();
+String tenantId = LoginUserUtils.tenantId();
+```
+
 ```java
 @Permission("order:read")
 @GetMapping("/orders/{id}")

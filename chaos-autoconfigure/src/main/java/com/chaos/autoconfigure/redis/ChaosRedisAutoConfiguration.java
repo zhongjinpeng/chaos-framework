@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -59,6 +60,16 @@ public class ChaosRedisAutoConfiguration {
     @ConditionalOnMissingBean
     public CacheKeyStrategy cacheKeyStrategy(RedisKeyPrefix redisKeyPrefix) {
         return new PrefixedCacheKeyStrategy(new DefaultCacheKeyStrategy(), redisKeyPrefix);
+    }
+
+    /**
+     * 统一普通 RedisTemplate 的 key/value 序列化策略。
+     */
+    @Bean(name = "chaosRedisTemplateSerializationPostProcessor")
+    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
+    @ConditionalOnMissingBean(name = "chaosRedisTemplateSerializationPostProcessor")
+    public BeanPostProcessor chaosRedisTemplateSerializationPostProcessor() {
+        return RedisSerializationSupport.postProcessor();
     }
 
     /**

@@ -93,6 +93,8 @@ class OptionalDependencyIsolationTest {
             // Servlet 资源服务器需要 JwtDecoder；Boot 在配置 jwk-set-uri 后创建（不会在启动时访问该地址）。
             "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=http://localhost:9000/oauth2/jwks",
             "spring.datasource.url=jdbc:h2:mem:chaos-isolation;DB_CLOSE_DELAY=-1",
+            // 授权服务器客户端必须显式配置；自动装配不再生成隐式 chaos-client。
+            "chaos.authorization.client.registrations.probe.secret={noop}probe-secret",
             // 不在上下文刷新时启动后台调度线程，避免派发器访问尚不存在的 outbox 表。
             "chaos.mq.outbox.dispatcher.enabled=false",
             "chaos.mq.outbox.cleanup.enabled=false",
