@@ -7,6 +7,7 @@ import com.chaos.authorization.grant.ChaosGrantAuthenticationHandler;
 import com.chaos.security.api.auth.LoginUser;
 import java.util.Locale;
 import java.util.Map;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -32,6 +33,9 @@ public class PasswordGrantAuthenticationHandler implements ChaosGrantAuthenticat
     private static final String TENANT_CODE = "tenant_code";
 
     private static final String TENANT_CODE_CAMEL = "tenantCode";
+
+    private static final String INVALID_CREDENTIALS_DESCRIPTION =
+            "username or password is invalid";
 
     private final ChaosAuthorizationUserService userService;
 
@@ -103,6 +107,14 @@ public class PasswordGrantAuthenticationHandler implements ChaosGrantAuthenticat
         } catch (RuntimeException ex) {
             if (loginFailureLimiter != null) {
                 loginFailureLimiter.recordFailure(lockKey);
+            }
+            if (ex instanceof AuthenticationException
+                    && !(ex instanceof OAuth2AuthenticationException)) {
+                throw new OAuth2AuthenticationException(new OAuth2Error(
+                        OAuth2ErrorCodes.INVALID_GRANT,
+                        INVALID_CREDENTIALS_DESCRIPTION,
+                        null
+                ), ex);
             }
             throw ex;
         }

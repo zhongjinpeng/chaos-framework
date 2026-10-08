@@ -109,6 +109,35 @@ chaos:
       timeout: 3s
 ```
 
+Gateway 代理浏览器或其他不应持有客户端密钥的调用方访问 token 端点时，可以按路由注入保密客户端凭据：
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: web-login
+              uri: http://auth-server:9000
+              predicates:
+                - Path=/api/v1/auth/web/token
+              filters:
+                - RewritePath=/api/v1/auth/web/token, /oauth2/token
+                - OAuth2ClientAuthentication=web
+
+chaos:
+  gateway:
+    oauth2-clients:
+      web:
+        client-id: web
+        client-secret: ${WEB_CLIENT_SECRET}
+```
+
+`OAuth2ClientAuthentication` 会删除调用方传入的 `Authorization` 并注入所选注册的 Basic 凭据。
+客户端选择必须固化在路由上，不能直接信任调用方提交的 `client_id`。`client-secret` 必须是原始密钥，
+不能填写授权服务器存储的 BCrypt 摘要。
+
 Nacos 动态路由配置：
 
 ```yaml

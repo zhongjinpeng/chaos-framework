@@ -15,6 +15,7 @@ import com.chaos.gateway.filter.GatewayFallbackExceptionHandler;
 import com.chaos.gateway.filter.GatewayRateLimitFilter;
 import com.chaos.gateway.filter.GatewayTraceFilter;
 import com.chaos.gateway.filter.JwtAuthenticationGatewayFilter;
+import com.chaos.gateway.filter.OAuth2ClientAuthenticationGatewayFilterFactory;
 import com.chaos.gateway.filter.TenantGatewayFilter;
 import com.chaos.gateway.ratelimit.GatewayRateLimitKeyResolver;
 import com.chaos.security.api.access.AccessSubject;
@@ -66,6 +67,7 @@ class ChaosGatewayAutoConfigurationTest {
             assertThat(context).hasSingleBean(GatewayRateLimitKeyResolver.class);
             assertThat(context).hasSingleBean(GatewayRateLimitFilter.class);
             assertThat(context).hasSingleBean(JwtAuthenticationGatewayFilter.class);
+            assertThat(context).hasSingleBean(OAuth2ClientAuthenticationGatewayFilterFactory.class);
             assertThat(context).hasSingleBean(TenantGatewayFilter.class);
             assertThat(context).hasSingleBean(GatewayFallbackExceptionHandler.class);
         });

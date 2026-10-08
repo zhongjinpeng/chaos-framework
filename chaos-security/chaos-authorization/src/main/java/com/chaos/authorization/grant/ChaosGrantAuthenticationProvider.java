@@ -142,9 +142,21 @@ public class ChaosGrantAuthenticationProvider implements AuthenticationProvider 
                 .tenantId(LoginAuditAttributes.tenant(loginParameters))
                 .clientId(registeredClient.getClientId())
                 .ip(loginContext.ip())
-                .reason(ex.getMessage())
+                .reason(loginFailureReason(ex))
                 .attributes(LoginAuditAttributes.from(loginParameters, loginContext))
                 .build());
+    }
+
+    /**
+     * 对外 OAuth2 异常会隐藏账号校验细节，审计日志保留业务身份服务给出的原始失败原因。
+     */
+    static String loginFailureReason(AuthenticationException exception) {
+        if (exception instanceof OAuth2AuthenticationException
+                && exception.getCause() instanceof AuthenticationException cause
+                && StringUtils.hasText(cause.getMessage())) {
+            return cause.getMessage();
+        }
+        return exception.getMessage();
     }
 
     /**

@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
@@ -153,6 +154,25 @@ class PasswordGrantAuthenticationHandlerTest {
     }
 
     /**
+     * 业务身份服务使用 Spring Security 认证异常；password grant 必须将其转换为标准 OAuth2 错误，
+     * 不能让异常落入安全过滤器的默认入口并返回空 401。
+     */
+    @Test
+    void shouldTranslateAuthenticationExceptionToInvalidGrant() {
+        PasswordGrantAuthenticationHandler handler = new PasswordGrantAuthenticationHandler(
+                new BadCredentialsUserService());
+
+        assertThatThrownBy(() -> handler.authenticate(passwordParameters()))
+                .isInstanceOfSatisfying(OAuth2AuthenticationException.class, ex -> {
+                    assertThat(ex.getError().getErrorCode())
+                            .isEqualTo(OAuth2ErrorCodes.INVALID_GRANT);
+                    assertThat(ex.getError().getDescription())
+                            .isEqualTo("username or password is invalid");
+                    assertThat(ex.getCause()).isInstanceOf(BadCredentialsException.class);
+                });
+    }
+
+    /**
      * 连续认证失败达到阈值后必须锁定，锁定期内不再调用业务身份服务。
      */
     @Test
@@ -182,6 +202,19 @@ class PasswordGrantAuthenticationHandlerTest {
         public LoginUser authenticateByUsername(String username, String password) {
             calls++;
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
+        }
+
+        @Override
+        public LoginUser loadByMobile(String mobile) {
+            return null;
+        }
+    }
+
+    private static class BadCredentialsUserService implements ChaosAuthorizationUserService {
+
+        @Override
+        public LoginUser authenticateByUsername(String username, String password) {
+            throw new BadCredentialsException("internal authentication detail");
         }
 
         @Override

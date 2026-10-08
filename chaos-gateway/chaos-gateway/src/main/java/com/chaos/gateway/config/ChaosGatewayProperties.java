@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -62,6 +63,16 @@ public class ChaosGatewayProperties {
      * <p>白名单按解码后的路径匹配，而下游容器会再做一次规范化；两者不一致时可能绕过鉴权，因此默认直接返回 400。</p>
      */
     private boolean rejectAmbiguousPath = true;
+
+    /**
+     * 由 Gateway 代理 OAuth2 token 请求时使用的保密客户端注册。
+     *
+     * <p>注册名称由路由上的 {@code OAuth2ClientAuthentication} 过滤器引用。这里必须配置原始客户端密钥，
+     * 不能配置授权服务器保存的 BCrypt 摘要。</p>
+     */
+    @Valid
+    @NotNull(message = "chaos.gateway.oauth2-clients must not be null")
+    private Map<String, OAuth2Client> oauth2Clients = new LinkedHashMap<>();
 
     /**
      * JWT 校验配置。
@@ -169,6 +180,16 @@ public class ChaosGatewayProperties {
 
     public void setRejectAmbiguousPath(boolean rejectAmbiguousPath) {
         this.rejectAmbiguousPath = rejectAmbiguousPath;
+    }
+
+    public Map<String, OAuth2Client> getOauth2Clients() {
+        return Map.copyOf(oauth2Clients);
+    }
+
+    public void setOauth2Clients(Map<String, OAuth2Client> oauth2Clients) {
+        this.oauth2Clients = oauth2Clients == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(oauth2Clients);
     }
 
     public Jwt getJwt() {
@@ -442,6 +463,40 @@ public class ChaosGatewayProperties {
 
         public void setJwkSetUri(String jwkSetUri) {
             this.jwkSetUri = jwkSetUri;
+        }
+    }
+
+    /**
+     * Gateway 代管的单个 OAuth2 保密客户端。
+     */
+    public static class OAuth2Client {
+
+        /**
+         * 发送给授权服务器的客户端 ID。
+         */
+        @NotBlank(message = "chaos.gateway.oauth2-clients.*.client-id must not be blank")
+        private String clientId;
+
+        /**
+         * 发送给授权服务器的原始客户端密钥，建议通过环境变量注入。
+         */
+        @NotBlank(message = "chaos.gateway.oauth2-clients.*.client-secret must not be blank")
+        private String clientSecret;
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(String clientId) {
+            this.clientId = clientId;
+        }
+
+        public String getClientSecret() {
+            return clientSecret;
+        }
+
+        public void setClientSecret(String clientSecret) {
+            this.clientSecret = clientSecret;
         }
     }
 

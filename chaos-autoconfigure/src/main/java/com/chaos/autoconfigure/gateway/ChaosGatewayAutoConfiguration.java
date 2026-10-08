@@ -23,6 +23,7 @@ import com.chaos.gateway.filter.GatewayTraceFilter;
 import com.chaos.gateway.filter.GrayTagFilter;
 import com.chaos.gateway.filter.JwtAuthenticationGatewayFilter;
 import com.chaos.gateway.filter.OpaqueTokenAuthenticationGatewayFilter;
+import com.chaos.gateway.filter.OAuth2ClientAuthenticationGatewayFilterFactory;
 import com.chaos.gateway.filter.TenantGatewayFilter;
 import com.chaos.gateway.ratelimit.GatewayRateLimitKeyResolver;
 import com.chaos.gateway.ratelimit.GatewayRateLimiter;
@@ -342,6 +343,17 @@ public class ChaosGatewayAutoConfiguration {
                 auditEventPublisherProvider.getIfAvailable(NoopAuditEventPublisher::new),
                 usesOpaque(properties, resourceServerProperties)
         );
+    }
+
+
+    /**
+     * 注册按名称注入 OAuth2 保密客户端凭据的路由过滤器。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OAuth2ClientAuthenticationGatewayFilterFactory oauth2ClientAuthenticationGatewayFilterFactory(
+            ChaosGatewayProperties properties) {
+        return new OAuth2ClientAuthenticationGatewayFilterFactory(properties);
     }
 
     /**

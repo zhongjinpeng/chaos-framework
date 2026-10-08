@@ -15,9 +15,9 @@ python3 scripts/generate-configuration-reference.py
 ## 目录
 
 - [`chaos.audit`](#chaosaudit)（9 项）
-- [`chaos.authorization`](#chaosauthorization)（54 项）
+- [`chaos.authorization`](#chaosauthorization)（55 项）
 - [`chaos.diagnostics`](#chaosdiagnostics)（5 项）
-- [`chaos.gateway`](#chaosgateway)（47 项）
+- [`chaos.gateway`](#chaosgateway)（48 项）
 - [`chaos.job`](#chaosjob)（4 项）
 - [`chaos.mq`](#chaosmq)（17 项）
 - [`chaos.mybatis`](#chaosmybatis)（16 项）
@@ -58,6 +58,7 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.authorization.captcha.width` | `Integer` | `128` | 验证码图片宽度（像素），最小 96。 |  | `chaos-authorization` |
 | `chaos.authorization.client.id` | `String` | `chaos-client` | 默认内存客户端 ID。 |  | `chaos-authorization` |
 | `chaos.authorization.client.redis-key-prefix` | `String` | `chaos:authorization:client` | Redis 客户端仓储的键前缀，仅 store-type=redis 时使用。 |  | `chaos-authorization` |
+| `chaos.authorization.client.registrations` | `Map<String,ClientRegistration>` |  | 多客户端注册配置；非空时替代旧版的单客户端 id/secret/scopes 配置。 |  | `chaos-authorization` |
 | `chaos.authorization.client.scopes` | `String[]` | `read, write` | 默认内存客户端 scopes。 |  | `chaos-authorization` |
 | `chaos.authorization.client.secret` | `String` | `{noop}chaos-secret` | 默认内存客户端密钥。 |  | `chaos-authorization` |
 | `chaos.authorization.client.store-type` | `ClientStoreType` | `memory` | 客户端仓储模式。 | `memory`, `jdbc`, `redis` | `chaos-authorization` |
@@ -143,6 +144,7 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.gateway.nacos-routes.fail-fast` | `Boolean` | `false` | 初始加载失败时是否阻止应用启动。 |  | `chaos-gateway-nacos` |
 | `chaos.gateway.nacos-routes.group` | `String` | `DEFAULT_GROUP` | 路由配置 group。 |  | `chaos-gateway-nacos` |
 | `chaos.gateway.nacos-routes.timeout-ms` | `Long` | `3000` | 初始拉取配置超时时间，单位毫秒。 |  | `chaos-gateway-nacos` |
+| `chaos.gateway.oauth2-clients` | `Map<String,OAuth2Client>` |  | 由 Gateway 代理 OAuth2 token 请求时使用的保密客户端注册。 注册名称由路由上的 `OAuth2ClientAuthentication` 过滤器引用。这里必须配置原始客户端密钥， 不能配置授权服务器保存的 BCrypt 摘要。 |  | `chaos-gateway` |
 | `chaos.gateway.opaque-token.cache-max-size` | `Integer` | `10000` | introspection 本地缓存最多保留的 token 数。 |  | `chaos-gateway` |
 | `chaos.gateway.opaque-token.cache-ttl` | `Duration` | `30s` | introspection 成功结果的本地缓存时长；实际 TTL 取该值与 token exp 的较小值，0 表示不缓存。 缓存会让已撤销 token 在 TTL 内继续可用，属于性能与撤销实时性的折中。 |  | `chaos-gateway` |
 | `chaos.gateway.opaque-token.client-id` | `String` |  | 调用 introspection 端点使用的 OAuth2 client_id。 |  | `chaos-gateway` |
