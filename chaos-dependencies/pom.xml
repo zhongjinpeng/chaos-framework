@@ -77,6 +77,8 @@
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
         <oauth2-oidc-sdk.version>11.23.1</oauth2-oidc-sdk.version>
         <fastexcel.version>1.3.0</fastexcel.version>
+        <poi.version>5.4.1</poi.version>
+        <commons-io.version>2.18.0</commons-io.version>
 
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     </properties>
@@ -131,6 +133,16 @@
                 <groupId>cn.idev.excel</groupId>
                 <artifactId>fastexcel</artifactId>
                 <version>${fastexcel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>

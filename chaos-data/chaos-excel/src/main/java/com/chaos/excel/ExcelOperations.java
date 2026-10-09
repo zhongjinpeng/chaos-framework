@@ -9,6 +9,7 @@ import cn.idev.excel.read.builder.ExcelReaderBuilder;
 import cn.idev.excel.write.metadata.WriteSheet;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -16,6 +17,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 /** FastExcel 的统一、安全读写入口。 */
 public final class ExcelOperations {
@@ -71,6 +74,28 @@ public final class ExcelOperations {
     public static <T> List<T> read(byte[] content, Class<T> rowType) {
         Objects.requireNonNull(content, "content must not be null");
         return read(new ByteArrayInputStream(content), rowType, ExcelReadOptions.defaults());
+    }
+
+    /** Read every visible worksheet while keeping hidden dictionary sheets out of imports. */
+    public static <T> List<T> readVisibleSheets(byte[] content, Class<T> rowType,
+                                                 ExcelReadOptions options) {
+        Objects.requireNonNull(content, "content must not be null");
+        Objects.requireNonNull(rowType, "rowType must not be null");
+        Objects.requireNonNull(options, "options must not be null");
+        List<T> rows = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(content))) {
+            for (int sheetNumber = 0; sheetNumber < workbook.getNumberOfSheets(); sheetNumber++) {
+                if (workbook.isSheetHidden(sheetNumber) || workbook.isSheetVeryHidden(sheetNumber)) {
+                    continue;
+                }
+                ExcelReadOptions sheetOptions = new ExcelReadOptions(
+                        sheetNumber, options.headerRows(), options.batchSize(), options.maxRows());
+                rows.addAll(read(new ByteArrayInputStream(content), rowType, sheetOptions));
+            }
+        } catch (IOException exception) {
+            throw new ExcelProcessingException("Excel workbook inspection failed", exception);
+        }
+        return List.copyOf(rows);
     }
 
     public static <T> List<T> read(InputStream input, Class<T> rowType, ExcelReadOptions options) {

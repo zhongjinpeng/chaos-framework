@@ -2,7 +2,7 @@
 
 ## 职责
 
-`chaos-excel` 基于 FastExcel 提供统一的 XLSX 导入导出入口，不依赖 Spring MVC 或 Servlet。
+`chaos-excel` 基于 FastExcel 提供统一的 XLSX 导入导出入口和导入模板生成能力，不依赖 Spring MVC 或 Servlet。
 Controller 负责上传、下载协议，业务服务负责数据校验与持久化，本模块只负责表格读写和资源边界。
 
 ## 依赖方式
@@ -45,6 +45,30 @@ ExcelOperations.readBatches(inputStream, SurveyImportRow.class, options, batch -
     applicationService.importBatch(batch);
 });
 ```
+
+需要读取多 Sheet 导入模板时使用 `readVisibleSheets`。该方法会跳过模板内部的隐藏字典 Sheet：
+
+```java
+List<SurveyImportRow> rows = ExcelOperations.readVisibleSheets(
+        content, SurveyImportRow.class, new ExcelReadOptions(0, 1, 500, 100_000));
+```
+
+## 模板
+
+模板下载使用 `ExcelTemplateOperations` 门面。业务模块只声明行模型、示例数据、列宽和下拉策略，
+公共实现统一处理字体、表头、边框、冻结首行、隐藏字典 Sheet、命名区域和数据校验：
+
+```java
+ExcelTemplateSupport.SheetDefinition definition = new ExcelTemplateSupport.SheetDefinition(
+        "试剂", new int[]{20, 24}, Map.of(
+                1, new ExcelTemplateSupport.Dropdown("units", List.of("g", "mL"))));
+ExcelDocument template = ExcelTemplateOperations.write(
+        "试剂导入模板", List.of(new ExcelTemplateOperations.Sheet(
+                "试剂", ReagentRow.class, sampleRows, definition)));
+```
+
+下拉项使用隐藏字典和名称管理器承载，不受 Excel 直接列表 255 字符限制；同一个名称可以被多个
+Sheet 复用，不会重复创建或发生 Sheet 下标错位。
 
 默认读取第一个工作表、跳过一行表头、每 500 行回调一次，最多读取 100,000 行。超过上限、
 单元格转换失败或文件损坏时抛出 `ExcelProcessingException`。输入流同样由调用方关闭。
