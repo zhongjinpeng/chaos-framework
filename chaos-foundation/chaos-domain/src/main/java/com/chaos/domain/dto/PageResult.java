@@ -1,6 +1,8 @@
 package com.chaos.domain.dto;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * 标准分页查询结果。
@@ -18,5 +20,17 @@ public record PageResult<T>(List<T> records, long total, long pageNo, long pageS
      */
     public PageResult {
         records = List.copyOf(records);
+    }
+
+    /**
+     * 转换当前页的记录类型，同时保留分页元数据。
+     *
+     * @param mapper 记录转换函数
+     * @param <R> 目标记录类型
+     * @return 转换后的分页结果
+     */
+    public <R> PageResult<R> map(Function<? super T, ? extends R> mapper) {
+        Objects.requireNonNull(mapper, "mapper must not be null");
+        return new PageResult<>(records.stream().<R>map(mapper).toList(), total, pageNo, pageSize);
     }
 }

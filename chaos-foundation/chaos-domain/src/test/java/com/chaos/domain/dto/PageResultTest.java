@@ -84,4 +84,16 @@ class PageResultTest {
         assertTrue(str.contains("3"));
         assertTrue(str.contains("10"));
     }
+
+    @Test
+    void mapsRecordsAndPreservesPaginationMetadata() {
+        PageResult<Integer> result = new PageResult<>(List.of(1, 2), 50L, 3L, 10L);
+
+        PageResult<String> mapped = result.map(String::valueOf);
+
+        assertEquals(List.of("1", "2"), mapped.records());
+        assertEquals(50L, mapped.total());
+        assertEquals(3L, mapped.pageNo());
+        assertEquals(10L, mapped.pageSize());
+    }
 }

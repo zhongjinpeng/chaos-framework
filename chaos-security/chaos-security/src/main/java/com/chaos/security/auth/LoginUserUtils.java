@@ -1,5 +1,7 @@
 package com.chaos.security.auth;
 
+import com.chaos.core.exception.BizException;
+import com.chaos.core.exception.CommonErrorCode;
 import com.chaos.security.api.auth.LoginUser;
 import java.util.Optional;
 import java.util.Set;
@@ -28,11 +30,40 @@ public final class LoginUserUtils {
      * 获取当前登录用户，未登录时抛出异常。
      *
      * @return 已认证用户
-     * @throws IllegalStateException 当前请求没有已认证用户
+     * @throws BizException 当前请求没有已认证用户
      */
     public static LoginUser requiredUser() {
-        return currentUser().orElseThrow(() ->
-                new IllegalStateException("当前请求未认证登录用户"));
+        return currentUser().orElseThrow(() -> new BizException(CommonErrorCode.UNAUTHORIZED));
+    }
+
+    /** 获取必需的当前用户 ID。 */
+    public static String requiredUserId() {
+        String userId = requiredUser().userId();
+        if (!hasText(userId)) {
+            throw new BizException(CommonErrorCode.UNAUTHORIZED);
+        }
+        return userId;
+    }
+
+    /** 获取必需的当前租户 ID。 */
+    public static String requiredTenantId() {
+        String tenantId = requiredUser().tenantId();
+        if (!hasText(tenantId)) {
+            throw new BizException(CommonErrorCode.FORBIDDEN);
+        }
+        return tenantId;
+    }
+
+    /** 获取当前用户的展示标识，优先使用用户名，缺失时退回用户 ID。 */
+    public static String requiredUsernameOrUserId() {
+        LoginUser user = requiredUser();
+        if (hasText(user.username())) {
+            return user.username();
+        }
+        if (hasText(user.userId())) {
+            return user.userId();
+        }
+        throw new BizException(CommonErrorCode.UNAUTHORIZED);
     }
 
     /**
@@ -68,5 +99,9 @@ public final class LoginUserUtils {
      */
     public static Set<String> permissions() {
         return currentUser().map(LoginUser::permissions).orElseGet(Set::of);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }
