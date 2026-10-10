@@ -80,7 +80,7 @@
         <poi.version>5.4.1</poi.version>
         <commons-io.version>2.18.0</commons-io.version>
 
-        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
