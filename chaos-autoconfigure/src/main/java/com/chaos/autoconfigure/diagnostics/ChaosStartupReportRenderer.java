@@ -1,19 +1,16 @@
 package com.chaos.autoconfigure.diagnostics;
 
-import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.DisabledCategory;
-import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Feature;
+import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.EndpointStatus;
+import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.EndpointUrl;
 import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Finding;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.RuntimeDetails;
 import java.util.stream.Collectors;
 
 /**
  * 把 {@link ChaosFeatureReport} 渲染为紧凑的启动日志文本。
  *
- * <p>设计目标是"一屏看懂"：已启用功能每个一行并带关键配置；未启用功能按原因归类合并成一行，
- * 缺少依赖的功能通常是有意不引入，不逐条展开；诊断提示放在最后并按严重程度排序。</p>
+ * <p>设计目标是"一屏看懂"：只展示应用身份、运行地址以及需要处理的诊断提示。完整功能状态、
+ * 配置明细和无问题时的空诊断统一通过 Actuator Health 查询，避免启动日志被静态能力清单淹没。</p>
  */
 public final class ChaosStartupReportRenderer {
 
@@ -28,11 +25,34 @@ public final class ChaosStartupReportRenderer {
     public static String render(ChaosFeatureReport report) {
         StringBuilder builder = new StringBuilder();
         appendHeader(builder, report);
-        appendEnabled(builder, report);
-        appendDisabled(builder, report);
+        appendRuntime(builder, report.runtime());
         appendFindings(builder, report);
-        builder.append("\n  查看完整报告：暴露 actuator 端点 chaos（management.endpoints.web.exposure.include）后访问 /actuator/chaos");
         return builder.toString();
+    }
+
+    /**
+     * 运行环境与完整访问地址。
+     */
+    private static void appendRuntime(StringBuilder builder, RuntimeDetails runtime) {
+        if (runtime == null || "UNKNOWN".equals(runtime.webApplicationType())) {
+            return;
+        }
+        builder.append("\n  运行环境  类型=").append(runtime.webApplicationType())
+                .append(" | 绑定地址=").append(runtime.bindAddress());
+        if (runtime.applicationPort() != null) {
+            builder.append(" | 应用端口=").append(runtime.applicationPort());
+        }
+        if (runtime.managementPort() != null) {
+            builder.append(" | 管理端口=").append(runtime.managementPort());
+        }
+        if (!runtime.endpoints().isEmpty()) {
+            builder.append("\n  访问地址（").append(runtime.endpoints().size()).append("）");
+            for (EndpointUrl endpoint : runtime.endpoints()) {
+                builder.append("\n    ").append(pad(endpoint.name()))
+                        .append(endpoint.url())
+                        .append(" [").append(statusLabel(endpoint.status())).append(']');
+            }
+        }
     }
 
     /**
@@ -52,56 +72,13 @@ public final class ChaosStartupReportRenderer {
     }
 
     /**
-     * 已启用功能：每个一行，带关键配置。
-     */
-    private static void appendEnabled(StringBuilder builder, ChaosFeatureReport report) {
-        List<Feature> enabled = report.enabledFeatures();
-        builder.append("\n  已启用（").append(enabled.size()).append("）");
-        if (enabled.isEmpty()) {
-            builder.append("\n    无：没有引入任何 chaos 功能 starter");
-        }
-        for (Feature feature : enabled) {
-            builder.append("\n    ").append(pad(feature.name()));
-            if (!feature.settings().isEmpty()) {
-                builder.append(feature.settings().entrySet().stream()
-                        .map(entry -> entry.getKey() + "=" + entry.getValue())
-                        .collect(Collectors.joining(", ")));
-            }
-        }
-    }
-
-    /**
-     * 未启用功能：按原因归类合并，缺依赖的只列功能名（通常是有意不引入）。
-     */
-    private static void appendDisabled(StringBuilder builder, ChaosFeatureReport report) {
-        Map<DisabledCategory, List<Feature>> disabled = new EnumMap<>(DisabledCategory.class);
-        report.features().stream()
-                .filter(feature -> !feature.enabled())
-                .forEach(feature -> disabled.computeIfAbsent(feature.category(), key -> new ArrayList<>()).add(feature));
-        if (disabled.isEmpty()) {
-            return;
-        }
-        builder.append("\n  未启用");
-        disabled.forEach((category, features) -> {
-            builder.append("\n    ").append(pad(label(category)));
-            if (category == DisabledCategory.MISSING_DEPENDENCY || category == DisabledCategory.WEB_APPLICATION_TYPE) {
-                builder.append(features.stream().map(Feature::name).collect(Collectors.joining(", ")));
-            } else {
-                builder.append(features.stream()
-                        .map(feature -> feature.name() + "（" + feature.reason() + "）")
-                        .collect(Collectors.joining("; ")));
-            }
-        });
-    }
-
-    /**
-     * 诊断提示：按严重程度排序，每条都带"怎么修"。
+     * 诊断提示：没有问题时不占日志空间；存在问题时每条都带"怎么修"。
      */
     private static void appendFindings(StringBuilder builder, ChaosFeatureReport report) {
-        builder.append("\n  诊断（").append(report.findings().size()).append("）");
         if (report.findings().isEmpty()) {
-            builder.append("\n    未发现问题");
+            return;
         }
+        builder.append("\n  诊断（").append(report.findings().size()).append("）");
         for (Finding finding : report.findings()) {
             builder.append("\n    [").append(finding.severity()).append("] ").append(finding.feature())
                     .append("：").append(finding.problem())
@@ -109,14 +86,12 @@ public final class ChaosStartupReportRenderer {
         }
     }
 
-    private static String label(DisabledCategory category) {
-        return switch (category) {
-            case MISSING_DEPENDENCY -> "缺少依赖";
-            case WEB_APPLICATION_TYPE -> "应用类型不符";
-            case DISABLED_BY_PROPERTY -> "被配置关闭";
-            case EXCLUDED -> "被排除";
-            case NOT_IMPORTED -> "未导入";
-            case OTHER, NONE -> "其他";
+    private static String statusLabel(EndpointStatus status) {
+        return switch (status) {
+            case ENABLED -> "已启用";
+            case EXPOSED -> "已暴露";
+            case NOT_EXPOSED -> "未暴露";
+            case DISABLED -> "已关闭";
         };
     }
 

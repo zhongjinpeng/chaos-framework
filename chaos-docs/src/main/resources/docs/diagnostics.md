@@ -1,9 +1,9 @@
-# 启动诊断：启动报告、/actuator/chaos 与可操作的错误提示
+# 运行诊断：启动报告、Actuator Health 与可操作的错误提示
 
 使用方最常见的两个问题是"我引入的功能到底生效了没有"和"启动失败了该改什么"。chaos 在 `chaos-autoconfigure` 中提供三件工具：
 
-1. **启动报告**：应用启动完成后在日志中输出一次，列出已启用的功能与关键配置、未启用的原因、诊断提示。
-2. **`/actuator/chaos` 端点**：以 JSON 返回与启动报告相同的内容，便于运行期排查或接入巡检。
+1. **启动报告**：应用启动完成后在日志中输出一次，只保留运行摘要、完整访问地址和需要处理的诊断提示。
+2. **`/actuator/health`**：通过 `chaosRuntime` 健康组件返回完整诊断报告，不再增加独立的 Chaos 端点。
 3. **可操作的错误提示**：框架抛出的启动失败与配置错误统一使用"问题 / 原因 / 怎么修"格式。
 
 ## 1. 启动报告
@@ -12,31 +12,29 @@
 
 ```text
 Chaos 启动报告 | 应用 example-gateway | profile [default] | 生产模式 否 | fail-fast 开
-  已启用（4）
-    tenant           servlet-filter=false
-    audit            publisher=LoggingAuditEventPublisher
-    gateway          token.type=jwt, jwk-set-uri=http://localhost:9000, issuer-uri=http://localhost:9000, audiences=1, rate-limiter=InMemoryRateLimiter, trusted-proxies=0
-    cloud-nacos
-  未启用
-    缺少依赖         web, application, audit-jdbc, security, security-redis, authorization, gateway-nacos, cloud, mybatis, redis, mq, mq-outbox, job, storage
+  运行环境  类型=REACTIVE | 绑定地址=0.0.0.0 | 应用端口=8080 | 管理端口=8080
+  访问地址（3）
+    application      http://localhost:8080/ [已启用]
+    actuator         http://localhost:8080/actuator [已暴露]
+    health           http://localhost:8080/actuator/health [已暴露]
   诊断（1）
     [INFO] production-safety：当前使用开发用实现 InMemoryRateLimiter，以生产 profile 启动时会被生产安全检查阻断
            怎么修：上线前引入 chaos-redis-starter 并配置 spring.data.redis.*，Redis 实现会自动替换这些兜底实现
-  查看完整报告：暴露 actuator 端点 chaos（management.endpoints.web.exposure.include）后访问 /actuator/chaos
 ```
 
-（功能列表随引入的 starter 变化；`jwk-set-uri` 等 URL 只显示 scheme、host、port。）
+没有诊断提示时不输出“诊断（0）”；功能清单和配置明细统一通过 `/actuator/health` 查询。
 
 阅读方式：
 
 | 区块 | 含义 |
 | --- | --- |
 | 抬头 | 应用名、激活的 profile、是否被识别为生产模式（决定生产安全检查是否生效）、fail-fast 是否开启 |
-| 已启用 | 功能名与 starter 名一致（`web` ↔ `chaos-web-starter`）；后面是关键生效配置，URL 只保留 scheme/host/port，敏感键整体掩码 |
-| 未启用 | 按原因归类：**缺少依赖**（没引对应 starter，通常是有意的）、**应用类型不符**（例如网关只在 WebFlux 应用生效）、**被配置关闭**、**被排除**、**未导入** |
+| 运行环境 | Web 类型、绑定地址、实际应用端口和管理端口 |
+| 访问地址 | 应用、Actuator、Health、OpenAPI 和 Swagger UI 等入口的完整 URL 及启用/暴露状态 |
 | 诊断 | 内置规则与业务自定义规则的提示，按 ERROR → WARN → INFO 排序，每条都带"怎么修" |
 
-"是否启用"以自动装配类是否注册为 Bean 为准，"未启用原因"直接取自 Spring Boot 的 `ConditionEvaluationReport`（与 `--debug` 输出同源），不会与真实装配结果不一致。
+完整报告中的“是否启用”以自动装配类是否注册为 Bean 为准，“未启用原因”直接取自 Spring Boot 的
+`ConditionEvaluationReport`（与 `--debug` 输出同源），不会与真实装配结果不一致。
 
 配置：
 
@@ -48,6 +46,9 @@ Chaos 启动报告 | 应用 example-gateway | profile [default] | 生产模式 �
 
 日志 logger 名固定为 `com.chaos.StartupReport`，可以单独调整级别或输出目标。
 
+功能状态、YAML 配置、系统环境变量和 JVM 属性不会写入启动日志，避免日志体积膨胀及运行环境信息进入日志采集系统；
+这些明细统一放在下文的 `/actuator/health` 中。
+
 ### 自定义启动标识
 
 报告抬头默认只有应用名、profile、生产模式和 fail-fast。排查线上问题时通常还要知道是哪个版本、哪个实例、哪个机房，
@@ -56,7 +57,6 @@ Chaos 启动报告 | 应用 example-gateway | profile [default] | 生产模式 �
 ```text
 Chaos 启动报告 | 应用 example-gateway | profile [prod] | 生产模式 是 | fail-fast 开
   标识  版本=1.4.2 | 构建号=3871 | 实例=gateway-7d9f6c | 可用区=cn-hangzhou-b
-  已启用（4）
 ```
 
 构建期就确定的静态值写配置：
@@ -92,7 +92,7 @@ ChaosStartupIdentifierContributor deploymentIdentifiers(Environment environment)
   （比如把机房标成"灰度"）只需改配置，不必改代码重新发布。
 - 贡献者抛异常只记 debug 日志，不影响启动，其余标识照常输出——标识是辅助信息，不该成为启动的新失败点。
 - 值经过与其他配置相同的脱敏：键名含 `password` / `secret` / `token` 等字样时只显示掩码。
-- 标识同时出现在启动日志和 `/actuator/chaos` 响应里，两处内容一致。
+- 标识同时出现在启动日志和 `/actuator/health` 的 `chaosRuntime` 详情中，两处内容一致。
 
 ### 框架 banner
 
@@ -131,43 +131,85 @@ ChaosStartupIdentifierContributor deploymentIdentifiers(Environment environment)
 `addDefaultImplementationEntries`；用自己公司级 parent（只 import BOM）的项目要自己配上，
 否则那一段是空的。
 
-## 2. `/actuator/chaos` 端点
+## 2. `/actuator/health`
 
-端点默认访问级别为只读，并与其他 actuator 端点一样**默认不通过 HTTP 暴露**：
+存在 Spring Boot Actuator 时，框架自动注册名为 `chaosRuntime` 的健康组件。它不探测外部依赖，状态固定为
+`UP`，完整信息位于聚合健康响应的 `components.chaosRuntime.details`：
 
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus,chaos
-```
+- 应用名、服务版本、构建时间、启动时间、运行时长、profile、生产模式与 fail-fast 状态；
+- 已启用的框架能力及关键配置；未引入模块不再作为“缺少依赖”输出；
+- 诊断问题和修复建议；
+- Web 类型、绑定地址、应用端口、管理端口和完整访问 URL；
+- YAML 配置来源及声明键的最终生效值；
+- 与应用、Spring、Java 和部署环境相关的系统环境变量；
+- Java、操作系统及 Spring 运行参数等必要 JVM 系统属性。
+
+空的标识、诊断、配置项不会输出。`PATH`、`HOME`、完整 classpath、IDE 调试参数等既冗长又可能暴露
+运行目录的信息默认被过滤；密钥、令牌、密码和连接串凭据继续统一脱敏。
+
+只需调用标准聚合健康端点：
 
 ```bash
-curl http://localhost:8081/actuator/chaos
+curl http://localhost:8080/actuator/health
 ```
 
-返回结构（节选）：
+详情结构（节选）：
 
 ```json
 {
-  "application": "example-order-service",
-  "activeProfiles": ["jwt-token"],
-  "productionMode": false,
-  "failFast": true,
-  "features": [
-    {"name": "web", "enabled": true, "category": "NONE", "reason": "",
-     "settings": {"rate-limiter": "RedissonRateLimiter", "idempotent-repository": "RedissonIdempotentRepository"}},
-    {"name": "gateway", "enabled": false, "category": "MISSING_DEPENDENCY",
-     "reason": "@ConditionalOnClass did not find required class 'org.springframework.cloud.gateway.filter.GlobalFilter'", "settings": {}}
-  ],
-  "findings": [
-    {"severity": "WARN", "feature": "redis", "problem": "chaos.redis.key-prefix 未配置……", "fix": "配置 chaos.redis.key-prefix=${spring.application.name}"}
-  ]
+  "status": "UP",
+  "components": {
+    "chaosRuntime": {
+      "status": "UP",
+      "details": {
+        "application": "example-order-service",
+        "serviceVersion": "1.4.2",
+        "buildTime": "2026-10-10T06:55:00Z",
+        "startedAt": "2026-10-10T07:00:00Z",
+        "uptimeSeconds": 90,
+        "activeProfiles": ["dev"],
+        "productionMode": false,
+        "failFast": true,
+        "features": [
+          {"name": "web"}
+        ],
+        "runtime": {
+          "webApplicationType": "SERVLET",
+          "bindAddress": "0.0.0.0",
+          "applicationPort": 8080,
+          "managementPort": 8080,
+          "endpoints": [],
+          "configurationSources": ["class path resource [application.yml]"],
+          "effectiveYamlConfiguration": {"spring.datasource.password": "******"},
+          "systemEnvironment": {"SPRING_PROFILES_ACTIVE": "dev"},
+          "jvmSystemProperties": {"java.version": "21.0.10", "os.arch": "aarch64"}
+        }
+      }
+    }
+  }
 }
 ```
 
-**安全提示**：报告中的配置值已脱敏，但仍会暴露应用由哪些功能组成、授权服务器地址和实现类名。生产环境只应在管理端口（`management.server.port`）或内网开放，并与其他 actuator 端点一起纳入访问控制；网关的默认白名单只放行 `/actuator/health/**`，不会对外暴露该端点。
+Chaos 默认将 `management.endpoint.health.show-components` 和 `show-details` 设为 `always`，业务服务无需重复配置。
+同时默认关闭没有实际依赖探测价值的 `ping`、空 SSL、refresh scope 以及未初始化的 Discovery 健康项，保留磁盘、
+数据库、Redis 等真实依赖指标。所有默认值使用最低优先级，业务配置可以覆盖。
+
+生产环境同样可以使用 `always`，但应把管理端点放在独立管理端口或内网并配置访问控制。框架会屏蔽键名含
+`password`、`secret`、`token`、`private-key`、`access-key`、`api-key` 的值，
+并清理 URL 凭据、查询参数、Bearer token 和 JVM `-D` 敏感参数，但键名和运行环境结构本身仍可能属于敏感信息。
+
+三类配置明细默认采集并筛选，可用一个开关整体关闭；关闭后仍保留运行摘要和完整 URL：
+
+```yaml
+chaos:
+  diagnostics:
+    runtime-health:
+      include-configuration-details: false
+```
+
+| 配置项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `chaos.diagnostics.runtime-health.include-configuration-details` | `true` | 是否在 `chaosRuntime` 健康详情中包含 YAML 生效配置、系统环境变量和 JVM 属性 |
 
 ## 3. 诊断规则
 
@@ -185,7 +227,7 @@ curl http://localhost:8081/actuator/chaos
 
 ### 自定义规则
 
-注册 `ChaosDiagnosticRule` Bean 即可，结果会出现在启动报告与端点中：
+注册 `ChaosDiagnosticRule` Bean 即可，结果会出现在启动报告与 `/actuator/health` 中：
 
 ```java
 @Bean

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport;
 import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport.ConditionAndOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport.ConditionAndOutcomes;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 
 /**
@@ -39,6 +40,8 @@ public class ChaosFeatureReporter {
 
     private final List<ChaosStartupIdentifierContributor> identifierContributors;
 
+    private final ChaosRuntimeReportCollector runtimeReportCollector;
+
     /**
      * 创建报告构建器，不带自定义启动标识。
      */
@@ -46,7 +49,7 @@ public class ChaosFeatureReporter {
             ConfigurableListableBeanFactory beanFactory,
             Environment environment,
             List<ChaosDiagnosticRule> rules) {
-        this(beanFactory, environment, rules, Map.of(), List.of());
+        this(beanFactory, environment, null, rules, Map.of(), List.of(), true);
     }
 
     /**
@@ -64,6 +67,28 @@ public class ChaosFeatureReporter {
             List<ChaosDiagnosticRule> rules,
             Map<String, String> configuredIdentifiers,
             List<ChaosStartupIdentifierContributor> identifierContributors) {
+        this(beanFactory, environment, null, rules, configuredIdentifiers, identifierContributors, true);
+    }
+
+    /**
+     * 创建包含运行环境与配置明细的报告构建器。
+     *
+     * @param beanFactory Bean 工厂
+     * @param environment Spring 环境
+     * @param applicationContext 应用上下文，用于识别实际 Web 类型与端口
+     * @param rules 诊断规则（内置规则 + 业务自定义规则）
+     * @param configuredIdentifiers 配置中声明的静态启动标识
+     * @param identifierContributors 运行期动态标识贡献者
+     * @param includeConfigurationDetails 是否包含 YAML、环境变量和 JVM 属性
+     */
+    public ChaosFeatureReporter(
+            ConfigurableListableBeanFactory beanFactory,
+            Environment environment,
+            ApplicationContext applicationContext,
+            List<ChaosDiagnosticRule> rules,
+            Map<String, String> configuredIdentifiers,
+            List<ChaosStartupIdentifierContributor> identifierContributors,
+            boolean includeConfigurationDetails) {
         this.beanFactory = beanFactory;
         this.environment = environment;
         this.rules = List.copyOf(rules);
@@ -72,6 +97,8 @@ public class ChaosFeatureReporter {
                 ? Map.of()
                 : Collections.unmodifiableMap(new LinkedHashMap<>(configuredIdentifiers));
         this.identifierContributors = identifierContributors == null ? List.of() : List.copyOf(identifierContributors);
+        this.runtimeReportCollector = new ChaosRuntimeReportCollector(
+                environment, applicationContext, includeConfigurationDetails);
     }
 
     /**
@@ -121,7 +148,8 @@ public class ChaosFeatureReporter {
                 ProductionSafety.isFailFast(environment),
                 identifiers(),
                 features,
-                findings);
+                findings,
+                runtimeReportCollector.collect());
     }
 
     /**

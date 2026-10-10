@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- 精简 `/actuator/health` 中的 `chaosRuntime`：仅展示已启用能力并省略空区块，过滤 shell、classpath 与 IDE 噪声。
+- 增加服务版本、构建时间、启动时间和运行时长；`chaos-boot-parent` 默认生成 Spring Boot build-info。
+- 由框架提供完整 Health 详情与低价值健康指标的低优先级默认值，业务服务无需重复配置。
+
 所有重要变更都记录在这里。版本格式遵循语义化版本：`MAJOR.MINOR.PATCH`。
 
 ## 1.0.0 — 2026-09-16
@@ -187,8 +193,9 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 
 ### Added（1.0 易用性：启动诊断）
 
-- **diagnostics**：启动完成后输出 Chaos 启动报告（已启用功能与关键配置、未启用原因分类、诊断提示），配置值脱敏；
-  `chaos.diagnostics.startup-report.enabled` / `level` 控制。新增只读 actuator 端点 `/actuator/chaos`（默认不暴露）。
+- **diagnostics**：启动完成后输出精简 Chaos 启动报告（运行摘要、完整访问地址和有效诊断），配置值脱敏；
+  `chaos.diagnostics.startup-report.enabled` / `level` 控制。完整功能状态与配置明细统一返回到 `/actuator/health`
+  的 `chaosRuntime` 组件，不增加独立 actuator 端点。
 - **diagnostics**：新增 `ChaosDiagnosticRule` SPI 与内置规则（Redis key 前缀、开发用实现提前提示、网关 issuer/audiences、可信代理、
   生产安全被放宽、网关应用混入 chaos-web）。
 - **core**：新增 `ChaosDiagnostic` / `ChaosDiagnosticException`（继承 `IllegalStateException`），框架配置错误统一输出"问题 / 原因 / 怎么修"：
@@ -198,7 +205,7 @@ starter 只聚合依赖、不含 Java 代码，分场景 starter 与能力 start
 - **mq**：JDBC outbox 缺表时启动输出带方言建表脚本路径的 WARN（`chaos.diagnostics.outbox-schema-check.enabled`）。
 - **autoconfigure**：`chaos-autoconfigure` 新增对 `chaos-core` 的 compile 依赖（纯 Java、无三方依赖）。
 - **diagnostics**：启动报告抬头支持自定义标识（版本号、构建号、实例、机房），渲染成抬头下的一行「标识」，
-  同时出现在 `/actuator/chaos` 响应里。静态值配 `chaos.diagnostics.startup-report.identifiers`，
+  同时出现在 `/actuator/health` 的 `chaosRuntime` 详情里。静态值配 `chaos.diagnostics.startup-report.identifiers`，
   运行期才知道的值（hostname、Pod 名、可用区）注册 `ChaosStartupIdentifierContributor` Bean；
   同名 key 以配置为准，这样线上改标识不必改代码重新发布。贡献者抛异常只记 debug 日志、不影响启动，
   值按与其他配置相同的规则脱敏。注意中文 key 必须写成 `"[中文]"`，否则 Spring 宽松绑定会剥掉这些字符。

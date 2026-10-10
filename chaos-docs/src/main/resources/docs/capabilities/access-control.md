@@ -172,7 +172,8 @@ chaos:
 
 - 拒绝时上报 `chaos.security.access.denied`，标签 `source=permission`（`@Permission`）或 `source=require-access`（`@RequireAccess`）。
 - 拒绝时发布审计事件 `security.permission.denied`，属性含 `action`、命中的 `policy`、`resourceType`、`resourceId`。
-- 启动报告与 `/actuator/chaos` 的 `security` 一节展示 `access.policies`（策略条数）、`access.combining-algorithm`、
+- `/actuator/health` 的 `components.chaosRuntime.details.features` 展示 `security` 能力的
+  `access.policies`（策略条数）、`access.combining-algorithm`、
   `access.wildcard-permission`、`access.admin-roles`、`access.policy-source`；`gateway` 一节展示
   `access.enabled`、`access.rules`、`access.policies`。
 - 网关拒绝时上报同一个指标，标签 `source=gateway`。

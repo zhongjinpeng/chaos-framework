@@ -27,7 +27,7 @@
 - [配置模板：开发 / 生产最小配置](templates/README.md)
 - [生产检查清单：业务服务](checklists/web-service.md) · [网关](checklists/gateway.md) · [授权服务器](checklists/auth-server.md)
 - [Configuration Reference：全部配置项（自动生成）](configuration-reference.md)
-- [启动诊断：启动报告、/actuator/chaos 与错误提示](diagnostics.md)
+- [运行诊断：启动报告、Actuator Health 与错误提示](diagnostics.md)
 
 **框架设计与治理**
 

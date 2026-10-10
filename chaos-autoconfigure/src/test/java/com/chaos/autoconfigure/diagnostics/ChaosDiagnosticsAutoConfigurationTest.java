@@ -10,6 +10,7 @@ import com.chaos.autoconfigure.gateway.ChaosGatewayAutoConfiguration;
 import com.chaos.autoconfigure.job.ChaosJobAutoConfiguration;
 import com.chaos.core.diagnostic.ChaosDiagnosticException;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -66,8 +67,8 @@ class ChaosDiagnosticsAutoConfigurationTest {
                 new ContextRefreshedEvent(context.getSourceApplicationContext())));
 
         assertThat(output).contains("Chaos 启动报告 | 应用 diagnostics-demo");
-        assertThat(output).contains("已启用（1）").contains("job");
-        assertThat(output).contains("应用类型不符").contains("gateway");
+        assertThat(output).doesNotContain(
+                "已启用（", "未启用", "诊断（0）", "YAML 最终生效配置", "系统环境变量", "JVM 系统属性");
         assertThat(output.toString().split("Chaos 启动报告", -1)).hasSize(2);
     }
 
@@ -82,6 +83,59 @@ class ChaosDiagnosticsAutoConfigurationTest {
                 .run(context -> assertThat(context).hasSingleBean(ChaosStartupReportLogger.class));
 
         assertThat(output).doesNotContain("Chaos 启动报告");
+    }
+
+    /**
+     * 健康组件默认返回配置明细，也可以通过统一开关整体关闭。
+     */
+    @Test
+    void configurationDetailsShouldBeEnabledByDefaultAndCanBeDisabled() {
+        contextRunner.run(context -> {
+            assertThat(context).hasSingleBean(ChaosRuntimeHealthIndicator.class);
+            Map<String, Object> runtime = healthRuntime(context.getBean(ChaosRuntimeHealthIndicator.class));
+            assertThat((Map<?, ?>) runtime.get("systemEnvironment")).isNotEmpty();
+            assertThat((Map<?, ?>) runtime.get("jvmSystemProperties")).isNotEmpty();
+        });
+        contextRunner.withPropertyValues(
+                        "chaos.diagnostics.runtime-health.include-configuration-details=false")
+                .run(context -> {
+                    Map<String, Object> runtime = healthRuntime(context.getBean(ChaosRuntimeHealthIndicator.class));
+                    assertThat(runtime).doesNotContainKeys(
+                            "configurationSources",
+                            "effectiveYamlConfiguration",
+                            "systemEnvironment",
+                            "jvmSystemProperties");
+                });
+    }
+
+    /**
+     * 框架统一提供健康详情和噪声指标默认值，业务配置可以按需覆盖。
+     */
+    @Test
+    void healthDefaultsShouldBeProvidedByFrameworkAndRemainOverridable() {
+        contextRunner.run(context -> {
+            assertThat(context.getEnvironment().getProperty("management.endpoint.health.show-components"))
+                    .isEqualTo("always");
+            assertThat(context.getEnvironment().getProperty("management.endpoint.health.show-details"))
+                    .isEqualTo("always");
+            assertThat(context.getEnvironment().getProperty("management.health.ping.enabled", Boolean.class))
+                    .isFalse();
+            assertThat(context.getEnvironment().getProperty(
+                            "spring.cloud.discovery.client.health-indicator.enabled", Boolean.class))
+                    .isFalse();
+        });
+
+        contextRunner
+                .withPropertyValues(
+                        "management.endpoint.health.show-details=never",
+                        "management.health.ping.enabled=true")
+                .run(context -> {
+                    assertThat(context.getEnvironment().getProperty("management.endpoint.health.show-details"))
+                            .isEqualTo("never");
+                    assertThat(context.getEnvironment().getProperty(
+                                    "management.health.ping.enabled", Boolean.class))
+                            .isTrue();
+                });
     }
 
     /**
@@ -107,18 +161,6 @@ class ChaosDiagnosticsAutoConfigurationTest {
         contextRunner.withUserConfiguration(CustomRuleConfiguration.class).run(context -> {
             List<Finding> findings = context.getBean(ChaosFeatureReporter.class).build().findings();
             assertThat(findings).extracting(Finding::problem).contains("custom-problem");
-        });
-    }
-
-    /**
-     * 端点默认不暴露；显式暴露后返回与日志相同的报告。
-     */
-    @Test
-    void endpointShouldRequireExplicitExposure() {
-        contextRunner.run(context -> assertThat(context).doesNotHaveBean(ChaosEndpoint.class));
-        contextRunner.withPropertyValues("management.endpoints.web.exposure.include=chaos").run(context -> {
-            ChaosFeatureReport report = context.getBean(ChaosEndpoint.class).report();
-            assertThat(feature(report, "job").enabled()).isTrue();
         });
     }
 
@@ -152,6 +194,11 @@ class ChaosDiagnosticsAutoConfigurationTest {
 
     private static Feature feature(ChaosFeatureReport report, String name) {
         return report.features().stream().filter(feature -> feature.name().equals(name)).findFirst().orElseThrow();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> healthRuntime(ChaosRuntimeHealthIndicator indicator) {
+        return (Map<String, Object>) indicator.health().getDetails().get("runtime");
     }
 
     @Configuration(proxyBeanMethods = false)

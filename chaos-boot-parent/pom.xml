@@ -149,6 +149,13 @@
                                 <goal>repackage</goal>
                             </goals>
                         </execution>
+                        <execution>
+                            <id>build-info</id>
+                            <goals>
+                                <!-- 为健康详情生成服务版本与构建时间，避免依赖运行方式猜测版本。 -->
+                                <goal>build-info</goal>
+                            </goals>
+                        </execution>
                     </executions>
                 </plugin>
             </plugins>

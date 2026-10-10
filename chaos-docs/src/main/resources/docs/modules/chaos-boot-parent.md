@@ -10,6 +10,7 @@
 - **测试**：surefire 运行 `*Test`，failsafe 运行 `*IT`（已绑定 `integration-test` / `verify`）。
 - **打包**：`spring-boot-maven-plugin` 预置 `repackage`，应用模块声明插件坐标即可生成可执行 jar；
   jar 的 `MANIFEST.MF` 带 `Implementation-Title` / `Implementation-Version`（`addDefaultImplementationEntries`），
+  并生成 `META-INF/build-info.properties`，供 `/actuator/health` 展示服务版本与构建时间，
   否则 banner 与 Spring Boot 的 `${application.version}` 取不到应用版本。
 
 ## 使用方式

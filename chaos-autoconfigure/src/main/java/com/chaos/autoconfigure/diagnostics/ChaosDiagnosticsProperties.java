@@ -22,6 +22,13 @@ public class ChaosDiagnosticsProperties {
     private StartupReport startupReport = new StartupReport();
 
     /**
+     * 运行环境健康详情配置。
+     */
+    @Valid
+    @NotNull(message = "chaos.diagnostics.runtime-health must not be null")
+    private RuntimeHealth runtimeHealth = new RuntimeHealth();
+
+    /**
      * Web 运行栈检查配置。
      */
     @Valid
@@ -41,6 +48,14 @@ public class ChaosDiagnosticsProperties {
 
     public void setStartupReport(StartupReport startupReport) {
         this.startupReport = startupReport == null ? new StartupReport() : startupReport;
+    }
+
+    public RuntimeHealth getRuntimeHealth() {
+        return runtimeHealth;
+    }
+
+    public void setRuntimeHealth(RuntimeHealth runtimeHealth) {
+        this.runtimeHealth = runtimeHealth == null ? new RuntimeHealth() : runtimeHealth;
     }
 
     public WebStackCheck getWebStackCheck() {
@@ -65,7 +80,7 @@ public class ChaosDiagnosticsProperties {
     public static class StartupReport {
 
         /**
-         * 是否在应用启动完成后输出 Chaos 启动报告（已启用功能、关键配置、诊断提示），默认开启。
+         * 是否在应用启动完成后输出 Chaos 启动报告（运行摘要、访问地址、诊断提示），默认开启。
          */
         private boolean enabled = true;
 
@@ -106,6 +121,29 @@ public class ChaosDiagnosticsProperties {
 
         public void setLevel(ReportLevel level) {
             this.level = level == null ? ReportLevel.INFO : level;
+        }
+    }
+
+    /**
+     * 运行环境健康详情配置。
+     */
+    public static class RuntimeHealth {
+
+        /**
+         * 是否采集 YAML 最终生效配置、系统环境变量和 JVM 系统属性，默认开启。
+         *
+         * <p>这些明细不写入启动日志，只通过 Actuator 的 {@code chaosRuntime} 健康组件返回，且所有值
+         * 在进入健康详情前统一脱敏。对运行环境信息披露有严格限制时可关闭；应用类型、实际端口和完整
+         * 端点 URL 不受此开关影响。</p>
+         */
+        private boolean includeConfigurationDetails = true;
+
+        public boolean isIncludeConfigurationDetails() {
+            return includeConfigurationDetails;
+        }
+
+        public void setIncludeConfigurationDetails(boolean includeConfigurationDetails) {
+            this.includeConfigurationDetails = includeConfigurationDetails;
         }
     }
 

@@ -39,7 +39,7 @@
 
 ## 6. 可观测性与验证
 
-- [ ] 启动报告无 WARN 诊断；`/actuator/chaos` 未暴露到公网。
+- [ ] 启动报告无 WARN 诊断；`/actuator/health` 的完整详情按部署要求配置了访问边界。
 - [ ] 验证：登录 → 访问业务接口 → 注销 → 同一 token 立即失效；连续输错密码触发锁定。
 
 参考：[chaos-authorization](../modules/chaos-authorization.md) · [启动诊断](../diagnostics.md) · [配置参考](../configuration-reference.md)

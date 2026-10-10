@@ -66,24 +66,21 @@ mvn verify
 mvn spring-boot:run
 ```
 
-日志中会出现类似内容（说明哪些能力已启用、用的是什么实现、有什么需要注意）：
+日志中会出现类似内容（只保留运行地址和需要处理的问题）：
 
 ```text
 Chaos 启动报告 | 应用 todo-service | profile [default] | 生产模式 否 | fail-fast 开
-  已启用（5）
-    web              rate-limiter=InMemoryRateLimiter, idempotent-repository=InMemoryIdempotentRepository, trusted-proxies=0, ...
-    application
-    tenant           servlet-filter=false
-    audit            publisher=LoggingAuditEventPublisher
-    security         token.type=JWT, jwk-set-uri=http://localhost:9000, ...
-  未启用
-    缺少依赖         audit-jdbc, security-redis, ..., mybatis, redis, mq, job, storage
+  运行环境  类型=SERVLET | 绑定地址=0.0.0.0 | 应用端口=8080 | 管理端口=8080
+  访问地址（3）
+    application      http://localhost:8080/ [已启用]
+    actuator         http://localhost:8080/actuator [已暴露]
+    health           http://localhost:8080/actuator/health [已暴露]
   诊断（1）
     [INFO] production-safety：当前使用开发用实现 InMemoryRateLimiter、InMemoryIdempotentRepository、NoopJwtRevocationService，以生产 profile 启动时会被生产安全检查阻断
            怎么修：上线前引入 chaos-redis-starter 并配置 spring.data.redis.*，Redis 实现会自动替换这些兜底实现
 ```
 
-报告各字段含义与 `/actuator/chaos` 端点见 [启动诊断](diagnostics.md)。
+完整功能状态、配置明细及报告字段说明见 [`/actuator/health`](diagnostics.md)。
 
 ## 第三步：调用接口
 

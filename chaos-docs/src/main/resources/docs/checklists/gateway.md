@@ -44,8 +44,8 @@
 
 ## 7. 可观测性与验证
 
-- [ ] 启动报告中限流实现为 Redis 版、`trusted-proxies` 数量正确、无 WARN 诊断。
-- [ ] `/actuator/chaos` 未暴露到公网。
+- [ ] 启动报告无 WARN 诊断；`/actuator/health` 中限流实现为 Redis 版、`trusted-proxies` 数量正确。
+- [ ] `/actuator/health` 的完整详情按部署要求配置了访问边界。
 - [ ] 伪造 `X-User-Id` / `X-Forwarded-For` 请求验证：下游收不到伪造头，限流与黑名单按真实 IP 生效。
 
 参考：[启动诊断](../diagnostics.md) · [chaos-gateway 安全模型](../modules/chaos-gateway.md) · [配置参考](../configuration-reference.md)
