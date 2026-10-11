@@ -75,6 +75,13 @@ public class ChaosGatewayProperties {
     private Map<String, OAuth2Client> oauth2Clients = new LinkedHashMap<>();
 
     /**
+     * 网关跨域访问配置；默认关闭，开启后由 Chaos 写入 Spring Cloud Gateway 的全局 CORS 配置。
+     */
+    @Valid
+    @NotNull(message = "chaos.gateway.cors must not be null")
+    private Cors cors = new Cors();
+
+    /**
      * JWT 校验配置。
      */
     @Valid
@@ -190,6 +197,14 @@ public class ChaosGatewayProperties {
         this.oauth2Clients = oauth2Clients == null
                 ? new LinkedHashMap<>()
                 : new LinkedHashMap<>(oauth2Clients);
+    }
+
+    public Cors getCors() {
+        return cors;
+    }
+
+    public void setCors(Cors cors) {
+        this.cors = cors == null ? new Cors() : cors;
     }
 
     public Jwt getJwt() {
@@ -497,6 +512,105 @@ public class ChaosGatewayProperties {
 
         public void setClientSecret(String clientSecret) {
             this.clientSecret = clientSecret;
+        }
+    }
+
+    /**
+     * Gateway 全局 CORS 配置。
+     */
+    public static class Cors {
+
+        /**
+         * 是否启用 Chaos 提供的 Gateway CORS 自动配置；默认关闭，避免升级后意外开放跨域访问。
+         */
+        private boolean enabled = false;
+
+        /**
+         * CORS 规则适用的路径模式。
+         */
+        @NotBlank(message = "chaos.gateway.cors.path-pattern must not be blank")
+        private String pathPattern = "/**";
+
+        /**
+         * 允许跨域访问网关的精确来源；开启 CORS 时至少配置一个来源，不应使用通配符。
+         */
+        private List<String> allowedOrigins = new ArrayList<>();
+
+        /**
+         * 允许的跨域请求方法。
+         */
+        private List<String> allowedMethods = new ArrayList<>(List.of("GET", "POST", "OPTIONS"));
+
+        /**
+         * 允许浏览器跨域发送的请求头。
+         */
+        private List<String> allowedHeaders = new ArrayList<>(List.of("Authorization", "Content-Type", "Accept"));
+
+        /**
+         * 是否允许浏览器携带凭据；启用时 allowed-origins 必须使用精确来源。
+         */
+        private boolean allowCredentials = true;
+
+        /**
+         * 浏览器缓存预检结果的时长。
+         */
+        @NotNull(message = "chaos.gateway.cors.max-age must not be null")
+        private Duration maxAge = Duration.ofMinutes(30);
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getPathPattern() {
+            return pathPattern;
+        }
+
+        public void setPathPattern(String pathPattern) {
+            this.pathPattern = pathPattern;
+        }
+
+        public List<String> getAllowedOrigins() {
+            return List.copyOf(allowedOrigins);
+        }
+
+        public void setAllowedOrigins(List<String> allowedOrigins) {
+            this.allowedOrigins = allowedOrigins == null ? new ArrayList<>() : new ArrayList<>(allowedOrigins);
+        }
+
+        public List<String> getAllowedMethods() {
+            return List.copyOf(allowedMethods);
+        }
+
+        public void setAllowedMethods(List<String> allowedMethods) {
+            this.allowedMethods = allowedMethods == null ? new ArrayList<>() : new ArrayList<>(allowedMethods);
+        }
+
+        public List<String> getAllowedHeaders() {
+            return List.copyOf(allowedHeaders);
+        }
+
+        public void setAllowedHeaders(List<String> allowedHeaders) {
+            this.allowedHeaders = allowedHeaders == null ? new ArrayList<>() : new ArrayList<>(allowedHeaders);
+        }
+
+        public boolean isAllowCredentials() {
+            return allowCredentials;
+        }
+
+        public void setAllowCredentials(boolean allowCredentials) {
+            this.allowCredentials = allowCredentials;
+        }
+
+        public Duration getMaxAge() {
+            return maxAge;
+        }
+
+        public void setMaxAge(Duration maxAge) {
+            this.maxAge = maxAge;
         }
     }
 

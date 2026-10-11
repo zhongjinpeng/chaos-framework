@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
@@ -49,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.gateway.config.GlobalCorsProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -61,6 +63,7 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.introspection.NimbusReactiveOpaqueTokenIntrospector;
 import org.springframework.security.oauth2.server.resource.introspection.ReactiveOpaqueTokenIntrospector;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
@@ -82,6 +85,50 @@ import reactor.core.scheduler.Schedulers;
 public class ChaosGatewayAutoConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChaosGatewayAutoConfiguration.class);
+
+    /**
+     * Gateway CORS 集成。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(GlobalCorsProperties.class)
+    @ConditionalOnProperty(prefix = "chaos.gateway.cors", name = "enabled", havingValue = "true")
+    static class GatewayCorsConfiguration {
+
+        /**
+         * 在 Spring Cloud Gateway 创建路由映射前，把 Chaos CORS 配置合并到其原生全局配置中。
+         */
+        @Bean
+        static BeanPostProcessor chaosGatewayCorsBeanPostProcessor(
+                ObjectProvider<ChaosGatewayProperties> propertiesProvider) {
+            return new BeanPostProcessor() {
+                @Override
+                public Object postProcessAfterInitialization(Object bean, String beanName) {
+                    if (bean instanceof GlobalCorsProperties globalCorsProperties) {
+                        ChaosGatewayProperties.Cors cors = propertiesProvider.getObject().getCors();
+                        globalCorsProperties.getCorsConfigurations()
+                                .putIfAbsent(cors.getPathPattern(), toCorsConfiguration(cors));
+                    }
+                    return bean;
+                }
+            };
+        }
+
+        private static CorsConfiguration toCorsConfiguration(ChaosGatewayProperties.Cors cors) {
+            if (cors.getAllowedOrigins().isEmpty()) {
+                throw new ChaosDiagnosticException(ChaosDiagnostic.of(
+                        "网关已开启 CORS 但没有配置允许的来源",
+                        "chaos.gateway.cors.enabled=true 且 allowed-origins 为空，浏览器预检请求无法通过",
+                        "配置 chaos.gateway.cors.allowed-origins，只填写需要访问网关的精确来源"));
+            }
+            CorsConfiguration configuration = new CorsConfiguration();
+            configuration.setAllowedOrigins(cors.getAllowedOrigins());
+            configuration.setAllowedMethods(cors.getAllowedMethods());
+            configuration.setAllowedHeaders(cors.getAllowedHeaders());
+            configuration.setAllowCredentials(cors.isAllowCredentials());
+            configuration.setMaxAge(cors.getMaxAge().toSeconds());
+            return configuration;
+        }
+    }
 
     /**
      * 禁用 Spring Security 默认拦截，认证由 Chaos Gateway Filter 处理。

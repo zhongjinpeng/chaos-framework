@@ -51,6 +51,56 @@ chaos:
 | `chaos.web.forwarding.trust-identity-headers` | `false` | 开启后，仅当直连对端命中 `trusted-proxies` 时才采纳 `X-User-Id`/`X-Tenant-Id` |
 | `chaos.web.xss-enabled` | `false` | 1.0.3 起默认关闭 |
 
+### Swagger OAuth2 登录
+
+`chaos-web-starter` 已包含 springdoc。开发或测试环境可以声明多个 OAuth2 密码登录入口，Swagger UI 会分别展示，
+任意一个方案授权成功后都可以携带 Bearer token 调用接口：
+
+```yaml
+chaos:
+  openapi:
+    oauth2:
+      enabled: true
+      # 业务服务与网关分端口时，统一为相对 token-url 补充网关地址；绝对 URL 不会被覆盖
+      token-url-base: http://localhost:9090
+      # 只填会下发到浏览器的公开占位值；真实凭据由网关按 token-url 注入
+      client-id: gateway-injected
+      client-secret: gateway-injected
+      scopes:
+        read: 读取数据
+        write: 修改数据
+      schemes:
+        webOAuth2:
+          token-url: /api/v1/auth/web/token
+          description: Web 用户登录
+        managementOAuth2:
+          token-url: /api/v1/auth/management/token
+          description: 管理端用户登录
+```
+
+配置生成密码登录、安全范围和全局安全要求，并把 client 占位值与全部 scope 预填到 Swagger UI。Swagger UI 只支持
+一组全局 client 参数，因此多个登录方案共用占位值；网关根据 token URL 在服务端覆盖为对应的真实客户端凭据。
+`client-secret` 会发送到浏览器，严禁填写真实密钥。该能力默认关闭，生产环境还应设置
+`springdoc.api-docs.enabled=false` 与 `springdoc.swagger-ui.enabled=false`。
+
+### Gateway CORS
+
+开发环境如果从业务服务端口直接打开 Swagger UI，可由框架自动接入 Spring Cloud Gateway 的原生全局 CORS 配置：
+
+```yaml
+chaos:
+  gateway:
+    cors:
+      enabled: true
+      allowed-origins:
+        - http://localhost:8081
+        - http://127.0.0.1:8081
+```
+
+默认允许 `GET`、`POST`、`OPTIONS` 以及 `Authorization`、`Content-Type`、`Accept` 请求头，并允许凭据；
+开启后必须配置精确的 `allowed-origins`，不会默认开放跨域访问。若应用已经配置
+`spring.cloud.gateway.server.webflux.globalcors.cors-configurations`，同路径的原生配置优先。
+
 ## 安全模型
 
 ### 身份请求头

@@ -29,13 +29,25 @@ import com.chaos.web.ratelimit.RateLimitInterceptor;
 import com.chaos.web.ratelimit.RateLimitKeyResolver;
 import com.chaos.web.support.ClientIpResolver;
 import com.chaos.web.xss.XssFilter;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
+import io.swagger.v3.oas.models.security.Scopes;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.properties.SwaggerUiOAuthProperties;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -321,6 +333,81 @@ public class ChaosWebAutoConfiguration {
         registration.setFilter(new XssFilter(properties.getXssExcludePaths()));
         registration.setOrder(Integer.MIN_VALUE + 20);
         return registration;
+    }
+
+    /**
+     * Springdoc OAuth2 集成。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass({OpenAPI.class, OpenApiCustomizer.class})
+    @ConditionalOnProperty(prefix = "chaos.openapi.oauth2", name = "enabled", havingValue = "true")
+    @EnableConfigurationProperties(ChaosOpenApiOAuth2Properties.class)
+    static class OpenApiOAuth2Configuration {
+
+        /**
+         * 把配置的密码登录入口写入 OpenAPI，不包含 client id 或 client secret。
+         */
+        @Bean
+        @ConditionalOnMissingBean(name = "chaosOAuth2OpenApiCustomizer")
+        OpenApiCustomizer chaosOAuth2OpenApiCustomizer(ChaosOpenApiOAuth2Properties properties) {
+            return openApi -> customizeOAuth2(openApi, properties);
+        }
+
+        /**
+         * 将公开的客户端占位值和全部 scope 写入 Swagger UI，避免每次授权时重复填写或勾选。
+         */
+        @Bean
+        static BeanPostProcessor chaosSwaggerUiOAuthBeanPostProcessor(
+                ObjectProvider<ChaosOpenApiOAuth2Properties> propertiesProvider) {
+            return new BeanPostProcessor() {
+                @Override
+                public Object postProcessAfterInitialization(Object bean, String beanName) {
+                    if (bean instanceof SwaggerUiOAuthProperties swaggerUiOAuthProperties) {
+                        ChaosOpenApiOAuth2Properties properties = propertiesProvider.getObject();
+                        swaggerUiOAuthProperties.setClientId(properties.getClientId());
+                        swaggerUiOAuthProperties.setClientSecret(properties.getClientSecret());
+                        swaggerUiOAuthProperties.setScopes(new ArrayList<>(properties.getScopes().keySet()));
+                    }
+                    return bean;
+                }
+            };
+        }
+
+        private static void customizeOAuth2(OpenAPI openApi, ChaosOpenApiOAuth2Properties properties) {
+            Components components = openApi.getComponents();
+            if (components == null) {
+                components = new Components();
+                openApi.setComponents(components);
+            }
+
+            Scopes scopes = new Scopes();
+            properties.getScopes().forEach(scopes::addString);
+            ArrayList<String> requiredScopes = new ArrayList<>(properties.getScopes().keySet());
+            for (var entry : properties.getSchemes().entrySet()) {
+                ChaosOpenApiOAuth2Properties.Scheme configuredScheme = entry.getValue();
+                SecurityScheme securityScheme = new SecurityScheme()
+                        .type(SecurityScheme.Type.OAUTH2)
+                        .description(configuredScheme.getDescription())
+                        .flows(new OAuthFlows().password(new OAuthFlow()
+                                .tokenUrl(resolveTokenUrl(properties.getTokenUrlBase(), configuredScheme.getTokenUrl()))
+                                .scopes(scopes)));
+                components.addSecuritySchemes(entry.getKey(), securityScheme);
+                if (properties.isGlobalSecurityRequirement()) {
+                    openApi.addSecurityItem(new SecurityRequirement()
+                            .addList(entry.getKey(), requiredScopes));
+                }
+            }
+        }
+
+        private static String resolveTokenUrl(String tokenUrlBase, String configuredTokenUrl) {
+            URI tokenUri = URI.create(configuredTokenUrl.trim());
+            if (tokenUri.isAbsolute() || tokenUrlBase == null || tokenUrlBase.isBlank()) {
+                return tokenUri.toString();
+            }
+            String normalizedBase = tokenUrlBase.trim().replaceFirst("/+$", "") + "/";
+            String relativeTokenUrl = configuredTokenUrl.trim().replaceFirst("^/+", "");
+            return URI.create(normalizedBase).resolve(relativeTokenUrl).toString();
+        }
     }
 
     /**

@@ -17,11 +17,12 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.audit`](#chaosaudit)（9 项）
 - [`chaos.authorization`](#chaosauthorization)（55 项）
 - [`chaos.diagnostics`](#chaosdiagnostics)（6 项）
-- [`chaos.gateway`](#chaosgateway)（48 项）
+- [`chaos.gateway`](#chaosgateway)（55 项）
 - [`chaos.job`](#chaosjob)（4 项）
 - [`chaos.mq`](#chaosmq)（17 项）
 - [`chaos.mybatis`](#chaosmybatis)（16 项）
 - [`chaos.nacos`](#chaosnacos)（4 项）
+- [`chaos.openapi`](#chaosopenapi)（7 项）
 - [`chaos.production-safety`](#chaosproduction-safety)（5 项）
 - [`chaos.redis`](#chaosredis)（1 项）
 - [`chaos.security`](#chaossecurity)（21 项）
@@ -128,6 +129,13 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.gateway.access.wildcard-permission-enabled` | `Boolean` | `true` | 是否允许 token 中的权限编码使用通配符，例如 order:* 覆盖 order:read。 |  | `chaos-gateway` |
 | `chaos.gateway.auth-enabled` | `Boolean` | `true` | 是否启用网关鉴权。 |  | `chaos-gateway` |
 | `chaos.gateway.blacklist` | `List<String>` |  | IP 黑名单。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.allow-credentials` | `Boolean` | `true` | 是否允许浏览器携带凭据；启用时 allowed-origins 必须使用精确来源。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.allowed-headers` | `List<String>` |  | 允许浏览器跨域发送的请求头。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.allowed-methods` | `List<String>` |  | 允许的跨域请求方法。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.allowed-origins` | `List<String>` |  | 允许跨域访问网关的精确来源；开启 CORS 时至少配置一个来源，不应使用通配符。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.enabled` | `Boolean` | `false` | 是否启用 Chaos 提供的 Gateway CORS 自动配置；默认关闭，避免升级后意外开放跨域访问。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.max-age` | `Duration` | `30m` | 浏览器缓存预检结果的时长。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.path-pattern` | `String` | `/**` | CORS 规则适用的路径模式。 |  | `chaos-gateway` |
 | `chaos.gateway.fallback.enabled` | `Boolean` | `true` | 是否启用 Gateway 统一降级异常处理。 |  | `chaos-gateway` |
 | `chaos.gateway.fallback.include-unhandled` | `Boolean` | `true` | 是否把未知异常也转换为统一 JSON。 |  | `chaos-gateway` |
 | `chaos.gateway.gray-enabled` | `Boolean` | `true` | 是否启用灰度标签透传。 |  | `chaos-gateway` |
@@ -228,6 +236,18 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.nacos.enabled` | `Boolean` | `true` | 是否启用 chaos 对 Nacos 的约定配置。 |  | `chaos-autoconfigure` |
 | `chaos.nacos.group` | `String` | `DEFAULT_GROUP` | 配置中心 group。 |  | `chaos-autoconfigure` |
 | `chaos.nacos.metadata-prefix` | `String` | `chaos` | 服务实例元数据键名前缀。 |  | `chaos-autoconfigure` |
+
+## chaos.openapi
+
+| 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
+| --- | --- | --- | --- | --- | --- |
+| `chaos.openapi.oauth2.client-id` | `String` | `gateway-injected` | Swagger UI 预填的客户端标识。该值会发送到浏览器，只能配置公开占位值，真实客户端凭据应由网关注入。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.client-secret` | `String` | `gateway-injected` | Swagger UI 预填的客户端密钥占位值。该值会发送到浏览器，不得配置真实客户端密钥。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.enabled` | `Boolean` | `false` | 是否把 OAuth2 密码登录方案写入 OpenAPI 文档；默认关闭，建议仅在开发和测试环境开启。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.global-security-requirement` | `Boolean` | `true` | 是否把每个登录方案作为全局安全要求写入 OpenAPI；多个方案之间采用 OR 关系。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.schemes` | `Map<String,Scheme>` |  | 安全方案映射，key 是 OpenAPI security scheme 名称；至少配置一个登录方案。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.scopes` | `Map<String,String>` |  | OAuth2 scope 与展示说明；配置的全部 scope 同时作为全局安全要求。 |  | `chaos-autoconfigure` |
+| `chaos.openapi.oauth2.token-url-base` | `String` | `""` | 相对 token URL 的统一基地址；为空时保留相对地址，配置后可确保从业务服务端口打开 Swagger UI 仍通过网关登录。 |  | `chaos-autoconfigure` |
 
 ## chaos.production-safety
 

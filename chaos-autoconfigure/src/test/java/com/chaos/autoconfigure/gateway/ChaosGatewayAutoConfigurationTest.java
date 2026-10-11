@@ -33,9 +33,11 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import org.springframework.cloud.gateway.config.GlobalCorsProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.server.resource.introspection.ReactiveOpaqueTokenIntrospector;
+import org.springframework.web.cors.CorsConfiguration;
 import reactor.core.publisher.Mono;
 
 /**
@@ -71,6 +73,45 @@ class ChaosGatewayAutoConfigurationTest {
             assertThat(context).hasSingleBean(TenantGatewayFilter.class);
             assertThat(context).hasSingleBean(GatewayFallbackExceptionHandler.class);
         });
+    }
+
+    /**
+     * 开启 Chaos Gateway CORS 后应把安全默认值和允许来源写入 Spring Cloud Gateway 原生配置。
+     */
+    @Test
+    void shouldConfigureGatewayCors() {
+        contextRunner
+                .withBean(GlobalCorsProperties.class, GlobalCorsProperties::new)
+                .withPropertyValues(
+                        "chaos.gateway.cors.enabled=true",
+                        "chaos.gateway.cors.allowed-origins[0]=http://localhost:8081")
+                .run(context -> {
+                    CorsConfiguration cors = context.getBean(GlobalCorsProperties.class)
+                            .getCorsConfigurations()
+                            .get("/**");
+
+                    assertThat(cors).isNotNull();
+                    assertThat(cors.getAllowedOrigins()).containsExactly("http://localhost:8081");
+                    assertThat(cors.getAllowedMethods()).containsExactly("GET", "POST", "OPTIONS");
+                    assertThat(cors.getAllowedHeaders()).containsExactly("Authorization", "Content-Type", "Accept");
+                    assertThat(cors.getAllowCredentials()).isTrue();
+                    assertThat(cors.getMaxAge()).isEqualTo(1800L);
+                });
+    }
+
+    /**
+     * CORS 开启却没有允许来源时应阻断启动，避免产生看似开启但所有预检仍失败的配置。
+     */
+    @Test
+    void shouldRejectGatewayCorsWithoutAllowedOrigins() {
+        contextRunner
+                .withBean(GlobalCorsProperties.class, GlobalCorsProperties::new)
+                .withPropertyValues("chaos.gateway.cors.enabled=true")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure()
+                        .rootCause()
+                        .isInstanceOf(ChaosDiagnosticException.class)
+                        .hasMessageContaining("chaos.gateway.cors.allowed-origins"));
     }
 
     /**
