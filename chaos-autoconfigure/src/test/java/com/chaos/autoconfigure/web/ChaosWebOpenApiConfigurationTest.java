@@ -2,18 +2,25 @@ package com.chaos.autoconfigure.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chaos.core.constant.ChaosHeaders;
+import com.chaos.web.idempotent.DefaultIdempotentKeyGenerator;
+import com.chaos.web.idempotent.Idempotent;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.junit.jupiter.api.Test;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.properties.SwaggerUiOAuthProperties;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.HandlerMethod;
 
 /**
- * Web OpenAPI OAuth2 自动装配测试。
+ * Web OpenAPI 自动装配测试。
  */
 class ChaosWebOpenApiConfigurationTest {
 
@@ -108,11 +115,88 @@ class ChaosWebOpenApiConfigurationTest {
                 });
     }
 
+    /**
+     * 默认幂等接口应在 OpenAPI 中声明必填请求头及与服务端一致的格式约束。
+     */
+    @Test
+    void shouldDocumentRequiredIdempotencyKeyHeader() {
+        contextRunner.run(context -> {
+            OperationCustomizer customizer = context.getBean(
+                    "chaosIdempotencyOperationCustomizer", OperationCustomizer.class);
+            Operation operation = customizer.customize(new Operation(), handlerMethod("requiredKey"));
+
+            assertThat(operation.getParameters()).singleElement().satisfies(parameter -> {
+                assertThat(parameter.getName()).isEqualTo(ChaosHeaders.IDEMPOTENCY_KEY);
+                assertThat(parameter.getIn()).isEqualTo("header");
+                assertThat(parameter.getRequired()).isTrue();
+                assertThat(parameter.getSchema().getMinLength()).isEqualTo(1);
+                assertThat(parameter.getSchema().getMaxLength())
+                        .isEqualTo(DefaultIdempotentKeyGenerator.MAX_REQUEST_KEY_LENGTH);
+                assertThat(parameter.getSchema().getPattern()).isEqualTo("^[!-~]{1,128}$");
+            });
+        });
+    }
+
+    /**
+     * 可选 key 应如实标记，固定 key、未标注方法和已手工声明请求头的方法不应重复生成参数。
+     */
+    @Test
+    void shouldRespectOptionalFixedAndExplicitIdempotencyContracts() {
+        contextRunner.run(context -> {
+            OperationCustomizer customizer = context.getBean(
+                    "chaosIdempotencyOperationCustomizer", OperationCustomizer.class);
+
+            Operation optional = customizer.customize(new Operation(), handlerMethod("optionalKey"));
+            assertThat(optional.getParameters()).singleElement()
+                    .satisfies(parameter -> assertThat(parameter.getRequired()).isFalse());
+
+            Operation fixed = customizer.customize(new Operation(), handlerMethod("fixedKey"));
+            Operation plain = customizer.customize(new Operation(), handlerMethod("plain"));
+            assertThat(fixed.getParameters()).isNull();
+            assertThat(plain.getParameters()).isNull();
+
+            Parameter documented = new Parameter()
+                    .name(ChaosHeaders.IDEMPOTENCY_KEY)
+                    .in("header")
+                    .required(true);
+            Operation explicit = new Operation().addParametersItem(documented);
+            customizer.customize(explicit, handlerMethod("requiredKey"));
+            assertThat(explicit.getParameters()).containsExactly(documented);
+        });
+    }
+
     private static void assertPasswordFlow(OpenAPI openApi, String schemeName, String tokenUrl) {
         SecurityScheme scheme = openApi.getComponents().getSecuritySchemes().get(schemeName);
         assertThat(scheme.getType()).isEqualTo(SecurityScheme.Type.OAUTH2);
         assertThat(scheme.getFlows().getPassword().getTokenUrl()).isEqualTo(tokenUrl);
         assertThat(scheme.getFlows().getPassword().getScopes()).containsOnlyKeys("read", "write");
+    }
+
+    private static HandlerMethod handlerMethod(String methodName) {
+        try {
+            return new HandlerMethod(
+                    new IdempotencyEndpoints(), IdempotencyEndpoints.class.getDeclaredMethod(methodName));
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError("找不到幂等测试接口方法: " + methodName, ex);
+        }
+    }
+
+    static class IdempotencyEndpoints {
+
+        @Idempotent
+        void requiredKey() {
+        }
+
+        @Idempotent(requireKey = false)
+        void optionalKey() {
+        }
+
+        @Idempotent(key = "server-controlled")
+        void fixedKey() {
+        }
+
+        void plain() {
+        }
     }
 
     @Configuration(proxyBeanMethods = false)

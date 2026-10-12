@@ -2,6 +2,7 @@ package com.chaos.autoconfigure.web;
 
 import com.chaos.autoconfigure.support.ProductionSafetyEnforcer;
 import com.chaos.autoconfigure.support.UnsafeForProduction;
+import com.chaos.core.constant.ChaosHeaders;
 import com.chaos.core.idempotent.IdempotentRecordStore;
 import com.chaos.core.idempotent.IdempotentRepository;
 import com.chaos.core.idempotent.support.InMemoryIdempotentRecordStore;
@@ -21,6 +22,7 @@ import com.chaos.web.filter.TraceFilter;
 import com.chaos.web.i18n.ErrorMessageResolver;
 import com.chaos.web.i18n.MessageSourceErrorMessageResolver;
 import com.chaos.web.idempotent.DefaultIdempotentKeyGenerator;
+import com.chaos.web.idempotent.Idempotent;
 import com.chaos.web.idempotent.IdempotentInterceptor;
 import com.chaos.web.idempotent.IdempotentKeyGenerator;
 import com.chaos.web.idempotent.IdempotentResponseReplayFilter;
@@ -31,6 +33,9 @@ import com.chaos.web.support.ClientIpResolver;
 import com.chaos.web.xss.XssFilter;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.OAuthFlow;
 import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.Scopes;
@@ -43,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.properties.SwaggerUiOAuthProperties;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -62,6 +68,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -333,6 +340,52 @@ public class ChaosWebAutoConfiguration {
         registration.setFilter(new XssFilter(properties.getXssExcludePaths()));
         registration.setOrder(Integer.MIN_VALUE + 20);
         return registration;
+    }
+
+    /**
+     * Springdoc 幂等请求头集成。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass({Operation.class, OperationCustomizer.class, Idempotent.class})
+    static class OpenApiIdempotencyConfiguration {
+
+        private static final String HEADER_LOCATION = "header";
+        private static final String REQUEST_KEY_PATTERN = "^[!-~]{1,"
+                + DefaultIdempotentKeyGenerator.MAX_REQUEST_KEY_LENGTH + "}$";
+
+        /**
+         * 为需要调用方提供幂等 key 的接口补充 OpenAPI 请求头参数。
+         */
+        @Bean
+        @ConditionalOnMissingBean(name = "chaosIdempotencyOperationCustomizer")
+        OperationCustomizer chaosIdempotencyOperationCustomizer() {
+            return OpenApiIdempotencyConfiguration::customizeIdempotencyHeader;
+        }
+
+        private static Operation customizeIdempotencyHeader(Operation operation, HandlerMethod handlerMethod) {
+            Idempotent annotation = handlerMethod.getMethodAnnotation(Idempotent.class);
+            if (annotation == null || !annotation.key().isBlank() || hasDocumentedHeader(operation)) {
+                return operation;
+            }
+
+            operation.addParametersItem(new Parameter()
+                    .name(ChaosHeaders.IDEMPOTENCY_KEY)
+                    .in(HEADER_LOCATION)
+                    .required(annotation.requireKey())
+                    .description("同一业务操作的首次请求与重试必须使用相同值；新的业务操作请更换。"
+                            + "允许 1-128 个非空格可打印 ASCII 字符。")
+                    .schema(new StringSchema()
+                            .minLength(1)
+                            .maxLength(DefaultIdempotentKeyGenerator.MAX_REQUEST_KEY_LENGTH)
+                            .pattern(REQUEST_KEY_PATTERN)));
+            return operation;
+        }
+
+        private static boolean hasDocumentedHeader(Operation operation) {
+            return operation.getParameters() != null && operation.getParameters().stream()
+                    .anyMatch(parameter -> HEADER_LOCATION.equals(parameter.getIn())
+                            && ChaosHeaders.IDEMPOTENCY_KEY.equalsIgnoreCase(parameter.getName()));
+        }
     }
 
     /**

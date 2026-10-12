@@ -157,7 +157,11 @@ public CaptchaDTO captcha() { ... }
 
 - 幂等 key 格式：`idem:{method}:{path}:t={tenantId}:u={userId}:{key}`，不同用户、租户使用相同 key 不会互相阻塞。
 - 不再使用 traceId 兜底（traceId 每个请求都不同，等于没有保护）。
-- 请求头 key 最长 128 个可打印 ASCII 字符。
+- 请求头 key 允许 1-128 个非空格可打印 ASCII 字符。
+- 引入 springdoc 时，Chaos 会在 Swagger 中为 `@Idempotent` 接口自动添加 `Idempotency-Key` 请求头输入框；
+  `requireKey` 决定是否必填，配置了注解固定 `key` 的接口不要求调用方传入。
+- 每个新的业务操作使用新 key；网络重试或超时重发同一次操作时复用原 key。Swagger 不会自动生成随机值，
+  避免每次重试换 key 后绕过幂等保护。
 - 请求失败（异常被全局异常处理器转换、或响应状态码 >= 400）后释放占位，客户端可用同一个 key 重试；
   成功后保留占位直到 TTL 到期。
 
