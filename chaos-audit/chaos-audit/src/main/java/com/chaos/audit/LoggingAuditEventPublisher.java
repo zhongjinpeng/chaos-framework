@@ -1,5 +1,8 @@
 package com.chaos.audit;
 
+import com.chaos.trace.log.MdcKeys;
+import com.chaos.trace.log.MdcSupport;
+import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,19 +42,25 @@ public class LoggingAuditEventPublisher implements AuditEventPublisher {
      */
     @Override
     public void publish(AuditEvent event) {
-        auditLog.info(
-                "action={} outcome={} principalId={} tenantId={} clientId={} traceId={} ip={} uri={} reason={} attributes={}",
-                event.action(),
-                event.outcome(),
-                event.principalId(),
-                event.tenantId(),
-                event.clientId(),
-                event.traceId(),
-                event.ip(),
-                event.uri(),
-                oneLine(event.reason()),
-                attributeSanitizer.sanitize(event.attributes())
-        );
+        Map<String, String> previousMdc = MdcSupport.copy();
+        try {
+            MdcSupport.putIfNotBlank(MdcKeys.TRACE_ID, event.traceId());
+            auditLog.info(
+                    "action={} outcome={} principalId={} tenantId={} clientId={} traceId={} ip={} uri={} reason={} attributes={}",
+                    event.action(),
+                    event.outcome(),
+                    event.principalId(),
+                    event.tenantId(),
+                    event.clientId(),
+                    event.traceId(),
+                    event.ip(),
+                    event.uri(),
+                    oneLine(event.reason()),
+                    attributeSanitizer.sanitize(event.attributes())
+            );
+        } finally {
+            MdcSupport.restore(previousMdc);
+        }
     }
 
     /**

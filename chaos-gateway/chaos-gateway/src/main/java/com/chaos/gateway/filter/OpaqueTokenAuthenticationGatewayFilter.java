@@ -156,6 +156,7 @@ public class OpaqueTokenAuthenticationGatewayFilter implements GlobalFilter, Ord
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String reason) {
         auditEventPublisher.publish(AuditSupport.event(AuditAction.GATEWAY_AUTH_DENIED, AuditOutcome.DENIED)
+                .traceId(GatewayExchangeAttributes.traceId(exchange))
                 .uri(exchange.getRequest().getURI().getPath())
                 .ip(ClientIpResolver.resolve(exchange))
                 .reason(reason)

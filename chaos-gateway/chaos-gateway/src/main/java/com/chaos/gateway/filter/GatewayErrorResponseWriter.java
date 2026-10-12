@@ -2,7 +2,6 @@ package com.chaos.gateway.filter;
 
 import com.chaos.core.exception.CommonErrorCode;
 import com.chaos.core.exception.ErrorCode;
-import com.chaos.trace.TraceContext;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
@@ -92,18 +91,19 @@ final class GatewayErrorResponseWriter {
         }
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        byte[] bytes = json(errorCode, localize(errorCode, exchange)).getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = json(errorCode, localize(errorCode, exchange), GatewayExchangeAttributes.traceId(exchange))
+                .getBytes(StandardCharsets.UTF_8);
         DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
         return exchange.getResponse().writeWith(Mono.just(buffer));
     }
 
-    private static String json(ErrorCode errorCode, String message) {
+    private static String json(ErrorCode errorCode, String message, String traceId) {
         return """
                 {"code":"%s","message":"%s","data":null,"traceId":"%s","timestamp":%d}"""
                 .formatted(
                         escape(errorCode.code()),
                         escape(message),
-                        escape(TraceContext.traceId()),
+                        escape(traceId),
                         Instant.now().toEpochMilli()
                 );
     }

@@ -17,7 +17,7 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.audit`](#chaosaudit)（9 项）
 - [`chaos.authorization`](#chaosauthorization)（55 项）
 - [`chaos.diagnostics`](#chaosdiagnostics)（6 项）
-- [`chaos.gateway`](#chaosgateway)（55 项）
+- [`chaos.gateway`](#chaosgateway)（56 项）
 - [`chaos.job`](#chaosjob)（4 项）
 - [`chaos.mq`](#chaosmq)（17 项）
 - [`chaos.mybatis`](#chaosmybatis)（16 项）
@@ -134,6 +134,7 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.gateway.cors.allowed-methods` | `List<String>` |  | 允许的跨域请求方法。 |  | `chaos-gateway` |
 | `chaos.gateway.cors.allowed-origins` | `List<String>` |  | 允许跨域访问网关的精确来源；开启 CORS 时至少配置一个来源，不应使用通配符。 |  | `chaos-gateway` |
 | `chaos.gateway.cors.enabled` | `Boolean` | `false` | 是否启用 Chaos 提供的 Gateway CORS 自动配置；默认关闭，避免升级后意外开放跨域访问。 |  | `chaos-gateway` |
+| `chaos.gateway.cors.exposed-headers` | `List<String>` |  | 允许浏览器脚本读取的响应头。 |  | `chaos-gateway` |
 | `chaos.gateway.cors.max-age` | `Duration` | `30m` | 浏览器缓存预检结果的时长。 |  | `chaos-gateway` |
 | `chaos.gateway.cors.path-pattern` | `String` | `/**` | CORS 规则适用的路径模式。 |  | `chaos-gateway` |
 | `chaos.gateway.fallback.enabled` | `Boolean` | `true` | 是否启用 Gateway 统一降级异常处理。 |  | `chaos-gateway` |

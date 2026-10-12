@@ -142,6 +142,7 @@ public class AccessControlGatewayFilter implements GlobalFilter, Ordered {
             AuthorizationDecision decision) {
         metrics.increment(ChaosMeterNames.SECURITY_ACCESS_DENIED, ChaosMeterNames.TAG_SOURCE, "gateway");
         auditEventPublisher.publish(AuditSupport.event(AuditAction.SECURITY_PERMISSION_DENIED, AuditOutcome.DENIED)
+                .traceId(GatewayExchangeAttributes.traceId(exchange))
                 .principalId(request.subject().userId())
                 .tenantId(request.subject().tenantId())
                 .uri(exchange.getRequest().getURI().getPath())

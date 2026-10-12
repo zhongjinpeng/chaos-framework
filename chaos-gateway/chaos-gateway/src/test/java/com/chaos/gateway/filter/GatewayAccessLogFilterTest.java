@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.chaos.core.constant.ChaosHeaders;
 import com.chaos.trace.RequestTiming;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -32,5 +33,6 @@ class GatewayAccessLogFilterTest {
         assertThat(timing.snapshot().stages()).containsKey("downstream");
         assertThat(accessLogFilter.getOrder()).isEqualTo(Ordered.HIGHEST_PRECEDENCE + 1);
         assertThat(downstreamTimingFilter.getOrder()).isEqualTo(9_999);
+        assertThat(MDC.get("traceId")).isNull();
     }
 }

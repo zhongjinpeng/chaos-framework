@@ -1,5 +1,6 @@
 package com.chaos.gateway.filter;
 
+import com.chaos.core.constant.ChaosHeaders;
 import com.chaos.security.api.access.AccessSubject;
 import java.util.Locale;
 import java.util.Map;
@@ -71,6 +72,14 @@ public final class GatewayExchangeAttributes {
      */
     public static String authenticatedUserId(ServerWebExchange exchange) {
         String value = exchange.getAttribute(AUTHENTICATED_USER_ID);
+        return value == null ? "" : value;
+    }
+
+    /**
+     * 读取入口过滤器生成或校验后的 trace ID；入口过滤器尚未执行时返回空字符串。
+     */
+    public static String traceId(ServerWebExchange exchange) {
+        String value = exchange.getAttribute(ChaosHeaders.TRACE_ID);
         return value == null ? "" : value;
     }
 

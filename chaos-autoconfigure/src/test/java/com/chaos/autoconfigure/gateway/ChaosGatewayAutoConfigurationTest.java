@@ -30,14 +30,18 @@ import com.chaos.gateway.ratelimit.RateLimiterGatewayAdapter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
-import org.springframework.cloud.gateway.config.GlobalCorsProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.oauth2.server.resource.introspection.ReactiveOpaqueTokenIntrospector;
-import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsWebFilter;
 import reactor.core.publisher.Mono;
 
 /**
@@ -76,26 +80,45 @@ class ChaosGatewayAutoConfigurationTest {
     }
 
     /**
-     * 开启 Chaos Gateway CORS 后应把安全默认值和允许来源写入 Spring Cloud Gateway 原生配置。
+     * 开启 Chaos Gateway CORS 后应在路由匹配前处理预检，并为普通跨域响应暴露配置的响应头。
      */
     @Test
     void shouldConfigureGatewayCors() {
         contextRunner
-                .withBean(GlobalCorsProperties.class, GlobalCorsProperties::new)
                 .withPropertyValues(
                         "chaos.gateway.cors.enabled=true",
-                        "chaos.gateway.cors.allowed-origins[0]=http://localhost:8081")
+                        "chaos.gateway.cors.allowed-origins[0]=http://localhost:8081",
+                        "chaos.gateway.cors.exposed-headers[0]=Content-Disposition")
                 .run(context -> {
-                    CorsConfiguration cors = context.getBean(GlobalCorsProperties.class)
-                            .getCorsConfigurations()
-                            .get("/**");
+                    CorsWebFilter filter = context.getBean(CorsWebFilter.class);
+                    AtomicBoolean chainInvoked = new AtomicBoolean();
+                    MockServerWebExchange preflight = MockServerWebExchange.from(
+                            MockServerHttpRequest.options("http://gateway.local/not-a-route")
+                                    .header(HttpHeaders.ORIGIN, "http://localhost:8081")
+                                    .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                                    .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "authorization,content-type"));
 
-                    assertThat(cors).isNotNull();
-                    assertThat(cors.getAllowedOrigins()).containsExactly("http://localhost:8081");
-                    assertThat(cors.getAllowedMethods()).containsExactly("GET", "POST", "OPTIONS");
-                    assertThat(cors.getAllowedHeaders()).containsExactly("Authorization", "Content-Type", "Accept");
-                    assertThat(cors.getAllowCredentials()).isTrue();
-                    assertThat(cors.getMaxAge()).isEqualTo(1800L);
+                    filter.filter(preflight, exchange -> {
+                        chainInvoked.set(true);
+                        return Mono.empty();
+                    }).block();
+
+                    assertThat(chainInvoked).isFalse();
+                    assertThat(preflight.getResponse().getHeaders().getAccessControlAllowOrigin())
+                            .isEqualTo("http://localhost:8081");
+                    assertThat(preflight.getResponse().getHeaders().getAccessControlAllowMethods())
+                            .containsExactly(HttpMethod.GET, HttpMethod.POST, HttpMethod.OPTIONS);
+                    assertThat(preflight.getResponse().getHeaders().getAccessControlAllowHeaders())
+                            .containsExactly("authorization", "content-type");
+                    assertThat(preflight.getResponse().getHeaders().getAccessControlAllowCredentials()).isTrue();
+                    assertThat(preflight.getResponse().getHeaders().getAccessControlMaxAge()).isEqualTo(1800L);
+
+                    MockServerWebExchange actual = MockServerWebExchange.from(
+                            MockServerHttpRequest.get("http://gateway.local/api/files")
+                                    .header(HttpHeaders.ORIGIN, "http://localhost:8081"));
+                    filter.filter(actual, exchange -> exchange.getResponse().setComplete()).block();
+                    assertThat(actual.getResponse().getHeaders().getAccessControlExposeHeaders())
+                            .containsExactly("Content-Disposition");
                 });
     }
 
@@ -105,13 +128,28 @@ class ChaosGatewayAutoConfigurationTest {
     @Test
     void shouldRejectGatewayCorsWithoutAllowedOrigins() {
         contextRunner
-                .withBean(GlobalCorsProperties.class, GlobalCorsProperties::new)
                 .withPropertyValues("chaos.gateway.cors.enabled=true")
                 .run(context -> assertThat(context).hasFailed()
                         .getFailure()
                         .rootCause()
                         .isInstanceOf(ChaosDiagnosticException.class)
                         .hasMessageContaining("chaos.gateway.cors.allowed-origins"));
+    }
+
+    /**
+     * 携带凭据时不允许通配来源，避免生成浏览器必然拒绝的响应。
+     */
+    @Test
+    void shouldRejectWildcardOriginWhenCredentialsAreAllowed() {
+        contextRunner
+                .withPropertyValues(
+                        "chaos.gateway.cors.enabled=true",
+                        "chaos.gateway.cors.allowed-origins[0]=*")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure()
+                        .rootCause()
+                        .isInstanceOf(ChaosDiagnosticException.class)
+                        .hasMessageContaining("allow-credentials"));
     }
 
     /**
@@ -353,4 +391,5 @@ class ChaosGatewayAutoConfigurationTest {
                                 "1001", "alice", "tenant-a", Set.of("admin"), Set.of(), Map.of()),
                                 "order:read")).policyId()).isEqualTo("dynamic-deny"));
     }
+
 }

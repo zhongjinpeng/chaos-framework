@@ -2,6 +2,7 @@ package com.chaos.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chaos.core.constant.ChaosHeaders;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.chaos.core.exception.CommonErrorCode;
@@ -42,6 +43,7 @@ class GatewayErrorResponseWriterTest {
     @Test
     void shouldWriteParsableJsonWithAllResultFields() throws Exception {
         MockServerWebExchange exchange = exchange(null);
+        exchange.getAttributes().put(ChaosHeaders.TRACE_ID, "trace-gateway-1");
 
         StepVerifier.create(GatewayErrorResponseWriter.unauthorized(exchange)).verifyComplete();
 
@@ -52,6 +54,7 @@ class GatewayErrorResponseWriterTest {
                 .containsExactlyInAnyOrder("code", "message", "data", "traceId", "timestamp");
         assertThat(json.get("code").asText()).isEqualTo("401");
         assertThat(json.get("data").isNull()).isTrue();
+        assertThat(json.get("traceId").asText()).isEqualTo("trace-gateway-1");
         assertThat(json.get("timestamp").asLong()).isPositive();
     }
 

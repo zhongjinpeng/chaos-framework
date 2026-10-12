@@ -53,6 +53,7 @@ public class BlacklistFilter implements GlobalFilter, Ordered {
                 .orElse("");
         if (!matchedRule.isBlank()) {
             auditEventPublisher.publish(AuditSupport.event(AuditAction.GATEWAY_BLACKLIST_DENIED, AuditOutcome.DENIED)
+                    .traceId(GatewayExchangeAttributes.traceId(exchange))
                     .uri(exchange.getRequest().getURI().getPath())
                     .ip(clientIp)
                     .reason("ip blacklist")

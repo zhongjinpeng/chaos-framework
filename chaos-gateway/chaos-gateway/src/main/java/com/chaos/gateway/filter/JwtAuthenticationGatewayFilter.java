@@ -210,6 +210,7 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
                 ChaosMeterNames.TAG_SOURCE, "gateway",
                 ChaosMeterNames.TAG_REASON, metricReason);
         auditEventPublisher.publish(AuditSupport.event(AuditAction.GATEWAY_AUTH_DENIED, AuditOutcome.DENIED)
+                .traceId(GatewayExchangeAttributes.traceId(exchange))
                 .uri(exchange.getRequest().getURI().getPath())
                 .ip(ClientIpResolver.resolve(exchange))
                 .reason(reason)

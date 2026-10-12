@@ -1,8 +1,10 @@
 package com.chaos.gateway.filter;
 
-import com.chaos.core.constant.ChaosHeaders;
 import com.chaos.trace.RequestTiming;
+import com.chaos.trace.log.MdcKeys;
+import com.chaos.trace.log.MdcSupport;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -55,6 +57,7 @@ public class GatewayAccessLogFilter implements GlobalFilter, Ordered {
                     : exchange.getResponse().getStatusCode().value();
             boolean failed = status >= 400 || signal == reactor.core.publisher.SignalType.ON_ERROR;
             boolean slow = snapshot.totalNanos() >= SLOW_REQUEST_NANOS;
+            String traceId = GatewayExchangeAttributes.traceId(exchange);
             String message = "event=request_timing env={} service={} protocol=http method={} path={} status={} "
                     + "trace_id={} request_id={} total_ms={} stages={} counts={} slow={} slowest_stage={} signal={}";
             Object[] arguments = {
@@ -63,7 +66,7 @@ public class GatewayAccessLogFilter implements GlobalFilter, Ordered {
                     exchange.getRequest().getMethod(),
                     exchange.getRequest().getURI().getRawPath(),
                     status,
-                    exchange.getAttribute(ChaosHeaders.TRACE_ID),
+                    traceId,
                     // X-Request-Id 由客户端控制，只记录合法格式，防止日志注入。
                     GatewayTraceFilter.safeId(exchange.getRequest().getHeaders().getFirst("X-Request-Id")),
                     snapshot.totalMillis(),
@@ -73,10 +76,16 @@ public class GatewayAccessLogFilter implements GlobalFilter, Ordered {
                     snapshot.slowestStage(),
                     signal
             };
-            if (failed || slow) {
-                accessLog.warn(message, arguments);
-            } else {
-                accessLog.info(message, arguments);
+            Map<String, String> previousMdc = MdcSupport.copy();
+            try {
+                MdcSupport.putIfNotBlank(MdcKeys.TRACE_ID, traceId);
+                if (failed || slow) {
+                    accessLog.warn(message, arguments);
+                } else {
+                    accessLog.info(message, arguments);
+                }
+            } finally {
+                MdcSupport.restore(previousMdc);
             }
         });
     }

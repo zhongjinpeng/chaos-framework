@@ -75,7 +75,7 @@ public class ChaosGatewayProperties {
     private Map<String, OAuth2Client> oauth2Clients = new LinkedHashMap<>();
 
     /**
-     * 网关跨域访问配置；默认关闭，开启后由 Chaos 写入 Spring Cloud Gateway 的全局 CORS 配置。
+     * 网关跨域访问配置；默认关闭，开启后由 Chaos 在路由匹配与鉴权前统一处理跨域请求。
      */
     @Valid
     @NotNull(message = "chaos.gateway.cors must not be null")
@@ -547,6 +547,11 @@ public class ChaosGatewayProperties {
         private List<String> allowedHeaders = new ArrayList<>(List.of("Authorization", "Content-Type", "Accept"));
 
         /**
+         * 允许浏览器脚本读取的响应头。
+         */
+        private List<String> exposedHeaders = new ArrayList<>();
+
+        /**
          * 是否允许浏览器携带凭据；启用时 allowed-origins 必须使用精确来源。
          */
         private boolean allowCredentials = true;
@@ -595,6 +600,14 @@ public class ChaosGatewayProperties {
 
         public void setAllowedHeaders(List<String> allowedHeaders) {
             this.allowedHeaders = allowedHeaders == null ? new ArrayList<>() : new ArrayList<>(allowedHeaders);
+        }
+
+        public List<String> getExposedHeaders() {
+            return List.copyOf(exposedHeaders);
+        }
+
+        public void setExposedHeaders(List<String> exposedHeaders) {
+            this.exposedHeaders = exposedHeaders == null ? new ArrayList<>() : new ArrayList<>(exposedHeaders);
         }
 
         public boolean isAllowCredentials() {

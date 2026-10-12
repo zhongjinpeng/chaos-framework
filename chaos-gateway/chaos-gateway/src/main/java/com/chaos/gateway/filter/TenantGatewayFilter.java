@@ -108,6 +108,7 @@ public class TenantGatewayFilter implements GlobalFilter, Ordered {
 
     private void publishMismatchAudit(ServerWebExchange exchange, String authenticatedTenantId, String requestedTenantId) {
         auditEventPublisher.publish(AuditSupport.event(AuditAction.GATEWAY_TENANT_DENIED, AuditOutcome.DENIED)
+                .traceId(GatewayExchangeAttributes.traceId(exchange))
                 .tenantId(authenticatedTenantId)
                 .principalId(GatewayExchangeAttributes.authenticatedUserId(exchange))
                 .uri(exchange.getRequest().getURI().getPath())
@@ -119,6 +120,7 @@ public class TenantGatewayFilter implements GlobalFilter, Ordered {
 
     private void publishDeniedAudit(ServerWebExchange exchange, TenantAccessDecision decision) {
         auditEventPublisher.publish(AuditSupport.event(AuditAction.GATEWAY_TENANT_DENIED, AuditOutcome.DENIED)
+                .traceId(GatewayExchangeAttributes.traceId(exchange))
                 .tenantId(decision.tenant().tenantId())
                 .uri(exchange.getRequest().getURI().getPath())
                 .ip(ClientIpResolver.resolve(exchange))
