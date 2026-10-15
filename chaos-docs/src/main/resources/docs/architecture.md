@@ -13,6 +13,7 @@ chaos-framework
 ├── chaos-foundation
 │   ├── chaos-core                    请求上下文、错误码、异常、幂等/锁/限流 SPI、可信代理 IP 解析（不依赖任何 chaos 模块）
 │   └── chaos-domain                  DDD 基础类型（domain.model）、分页（domain.dto）、缓存 key 策略（domain.cache）
+├── chaos-process                     状态机与流程引擎契约及运行时适配器（依赖 chaos-core，当前含内存实现）
 ├── chaos-observability
 │   └── chaos-trace                   W3C trace 上下文、MDC 与日志模板、Feign 透传、Micrometer 指标约定（trace.monitor）
 ├── chaos-audit
@@ -85,6 +86,7 @@ flowchart TB
         audit["chaos-audit / audit-jdbc"]
         tenant["chaos-tenant"]
         trace["chaos-trace"]
+        process["chaos-process<br/>状态机与流程引擎"]
     end
     subgraph contracts["契约层"]
         securityApi["chaos-security-api<br/>（不依赖 Spring）"]
@@ -106,6 +108,7 @@ flowchart TB
     web --> domain
     securityApi --> core
     domain --> core
+    process --> core
     trace --> core
     tenant --> core
     mq --> core
@@ -156,6 +159,7 @@ flowchart TB
 | chaos-dependencies | Public BOM and single source of truth for all dependency versions. |
 | chaos-foundation/chaos-core | Minimal constants, request context, exception contracts, idempotency/lock/rate-limit SPIs and trusted-proxy client IP resolution. Depends on no chaos module. |
 | chaos-foundation/chaos-domain | DDD aggregate and domain event abstractions (`domain.model`), page model (`domain.dto`) and cache key strategy (`domain.cache`). |
+| chaos-process | Framework-neutral state-machine and process contracts plus runtime adapters; the current in-memory implementation is for development and tests, while persistence adapters are added separately. Depends only on `chaos-core`. |
 | chaos-observability/chaos-trace | Trace context, W3C Trace Context compatibility, baggage, propagation headers, MDC keys and logging templates, OpenFeign trace interceptor, Micrometer observation filter and meter names. |
 | chaos-audit/chaos-audit | Audit event model and default structured audit log publisher. |
 | chaos-audit/chaos-audit-jdbc | JDBC audit persistence adapter. |

@@ -200,6 +200,11 @@
                 <artifactId>chaos-core</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <!-- chaos-core 的测试替身（RecordingChaosMetrics 等），仅供框架内部模块以 test 作用域复用。 -->
             <dependency>
                 <groupId>com.chaos</groupId>

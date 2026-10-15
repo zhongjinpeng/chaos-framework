@@ -125,6 +125,7 @@
 - [日志约定与模板（chaos-trace）](capabilities/logging.md)
 - [错误文案国际化（chaos-core + chaos-web）](capabilities/i18n.md)
 - [治理指标与健康检查（chaos-core + chaos-trace）](capabilities/metrics.md)
+- [状态机与流程引擎（chaos-core + chaos-process）](capabilities/process-engine.md)
 
 ## Proposals
 

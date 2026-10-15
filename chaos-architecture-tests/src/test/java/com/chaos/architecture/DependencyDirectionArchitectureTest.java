@@ -77,6 +77,7 @@ class DependencyDirectionArchitectureTest {
      */
     private static final Map<String, String> BASE_PACKAGES = Map.ofEntries(
             Map.entry("chaos-core", "com.chaos.core"),
+            Map.entry("chaos-process", "com.chaos.process"),
             Map.entry("chaos-domain", "com.chaos.domain"),
             Map.entry("chaos-trace", "com.chaos.trace"),
             Map.entry("chaos-audit", "com.chaos.audit"),

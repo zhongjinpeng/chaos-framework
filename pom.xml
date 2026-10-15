@@ -27,6 +27,7 @@
         <module>chaos-dependencies</module>
         <module>chaos-boot-parent</module>
         <module>chaos-foundation</module>
+        <module>chaos-process</module>
         <module>chaos-observability</module>
         <module>chaos-audit</module>
         <module>chaos-tenant</module>
