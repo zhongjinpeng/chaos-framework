@@ -17,6 +17,7 @@ import com.chaos.gateway.filter.BlacklistFilter;
 import com.chaos.gateway.filter.GatewayAccessLogFilter;
 import com.chaos.gateway.filter.GatewayDownstreamTimingFilter;
 import com.chaos.gateway.filter.GatewayFallbackExceptionHandler;
+import com.chaos.gateway.filter.GatewayIdentityMdcFilter;
 import com.chaos.gateway.filter.GatewayRateLimitFilter;
 import com.chaos.gateway.filter.GatewayRequestSanitizeFilter;
 import com.chaos.gateway.filter.GatewayTraceFilter;
@@ -536,6 +537,15 @@ public class ChaosGatewayAutoConfiguration {
             @org.springframework.beans.factory.annotation.Value("${spring.application.name:application}") String appName,
             @org.springframework.beans.factory.annotation.Value("${spring.profiles.active:default}") String environment) {
         return new GatewayAccessLogFilter(appName, environment);
+    }
+
+    /**
+     * 注册 Gateway 认证身份 MDC 过滤器。
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public GatewayIdentityMdcFilter gatewayIdentityMdcFilter() {
+        return new GatewayIdentityMdcFilter();
     }
 
     /**

@@ -2,7 +2,9 @@ package com.chaos.web.filter;
 
 import com.chaos.core.constant.ChaosHeaders;
 import com.chaos.core.context.ContextIdentifiers;
+import com.chaos.core.context.RequestContextAttributes;
 import com.chaos.trace.log.MdcKeys;
+import com.chaos.trace.log.MdcSupport;
 import com.chaos.trace.RequestTiming;
 import com.chaos.trace.RequestTimingContext;
 import com.chaos.trace.TraceContext;
@@ -12,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -62,9 +65,14 @@ public class AccessLogFilter extends OncePerRequestFilter {
         } finally {
             RequestTiming.Snapshot snapshot = timing.snapshot();
             long costMs = Math.round(snapshot.totalMillis());
-            MDC.put(MdcKeys.COST, Long.toString(costMs));
-            logTiming(request, response, snapshot, failed[0]);
-            MDC.remove(MdcKeys.COST);
+            Map<String, String> previousMdc = MdcSupport.copy();
+            try {
+                MDC.put(MdcKeys.COST, Long.toString(costMs));
+                putIdentityMdc(request);
+                logTiming(request, response, snapshot, failed[0]);
+            } finally {
+                MdcSupport.restore(previousMdc);
+            }
         }
     }
 
@@ -109,5 +117,16 @@ public class AccessLogFilter extends OncePerRequestFilter {
      */
     private static String sanitizeRequestId(String requestId) {
         return ContextIdentifiers.sanitizeTraceId(requestId);
+    }
+
+    private static void putIdentityMdc(HttpServletRequest request) {
+        putIfNotBlank(MdcKeys.USER_ID, request.getAttribute(RequestContextAttributes.USER_ID));
+        putIfNotBlank(MdcKeys.TENANT_ID, request.getAttribute(RequestContextAttributes.TENANT_ID));
+    }
+
+    private static void putIfNotBlank(String key, Object value) {
+        if (value != null && !value.toString().isBlank()) {
+            MDC.put(key, value.toString());
+        }
     }
 }

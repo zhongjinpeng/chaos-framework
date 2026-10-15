@@ -3,6 +3,7 @@ package com.chaos.security.context;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaos.core.context.RequestContext;
+import com.chaos.core.context.RequestContextAttributes;
 import com.chaos.security.api.auth.LoginUser;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -12,6 +13,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.MDC;
 
 /**
  * 用户上下文同步过滤器测试。
@@ -34,17 +36,27 @@ class SecurityContextRequestFilterTest {
         SecurityContextHolder.getContext().setAuthentication(
                 UsernamePasswordAuthenticationToken.authenticated(user, null, java.util.List.of()));
         String[] seen = new String[1];
+        String[] seenMdcUser = new String[1];
+        String[] seenMdcTenant = new String[1];
 
         filter.doFilter(new MockHttpServletRequest(), new MockHttpServletResponse(),
                 new MockFilterChain() {
                     @Override
                     public void doFilter(jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response) {
                         seen[0] = RequestContext.userId();
+                        seenMdcUser[0] = MDC.get("userId");
+                        seenMdcTenant[0] = MDC.get("tenantId");
+                        assertThat(request.getAttribute(RequestContextAttributes.USER_ID)).isEqualTo("1001");
+                        assertThat(request.getAttribute(RequestContextAttributes.TENANT_ID)).isEqualTo("tenant-a");
                     }
                 });
 
         assertThat(seen[0]).isEqualTo("1001");
+        assertThat(seenMdcUser[0]).isEqualTo("1001");
+        assertThat(seenMdcTenant[0]).isEqualTo("tenant-a");
         assertThat(RequestContext.userId()).isEmpty();
         assertThat(RequestContext.current()).isEmpty();
+        assertThat(MDC.get("userId")).isNull();
+        assertThat(MDC.get("tenantId")).isNull();
     }
 }

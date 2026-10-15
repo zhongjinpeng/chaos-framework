@@ -79,6 +79,10 @@ public class GatewayAccessLogFilter implements GlobalFilter, Ordered {
             Map<String, String> previousMdc = MdcSupport.copy();
             try {
                 MdcSupport.putIfNotBlank(MdcKeys.TRACE_ID, traceId);
+                MdcSupport.putIfNotBlank(
+                        MdcKeys.USER_ID, GatewayExchangeAttributes.authenticatedUserId(exchange));
+                MdcSupport.putIfNotBlank(
+                        MdcKeys.TENANT_ID, GatewayExchangeAttributes.authenticatedTenantId(exchange));
                 if (failed || slow) {
                     accessLog.warn(message, arguments);
                 } else {

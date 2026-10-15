@@ -1,6 +1,7 @@
 package com.chaos.security.context;
 
 import com.chaos.core.context.RequestContext;
+import com.chaos.core.context.RequestContextAttributes;
 import com.chaos.core.context.RequestContextSnapshot;
 import com.chaos.security.auth.SecurityUtils;
 import jakarta.servlet.FilterChain;
@@ -8,7 +9,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
+import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -31,18 +34,33 @@ public class SecurityContextRequestFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         Optional<RequestContextSnapshot> previous = RequestContext.current();
+        Map<String, String> previousMdc = MDC.getCopyOfContextMap();
         try {
             SecurityUtils.currentUser().ifPresent(user -> {
                 RequestContext.setUserId(user.userId());
                 RequestContext.setTenantId(user.tenantId());
+                request.setAttribute(RequestContextAttributes.USER_ID, user.userId());
+                request.setAttribute(RequestContextAttributes.TENANT_ID, user.tenantId());
+                putIfNotBlank("userId", user.userId());
+                putIfNotBlank("tenantId", user.tenantId());
             });
             filterChain.doFilter(request, response);
         } finally {
+            MDC.clear();
+            if (previousMdc != null && !previousMdc.isEmpty()) {
+                MDC.setContextMap(previousMdc);
+            }
             if (previous.isPresent()) {
                 RequestContext.set(previous.get());
             } else {
                 RequestContext.clear();
             }
+        }
+    }
+
+    private static void putIfNotBlank(String key, String value) {
+        if (value != null && !value.isBlank()) {
+            MDC.put(key, value);
         }
     }
 }
