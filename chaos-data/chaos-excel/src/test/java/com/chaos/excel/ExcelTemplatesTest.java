@@ -13,22 +13,22 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
-class ExcelTemplateOperationsTest {
+class ExcelTemplatesTest {
 
     @Test
     void shouldCreateStyledMultiSheetTemplateWithNamedDropdowns() throws Exception {
-        ExcelTemplateSupport.SheetDefinition definition = new ExcelTemplateSupport.SheetDefinition(
+        ExcelTemplates.Definition definition = new ExcelTemplates.Definition(
                 "试剂", new int[]{20, 24}, Map.of(
-                        1, new ExcelTemplateSupport.Dropdown("units", List.of("g", "mL"))));
+                        1, new ExcelTemplates.Dropdown("units", List.of("g", "mL"))));
 
-        ExcelDocument document = ExcelTemplateOperations.write("试剂导入模板",
-                List.of(new ExcelTemplateOperations.Sheet("试剂", TemplateRow.class,
+        ExcelDocument document = ExcelTemplates.write("试剂导入模板",
+                List.of(new ExcelTemplates.Sheet("试剂", TemplateRow.class,
                         List.of(new TemplateRow("氯化钠", "g")), definition)));
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(document.content()))) {
             assertThat(document.filename()).isEqualTo("试剂导入模板.xlsx");
             assertThat(workbook.getNumberOfSheets()).isEqualTo(2);
-            assertThat(workbook.isSheetHidden(workbook.getSheetIndex(ExcelTemplateSupport.DICTIONARY_SHEET)))
+            assertThat(workbook.isSheetHidden(workbook.getSheetIndex("_字典")))
                     .isTrue();
 
             Sheet sheet = workbook.getSheet("试剂");
@@ -56,7 +56,7 @@ class ExcelTemplateOperationsTest {
 
             Name units = workbook.getName("units");
             assertThat(units.getRefersToFormula()).isEqualTo("'_字典'!$A$1:$A$2");
-            assertThat(workbook.getSheet(ExcelTemplateSupport.DICTIONARY_SHEET)
+            assertThat(workbook.getSheet("_字典")
                     .getRow(1).getCell(0).getStringCellValue()).isEqualTo("mL");
         }
 

@@ -76,6 +76,22 @@ public final class ExcelOperations {
         return read(new ByteArrayInputStream(content), rowType, ExcelReadOptions.defaults());
     }
 
+    /**
+     * 按指定工作表、表头、批次和最大行数读取内存中的 Excel 文件。
+     *
+     * @param content 文件完整字节内容
+     * @param rowType 单行映射类型
+     * @param options 读取范围和资源限制
+     * @param <T> 单行映射类型
+     * @return 按工作表顺序生成的不可变数据行列表
+     * @throws ExcelProcessingException 文件解析、单元格转换或行数限制校验失败时抛出
+     */
+    public static <T> List<T> read(
+            byte[] content, Class<T> rowType, ExcelReadOptions options) {
+        Objects.requireNonNull(content, "content must not be null");
+        return read(new ByteArrayInputStream(content), rowType, options);
+    }
+
     /** Read every visible worksheet while keeping hidden dictionary sheets out of imports. */
     public static <T> List<T> readVisibleSheets(byte[] content, Class<T> rowType,
                                                  ExcelReadOptions options) {
@@ -128,6 +144,30 @@ public final class ExcelOperations {
         return new ExcelProcessingException(message, cause);
     }
 
+    /** Excel 导入数据行数超过调用方配置上限。 */
+    public static final class RowLimitExceededException extends ExcelProcessingException {
+        private final int maxRows;
+
+        /**
+         * 创建包含允许最大数据行数的异常。
+         *
+         * @param maxRows 调用方配置的最大数据行数
+         */
+        public RowLimitExceededException(int maxRows) {
+            super("Excel row limit exceeded: " + maxRows);
+            this.maxRows = maxRows;
+        }
+
+        /**
+         * 返回本次读取允许的最大数据行数。
+         *
+         * @return 大于零的数据行上限
+         */
+        public int maxRows() {
+            return maxRows;
+        }
+    }
+
     private static final class BatchReadListener<T> extends AnalysisEventListener<T> {
         private final ExcelReadOptions options;
         private final Consumer<List<T>> batchConsumer;
@@ -144,7 +184,7 @@ public final class ExcelOperations {
         public void invoke(T row, AnalysisContext context) {
             rowCount++;
             if (rowCount > options.maxRows()) {
-                throw new ExcelProcessingException("Excel row limit exceeded: " + options.maxRows());
+                throw new RowLimitExceededException(options.maxRows());
             }
             batch.add(row);
             if (batch.size() >= options.batchSize()) {

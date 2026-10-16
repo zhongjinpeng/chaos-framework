@@ -1,12 +1,17 @@
 package com.chaos.excel;
 
+import cn.idev.excel.ExcelWriter;
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.write.metadata.WriteSheet;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -19,29 +24,25 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/**
- * Shared XLSX template styling and dropdown support.
- *
- * <p>Business modules declare sheet appearance and dropdown dictionaries; this strategy owns the
- * workbook-specific implementation, including hidden dictionary sheets and named ranges.
- */
-public final class ExcelTemplateSupport {
-    public static final String DICTIONARY_SHEET = "_字典";
-    public static final int DEFAULT_FIRST_DATA_ROW = 1;
-    public static final int DEFAULT_LAST_DATA_ROW = 4999;
+/** Excel 导入模板定义、样式、下拉校验和多工作表写出的统一入口。 */
+public final class ExcelTemplates {
 
-    private ExcelTemplateSupport() {
+    private ExcelTemplates() {
     }
 
+    private static final String DICTIONARY_SHEET = "_字典";
+    private static final int DEFAULT_FIRST_DATA_ROW = 1;
+    private static final int DEFAULT_LAST_DATA_ROW = 4999;
+
+
     /** A sheet's reusable visual and validation definition. */
-    public record SheetDefinition(String sheetName, int[] columnWidths,
+    public record Definition(String sheetName, int[] columnWidths,
                                   Map<Integer, Dropdown> dropdowns) {
-        public SheetDefinition {
+        public Definition {
             if (sheetName == null || sheetName.isBlank()) {
                 throw new IllegalArgumentException("sheetName must not be blank");
             }
@@ -51,7 +52,7 @@ public final class ExcelTemplateSupport {
                     : Collections.unmodifiableMap(new LinkedHashMap<>(dropdowns));
         }
 
-        public SheetDefinition(String sheetName, int[] columnWidths) {
+        public Definition(String sheetName, int[] columnWidths) {
             this(sheetName, columnWidths, Map.of());
         }
     }
@@ -75,7 +76,7 @@ public final class ExcelTemplateSupport {
     }
 
     /** Apply the common workbook behavior to a workbook already written by FastExcel. */
-    public static byte[] enhance(byte[] content, List<SheetDefinition> definitions) {
+    private static byte[] enhance(byte[] content, List<Definition> definitions) {
         if (content == null) {
             throw new IllegalArgumentException("content must not be null");
         }
@@ -88,8 +89,9 @@ public final class ExcelTemplateSupport {
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle bodyStyle = createBodyStyle(workbook);
             CellStyle dateStyle = createDateStyle(workbook, bodyStyle);
-            for (SheetDefinition definition : definitions) {
-                Sheet sheet = workbook.getSheet(definition.sheetName());
+            for (Definition definition : definitions) {
+                org.apache.poi.ss.usermodel.Sheet sheet =
+                        workbook.getSheet(definition.sheetName());
                 if (sheet == null) {
                     throw new IllegalArgumentException("Sheet not found: " + definition.sheetName());
                 }
@@ -108,10 +110,11 @@ public final class ExcelTemplateSupport {
     }
 
     private static Map<String, Integer> writeDictionary(XSSFWorkbook workbook,
-                                                          List<SheetDefinition> definitions) {
-        Sheet dictionary = workbook.getSheet(DICTIONARY_SHEET);
+                                                          List<Definition> definitions) {
+        org.apache.poi.ss.usermodel.Sheet dictionary =
+                workbook.getSheet(DICTIONARY_SHEET);
         Map<String, Dropdown> unique = new LinkedHashMap<>();
-        for (SheetDefinition definition : definitions) {
+        for (Definition definition : definitions) {
             for (Dropdown dropdown : definition.dropdowns().values()) {
                 if (!dropdown.options().isEmpty()) {
                     unique.putIfAbsent(dropdown.name(), dropdown);
@@ -150,7 +153,7 @@ public final class ExcelTemplateSupport {
         return columns;
     }
 
-    private static void addDropdowns(Sheet sheet, Map<Integer, Dropdown> dropdowns,
+    private static void addDropdowns(org.apache.poi.ss.usermodel.Sheet sheet, Map<Integer, Dropdown> dropdowns,
                                      Map<String, Integer> dictionaryColumns) {
         DataValidationHelper helper = sheet.getDataValidationHelper();
         for (Map.Entry<Integer, Dropdown> entry : dropdowns.entrySet()) {
@@ -173,7 +176,7 @@ public final class ExcelTemplateSupport {
         }
     }
 
-    private static void styleSheet(Sheet sheet, int[] widths, CellStyle headerStyle,
+    private static void styleSheet(org.apache.poi.ss.usermodel.Sheet sheet, int[] widths, CellStyle headerStyle,
                                    CellStyle bodyStyle, CellStyle dateStyle) {
         Row header = sheet.getRow(0);
         if (header == null) {
@@ -266,5 +269,44 @@ public final class ExcelTemplateSupport {
             safe = "dd_" + safe;
         }
         return safe.length() > 200 ? safe.substring(0, 200) : safe;
+    }
+
+
+    /** A row model, sample data and the common workbook definition for one sheet. */
+    public record Sheet(String sheetName, Class<?> rowType, Collection<?> sampleData,
+                        Definition definition) {
+        public Sheet {
+            if (sheetName == null || sheetName.isBlank()) {
+                throw new IllegalArgumentException("sheetName must not be blank");
+            }
+            Objects.requireNonNull(rowType, "rowType must not be null");
+            sampleData = sampleData == null ? List.of() : List.copyOf(sampleData);
+            Objects.requireNonNull(definition, "definition must not be null");
+            if (!sheetName.equals(definition.sheetName())) {
+                throw new IllegalArgumentException("sheetName must match definition.sheetName");
+            }
+        }
+    }
+
+    /** Write a multi-sheet template, then apply shared style and dropdown strategies. */
+    public static ExcelDocument write(String filename, List<Sheet> sheets) {
+        Objects.requireNonNull(sheets, "sheets must not be null");
+        if (sheets.isEmpty()) {
+            throw new IllegalArgumentException("sheets must not be empty");
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ExcelWriter writer = FastExcel.write(output).autoCloseStream(false).build()) {
+            for (int index = 0; index < sheets.size(); index++) {
+                Sheet definition = sheets.get(index);
+                WriteSheet writeSheet = FastExcel.writerSheet(index, definition.sheetName())
+                        .head(definition.rowType()).build();
+                writer.write(definition.sampleData(), writeSheet);
+            }
+        } catch (RuntimeException exception) {
+            throw new ExcelProcessingException("Excel template export failed", exception);
+        }
+        byte[] enhanced = enhance(
+                output.toByteArray(), sheets.stream().map(Sheet::definition).toList());
+        return ExcelDocument.xlsx(filename, enhanced);
     }
 }

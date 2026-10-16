@@ -51,8 +51,19 @@ class ExcelOperationsTest {
 
         assertThatThrownBy(() -> ExcelOperations.read(new ByteArrayInputStream(document.content()),
                 TestRow.class, new ExcelReadOptions(0, 1, 10, 2)))
-                .isInstanceOf(ExcelProcessingException.class)
-                .hasMessageContaining("row limit exceeded");
+                .isInstanceOfSatisfying(ExcelOperations.RowLimitExceededException.class,
+                        exception -> assertThat(exception.maxRows()).isEqualTo(2));
+    }
+
+    @Test
+    void shouldReadByteArrayWithConfiguredLimits() {
+        ExcelDocument document = ExcelOperations.write("records.xlsx", TestRow.class,
+                List.of(new TestRow("A", "一室", 1), new TestRow("B", "二室", 2)));
+
+        List<TestRow> rows = ExcelOperations.read(document.content(), TestRow.class,
+                new ExcelReadOptions(0, 1, 1, 2));
+
+        assertThat(rows).hasSize(2);
     }
 
     public static class TestRow {
