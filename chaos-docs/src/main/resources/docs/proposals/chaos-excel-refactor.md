@@ -416,15 +416,11 @@ ExcelFile file = ExcelExports.write("实验室数据", List.of(
 public record ImportError(
         String sheetName,
         int rowNumber,          // 1-based，Excel 实际行号
-        Integer columnIndex,    // 0-based，行级错误为 null
+        int columnIndex,        // 0-based，行级错误为 -1
         String columnName,
-        String field,
-        String rawValue,        // 截断后的原始值
         String code,            // 稳定错误码，如 EXCEL_REQUIRED / EXCEL_FORMAT
         String message,
-        Severity severity) {
-    public enum Severity { ERROR, WARNING }
-}
+        Map<Integer, String> rawCells) {}
 
 public record SheetResult(
         String sheetName,
@@ -433,17 +429,18 @@ public record SheetResult(
         long failedRows,
         boolean skipped) {}
 
-public record ImportResult(
-        String originalFilename,
-        long totalRows,
-        long successRows,
-        long failedRows,
-        List<ImportError> errors,
-        boolean errorsTruncated,
-        Map<String, SheetResult> sheets) {
+public final class ImportResult {
+    // 不可变字段：originalFilename、totalRows、successRows、failedRows、
+    // errors、errorsTruncated、sheets、sheetHeaders
+
     public boolean hasErrors();
     public boolean isSuccess();
-    public Optional<ExcelFile> errorFile();
+    public boolean isPartialSuccess();
+    public double successRate();
+    public int collectedErrorCount();
+    public List<ImportError> errorsForSheet(String sheetName);
+    public Optional<SheetResult> sheet(String sheetName);
+    public Optional<ExcelFile> errorFile(); // 首次生成后缓存
     public ImportSummary summary();
 }
 

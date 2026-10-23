@@ -61,35 +61,35 @@ public class ReagentRow {
 Service 层声明模板结构：
 
 ```java
-import com.chaos.excel.ExcelDocument;
-import com.chaos.excel.ExcelTemplates;
+
 import com.chaos.excel.template.SamplePlacement;
 import com.chaos.excel.template.TemplateOptions;
 import com.chaos.excel.template.TemplateSheet;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public ExcelDocument reagentTemplate() {
-    TemplateSheet reagents = TemplateSheet.builder("试剂", ReagentRow.class)
-            .dropdown("units", List.of("g", "mL", "L"))
-            .samples(List.of(
-                    new ReagentRow("氯化钠", "g", LocalDate.of(2027, 1, 1)),
-                    new ReagentRow("无水乙醇", "mL", LocalDate.of(2027, 6, 1))))
-            .instructions("按列填写；单位从下拉列表选择")
-            .build();
+  TemplateSheet reagents = TemplateSheet.builder("试剂", ReagentRow.class)
+          .dropdown("units", List.of("g", "mL", "L"))
+          .samples(List.of(
+                  new ReagentRow("氯化钠", "g", LocalDate.of(2027, 1, 1)),
+                  new ReagentRow("无水乙醇", "mL", LocalDate.of(2027, 6, 1))))
+          .instructions("按列填写；单位从下拉列表选择")
+          .build();
 
-    TemplateSheet instruments = TemplateSheet.builder("仪器", InstrumentRow.class)
-            .dropdown("instrument_units", List.of("台", "套"))
-            .samples(List.of(new InstrumentRow("电子天平", "台")))
-            .build();
+  TemplateSheet instruments = TemplateSheet.builder("仪器", InstrumentRow.class)
+          .dropdown("instrument_units", List.of("台", "套"))
+          .samples(List.of(new InstrumentRow("电子天平", "台")))
+          .build();
 
-    return ExcelTemplates.write(
-            "实验室导入模板",
-            List.of(reagents, instruments),
-            TemplateOptions.defaults()
-                    .samplePlacement(SamplePlacement.SEPARATE_SHEET)
-                    .includeInstructions(true)
-                    .lastDataRow(4999));
+  return ExcelTemplates.write(
+          "实验室导入模板",
+          List.of(reagents, instruments),
+          TemplateOptions.defaults()
+                  .samplePlacement(SamplePlacement.SEPARATE_SHEET)
+                  .includeInstructions(true)
+                  .lastDataRow(4999));
 }
 ```
 
@@ -120,7 +120,7 @@ public ResponseEntity<byte[]> template() {
 ### Service：声明导入计划
 
 ```java
-import com.chaos.excel.ExcelImports;
+
 import com.chaos.excel.importer.ErrorPolicy;
 import com.chaos.excel.importer.ImportPlan;
 import com.chaos.excel.importer.ImportResult;
@@ -181,6 +181,20 @@ public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile upload)
 不需要 Redis 或对象存储。如果业务必须先返回 JSON、再下载错误文件，可以在业务层基于
 `ExcelFile` 自行保存并生成 token；框架只负责生成错误文件内容。
 
+`ImportResult` 还提供以下派生信息，便于接口层直接使用：
+
+```java
+result.isSuccess();             // 是否全部成功
+result.isPartialSuccess();      // 是否有成功也有失败
+result.successRate();           // 成功率，0.0 ~ 1.0
+result.collectedErrorCount();   // 实际保留的错误条数（可能小于 failedRows）
+result.errorsForSheet("试剂");   // 指定 Sheet 的错误
+result.sheet("试剂");            // 指定 Sheet 的统计
+```
+
+`errorFile()` 首次调用时生成错误文件并缓存，重复调用返回同一个 `ExcelFile`，适合在
+“先判断是否有错误、再写响应”的场景中避免重复构建工作簿。
+
 ### 错误策略
 
 ```java
@@ -199,15 +213,15 @@ public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile upload)
 ### 多 Sheet 内存导出
 
 ```java
-import com.chaos.excel.ExcelDocument;
-import com.chaos.excel.ExcelExports;
+
 import com.chaos.excel.export.ExportOptions;
 import com.chaos.excel.export.ExportSheet;
+
 import java.util.List;
 
 ExcelDocument document = ExcelExports.write("实验室数据", List.of(
-        ExportSheet.of("试剂", ReagentRow.class, reagentBatches),
-        ExportSheet.of("仪器", InstrumentRow.class, instrumentBatches)),
+                ExportSheet.of("试剂", ReagentRow.class, reagentBatches),
+                ExportSheet.of("仪器", InstrumentRow.class, instrumentBatches)),
         ExportOptions.defaults()
                 .freezeHeader(true)
                 .autoFilter(true)
