@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 重构 `chaos-excel`：移除 FastExcel，改为 Apache POI 5.5.1 单引擎；模板/错误文件使用 `XSSFWorkbook`/`SXSSFWorkbook`，导入使用 `XSSFReader` + StAX 保留原始单元格类型。
+- `chaos-excel` 新增 `@ExcelColumn` 行模型注解、`ImportPlan`/`ImportResult` 多 Sheet 导入、行级错误收集与错误文件下载、多 Sheet 导出、模板独立 `示例-*` 页与下拉/必填/说明页。`@ExcelProperty` 需迁移为 `@ExcelColumn`。
+- `chaos-excel` 删除已废弃 API：`ImportOperationType`、`readVisibleSheets`、`processBatches`/`processRequired`、旧模板 `Sheet`/`Definition`/`Dropdown`；保留 `read`/`readRequired`/`readBatches` 简单读取入口。`PoiZipGuard` 增加压缩炸弹预检。
+- BOM 将 `poi.version` 升级到 `5.5.1`，`commons-io.version` 对齐到 `2.21.0`，移除 `fastexcel` 依赖。
 - 精简 `/actuator/health` 中的 `chaosRuntime`：仅展示已启用能力并省略空区块，过滤 shell、classpath 与 IDE 噪声。
 - 增加服务版本、构建时间、启动时间和运行时长；`chaos-boot-parent` 默认生成 Spring Boot build-info。
 - 由框架提供完整 Health 详情与低价值健康指标的低优先级默认值，业务服务无需重复配置。

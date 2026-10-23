@@ -1,155 +1,370 @@
 package com.chaos.excel;
 
+import com.chaos.excel.importer.ErrorPolicy;
+import com.chaos.excel.importer.ImportError;
+import com.chaos.excel.importer.ImportOptions;
+import com.chaos.excel.importer.ImportPlan;
+import com.chaos.excel.importer.ImportResult;
+import com.chaos.excel.importer.RowValidationException;
+import com.chaos.excel.importer.SheetImportSpec;
+import com.chaos.excel.importer.SheetResult;
+import com.chaos.excel.internal.HeaderMatcher;
+import com.chaos.excel.internal.poi.PoiSheetReader;
+import com.chaos.excel.internal.poi.PoiWorkbookInspector;
+import com.chaos.excel.internal.poi.PoiZipGuard;
+import com.chaos.excel.mapping.CellValue;
+import com.chaos.excel.mapping.ColumnBinding;
+import com.chaos.excel.mapping.RowMapper;
+import com.chaos.excel.mapping.RowMappingException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
-/** Excel 上传校验、摘要计算、必填数据读取和逐行处理的统一入口。 */
+/** Excel 上传文件暂存、简单读取和多 Sheet 导入的统一入口。 */
 public final class ExcelImports {
+
+    private static final int LEGACY_MAX_COLUMNS = 256;
 
     private ExcelImports() {
     }
 
     /**
-     * 校验上传文件并返回安全文件名、内容和 SHA-256 摘要。
+     * 按流式字节上限暂存上传文件并计算 SHA-256；上传流由调用方关闭。
      *
-     * @param filename 客户端上传文件名，允许包含浏览器传入的本地路径
-     * @param content 文件完整字节内容，不能为 {@code null} 或空数组
-     * @param options 允许扩展名和最大内容字节数
-     * @return 包含安全文件名、防御性复制内容和摘要的导入文件
-     * @throws ExcelProcessingException 文件名、扩展名或内容不符合导入约束时抛出
+     * @param filename 客户端文件名，可包含浏览器传入的本地路径
+     * @param input 上传文件流
+     * @param options 允许的扩展名和最大字节数
+     * @return 需要通过 {@link StagedFile#close()} 删除临时文件的句柄
+     * @throws ExcelProcessingException 文件边界校验、读取、摘要计算或暂存失败时抛出
      */
-    public static File prepare(String filename, byte[] content, Options options) {
+    public static StagedFile stage(String filename, InputStream input, Options options) {
+        Objects.requireNonNull(input, "input must not be null");
         Objects.requireNonNull(options, "options must not be null");
         String safeFilename = safeFilename(filename);
         String lowerFilename = safeFilename.toLowerCase(Locale.ROOT);
-        boolean supported = options.allowedExtensions().stream().anyMatch(lowerFilename::endsWith);
-        if (!supported) {
-            throw new ExcelProcessingException(
-                    "Excel file extension is not allowed: " + safeFilename);
+        if (options.allowedExtensions().stream().noneMatch(lowerFilename::endsWith)) {
+            throw new ExcelProcessingException("Excel file extension is not allowed: " + safeFilename);
         }
-        if (content == null || content.length == 0) {
-            throw new ExcelProcessingException("Excel file content must not be empty");
+
+        Path path = null;
+        try {
+            path = Files.createTempFile("chaos-excel-import-", ".upload");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            long size = 0;
+            byte[] buffer = new byte[16 * 1024];
+            try (OutputStream output = Files.newOutputStream(path)) {
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    size += count;
+                    if (size > options.maxBytes()) {
+                        throw new ExcelProcessingException(
+                                "Excel file size exceeds limit: " + options.maxBytes() + " bytes");
+                    }
+                    digest.update(buffer, 0, count);
+                    output.write(buffer, 0, count);
+                }
+            }
+            if (size == 0) {
+                throw new ExcelProcessingException("Excel file content must not be empty");
+            }
+            return new StagedFile(safeFilename, path, size, HexFormat.of().formatHex(digest.digest()));
+        } catch (IOException exception) {
+            deleteTemporaryFile(path, exception);
+            throw new ExcelProcessingException("Excel upload staging failed", exception);
+        } catch (NoSuchAlgorithmException exception) {
+            deleteTemporaryFile(path, exception);
+            throw new IllegalStateException("SHA-256 is not available", exception);
+        } catch (RuntimeException exception) {
+            deleteTemporaryFile(path, exception);
+            throw exception;
         }
-        if (content.length > options.maxBytes()) {
+    }
+
+    /**
+     * 按导入计划读取多 Sheet 并聚合错误。
+     *
+     * @param file 已完成上传校验的暂存文件
+     * @param plan 导入计划
+     * @return 导入结果
+     */
+    public static ImportResult execute(StagedFile file, ImportPlan plan) {
+        Objects.requireNonNull(file, "file must not be null");
+        Objects.requireNonNull(plan, "plan must not be null");
+        ImportOptions options = plan.options();
+        if (file.size() > options.maxBytes()) {
             throw new ExcelProcessingException(
                     "Excel file size exceeds limit: " + options.maxBytes() + " bytes");
         }
-        return new File(safeFilename, content, sha256(content));
+        PoiZipGuard.check(
+                file.path(),
+                options.maxUncompressedBytes(),
+                options.maxZipEntries(),
+                options.maxCompressionRatio());
+        List<String> sheetNames = PoiWorkbookInspector.sheetNames(file.path());
+        if (sheetNames.size() > options.maxSheets()) {
+            throw new ExcelProcessingException(
+                    "Excel workbook contains too many sheets: " + sheetNames.size());
+        }
+        Set<String> sheetsByName = Set.copyOf(sheetNames);
+        List<ImportError> errors = new ArrayList<>();
+        boolean[] truncated = {false};
+        Map<String, SheetResult> sheetResults = new LinkedHashMap<>();
+        Map<String, List<String>> sheetHeaders = new LinkedHashMap<>();
+        long totalRows = 0;
+        long successRows = 0;
+        long failedRows = 0;
+        for (SheetImportSpec<?> spec : plan.sheets()) {
+            if (!sheetsByName.contains(spec.sheetName())) {
+                if (spec.required()) {
+                    throw new ExcelProcessingException("Excel sheet not found: " + spec.sheetName());
+                }
+                sheetResults.put(spec.sheetName(), new SheetResult(spec.sheetName(), 0, 0, 0, true));
+                continue;
+            }
+            SheetStats stats = importSheet(file.path(), spec, plan, errors, truncated);
+            sheetResults.put(spec.sheetName(),
+                    new SheetResult(spec.sheetName(), stats.totalRows(),
+                            stats.successRows(), stats.failedRows(), false));
+            sheetHeaders.put(spec.sheetName(), stats.headers());
+            totalRows += stats.totalRows();
+            successRows += stats.successRows();
+            failedRows += stats.failedRows();
+        }
+        return new ImportResult(file.filename(), totalRows, successRows, failedRows,
+                errors, truncated[0], sheetResults, sheetHeaders);
+    }
+
+    private static <T> SheetStats importSheet(
+            Path path,
+            SheetImportSpec<T> spec,
+            ImportPlan plan,
+            List<ImportError> errors,
+            boolean[] truncated) {
+        ImportOptions options = plan.options();
+        RowMapper<T> mapper = RowMapper.of(spec.rowType());
+        List<String> expectedHeaders = mapper.headers();
+        long[] total = {0};
+        long[] success = {0};
+        long[] failed = {0};
+        int[] skippedSamples = {0};
+        int maxRows = Math.min(spec.maxRows(), options.maxRows());
+        int maxErrors = Math.min(plan.errorPolicy().maxErrors(), options.maxErrors());
+        PoiSheetReader.read(path, spec.sheetName(), spec.headerRows(), maxRows,
+                options.maxColumns(), new PoiSheetReader.RowHandler() {
+                    @Override
+                    public void header(Map<Integer, String> headers) {
+                        HeaderMatcher.validate(headers, expectedHeaders, options.headerPolicy());
+                    }
+
+                    @Override
+                    public void row(int rowNumber, Map<Integer, CellValue> cells) {
+                        if (skippedSamples[0] < spec.skipSampleRows()) {
+                            skippedSamples[0]++;
+                            return;
+                        }
+                        total[0]++;
+                        Map<Integer, String> rawCells = rawCells(cells);
+                        try {
+                            T row = mapper.map(cells, rowNumber);
+                            spec.validator().validate(row, rowNumber);
+                            spec.handler().handle(row, rowNumber);
+                            success[0]++;
+                        } catch (RowMappingException exception) {
+                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportError(
+                                    spec.sheetName(),
+                                    rowNumber,
+                                    exception.columnIndex(),
+                                    exception.columnName(),
+                                    exception.code(),
+                                    exception.getMessage(),
+                                    rawCells), exception);
+                            failed[0]++;
+                        } catch (RowValidationException exception) {
+                            int columnIndex = columnIndex(mapper, exception.columnName());
+                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportError(
+                                    spec.sheetName(),
+                                    rowNumber,
+                                    columnIndex,
+                                    exception.columnName(),
+                                    exception.code(),
+                                    exception.getMessage(),
+                                    rawCells), exception);
+                            failed[0]++;
+                        }
+                    }
+                });
+        if (spec.requireData() && total[0] == 0) {
+            throw new NoDataException();
+        }
+        return new SheetStats(total[0], success[0], failed[0], List.copyOf(expectedHeaders));
+    }
+
+    private static void handleRowError(
+            ErrorPolicy policy,
+            int maxErrors,
+            List<ImportError> errors,
+            boolean[] truncated,
+            ImportError error,
+            RuntimeException cause) {
+        if (!policy.isCollect()) {
+            throw new ExcelProcessingException(
+                    "Excel import failed at row " + error.rowNumber() + ": " + error.message(),
+                    cause);
+        }
+        if (errors.size() >= maxErrors) {
+            truncated[0] = true;
+            return;
+        }
+        errors.add(error);
+    }
+
+    private static Map<Integer, String> rawCells(Map<Integer, CellValue> cells) {
+        Map<Integer, String> raw = new LinkedHashMap<>();
+        for (Map.Entry<Integer, CellValue> entry : cells.entrySet()) {
+            raw.put(entry.getKey(), entry.getValue().displayValue());
+        }
+        return Map.copyOf(raw);
+    }
+
+    private static int columnIndex(RowMapper<?> mapper, String columnName) {
+        if (columnName == null || columnName.isBlank()) {
+            return -1;
+        }
+        for (ColumnBinding column : mapper.columns()) {
+            if (column.name().equals(columnName)) {
+                return column.index();
+            }
+        }
+        return -1;
     }
 
     /**
-     * 校验上传文件并使用调用方提供的映射器读取至少一行数据。
+     * 读取暂存工作簿的全部数据行；结果会保存在内存中。
      *
-     * @param filename 客户端上传文件名，允许包含浏览器传入的本地路径
-     * @param content 文件完整字节内容
-     * @param options 文件扩展名和内容大小限制
-     * @param reader 读取已校验文件内容并返回映射行的函数
-     * @param <T> 单行映射类型
-     * @return 包含安全文件信息和不可变数据行的导入数据
-     * @throws ExcelProcessingException 文件校验、读取失败或工作簿没有数据行时抛出
+     * @param file 已完成上传校验的暂存文件
+     * @param rowType 行模型类型
+     * @param options 工作表、表头和行数限制
+     * @param <T> 行模型类型
+     * @return 按工作表顺序生成的不可变数据行列表
      */
-    public static <T> Data<T> readRequired(
-            String filename,
-            byte[] content,
-            Options options,
-            Function<byte[], List<T>> reader) {
-        return readRequired(prepare(filename, content, options), reader);
-    }
-
-    /**
-     * 使用调用方提供的映射器读取已校验文件中的至少一行数据。
-     *
-     * @param file 已完成上传校验和摘要计算的文件
-     * @param reader 读取文件内容并返回映射行的函数
-     * @param <T> 单行映射类型
-     * @return 包含原文件信息和不可变数据行的导入数据
-     * @throws ExcelProcessingException 文件读取失败或工作簿没有数据行时抛出
-     */
-    public static <T> Data<T> readRequired(File file, Function<byte[], List<T>> reader) {
+    public static <T> List<T> read(StagedFile file, Class<T> rowType, ReadOptions options) {
         Objects.requireNonNull(file, "file must not be null");
-        Objects.requireNonNull(reader, "reader must not be null");
-        List<T> rows = Objects.requireNonNull(
-                reader.apply(file.content()), "reader result must not be null");
+        Objects.requireNonNull(rowType, "rowType must not be null");
+        Objects.requireNonNull(options, "options must not be null");
+        String sheetName = sheetName(file, options.sheetNumber());
+        List<T> rows = new ArrayList<>();
+        readMapped(file, sheetName, rowType, options.headerRows(), options.maxRows(),
+                options.batchSize(), (batch, numbers) -> rows.addAll(batch));
+        return List.copyOf(rows);
+    }
+
+    /**
+     * 使用默认限制读取暂存工作簿的第一张工作表；结果会保存在内存中。
+     *
+     * @param file 已完成上传校验的暂存文件
+     * @param rowType 行模型类型
+     * @param <T> 行模型类型
+     * @return 第一工作表中的不可变数据行列表
+     */
+    public static <T> List<T> read(StagedFile file, Class<T> rowType) {
+        return read(file, rowType, ReadOptions.defaults());
+    }
+
+    /**
+     * 按配置批次读取暂存工作簿；框架负责打开和关闭解析流。
+     *
+     * @param file 已完成上传校验的暂存文件
+     * @param rowType 行模型类型
+     * @param options 工作表、表头、批次和行数限制
+     * @param batchConsumer 按工作表顺序接收不可变批次的处理器
+     * @param <T> 行模型类型
+     */
+    public static <T> void readBatches(
+            StagedFile file, Class<T> rowType, ReadOptions options, Consumer<List<T>> batchConsumer) {
+        Objects.requireNonNull(file, "file must not be null");
+        Objects.requireNonNull(rowType, "rowType must not be null");
+        Objects.requireNonNull(options, "options must not be null");
+        Objects.requireNonNull(batchConsumer, "batchConsumer must not be null");
+        String sheetName = sheetName(file, options.sheetNumber());
+        readMapped(file, sheetName, rowType, options.headerRows(), options.maxRows(),
+                options.batchSize(), (batch, numbers) -> batchConsumer.accept(batch));
+    }
+
+    private static <T> void readMapped(
+            StagedFile file,
+            String sheetName,
+            Class<T> rowType,
+            int headerRows,
+            int maxRows,
+            int batchSize,
+            BiConsumer<List<T>, int[]> batchConsumer) {
+        RowMapper<T> mapper = RowMapper.of(rowType);
+        List<T> batch = new ArrayList<>(Math.max(1, batchSize));
+        List<Integer> numbers = new ArrayList<>(Math.max(1, batchSize));
+        PoiSheetReader.read(file.path(), sheetName, headerRows, maxRows,
+                LEGACY_MAX_COLUMNS, new PoiSheetReader.RowHandler() {
+                    @Override
+                    public void row(int rowNumber, Map<Integer, CellValue> cells) {
+                        batch.add(mapper.map(cells, rowNumber));
+                        numbers.add(rowNumber);
+                        if (batch.size() >= batchSize) {
+                            flush(batch, numbers, batchConsumer);
+                        }
+                    }
+                });
+        flush(batch, numbers, batchConsumer);
+    }
+
+    private static <T> void flush(
+            List<T> batch, List<Integer> numbers, BiConsumer<List<T>, int[]> batchConsumer) {
+        if (batch.isEmpty()) {
+            return;
+        }
+        int[] rowNumbers = numbers.stream().mapToInt(Integer::intValue).toArray();
+        batchConsumer.accept(List.copyOf(batch), rowNumbers);
+        batch.clear();
+        numbers.clear();
+    }
+
+    private static String sheetName(StagedFile file, int sheetNumber) {
+        List<String> sheets = PoiWorkbookInspector.sheetNames(file.path());
+        if (sheetNumber < 0 || sheetNumber >= sheets.size()) {
+            throw new ExcelProcessingException("Excel sheet index out of range: " + sheetNumber);
+        }
+        return sheets.get(sheetNumber);
+    }
+
+    /**
+     * 通过统一解析器读取暂存文件并要求至少包含一条数据行。
+     *
+     * @param file 已完成上传边界校验和摘要计算的暂存文件
+     * @param rowType 行模型类型
+     * @param options 工作表、表头、批次和最大行数限制
+     * @param <T> 行模型类型
+     * @return 包含文件元数据和不可变数据行的结果
+     */
+    public static <T> StagedData<T> readRequired(
+            StagedFile file, Class<T> rowType, ReadOptions options) {
+        List<T> rows = read(file, rowType, options);
         if (rows.isEmpty()) {
             throw new NoDataException();
         }
-        return new Data<>(file, rows);
-    }
-
-    /**
-     * 校验上传文件并使用 FastExcel 映射类型读取至少一行数据。
-     *
-     * @param filename 客户端上传文件名，允许包含浏览器传入的本地路径
-     * @param content 文件完整字节内容
-     * @param rowType FastExcel 单行映射类型
-     * @param importOptions 文件扩展名和内容大小限制
-     * @param readOptions 工作表、表头、批次和最大行数限制
-     * @param <T> 单行映射类型
-     * @return 包含安全文件信息和不可变数据行的导入数据
-     * @throws ExcelProcessingException 文件校验、解析或数据行校验失败时抛出
-     */
-    public static <T> Data<T> readRequired(
-            String filename,
-            byte[] content,
-            Class<T> rowType,
-            Options importOptions,
-            ExcelReadOptions readOptions) {
-        Objects.requireNonNull(rowType, "rowType must not be null");
-        Objects.requireNonNull(readOptions, "readOptions must not be null");
-        return readRequired(
-                filename,
-                content,
-                importOptions,
-                bytes -> ExcelOperations.read(bytes, rowType, readOptions));
-    }
-
-    /**
-     * 读取至少一行数据并按顺序处理每行，同时为处理异常补充真实 Excel 行号。
-     *
-     * @param file 已完成上传校验和摘要计算的文件
-     * @param reader 读取文件内容并返回映射行的函数
-     * @param firstDataRowNumber 第一条数据在 Excel 中的一基行号
-     * @param processor 单行处理函数，返回值不能为 {@code null}
-     * @param <T> 单行映射类型
-     * @param <R> 单行处理结果类型
-     * @return 包含原文件信息和不可变行处理结果的导入数据
-     * @throws ExcelProcessingException 文件读取失败、没有数据行或单行处理失败时抛出
-     */
-    public static <T, R> Data<R> processRequired(
-            File file,
-            Function<byte[], List<T>> reader,
-            int firstDataRowNumber,
-            Function<T, R> processor) {
-        Data<T> data = readRequired(file, reader);
-        return new Data<>(data.file(), map(data.rows(), firstDataRowNumber, processor));
-    }
-
-    private static <T, R> List<R> map(
-            List<T> rows, int firstDataRowNumber, Function<T, R> processor) {
-        Objects.requireNonNull(processor, "processor must not be null");
-        if (firstDataRowNumber < 1) {
-            throw new IllegalArgumentException("firstDataRowNumber must be positive");
-        }
-        List<R> results = new ArrayList<>(rows.size());
-        for (int index = 0; index < rows.size(); index++) {
-            try {
-                results.add(Objects.requireNonNull(
-                        processor.apply(rows.get(index)), "processor result must not be null"));
-            } catch (RowProcessingException exception) {
-                throw exception;
-            } catch (RuntimeException exception) {
-                throw new RowProcessingException(firstDataRowNumber + index, exception);
-            }
-        }
-        return List.copyOf(results);
+        return new StagedData<>(file, rows);
     }
 
     private static String safeFilename(String filename) {
@@ -164,48 +379,22 @@ public final class ExcelImports {
         return safeFilename;
     }
 
-    private static String sha256(byte[] content) {
+    private static void deleteTemporaryFile(Path path, Throwable failure) {
+        if (path == null) {
+            return;
+        }
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available", exception);
+            Files.deleteIfExists(path);
+        } catch (IOException cleanupException) {
+            failure.addSuppressed(cleanupException);
         }
     }
 
-    /** 通过上传校验并计算摘要的 Excel 导入文件。 */
-    public record File(String filename, byte[] content, String sha256) {
-
-        public File {
-            if (filename == null || filename.isBlank()) {
-                throw new IllegalArgumentException("filename must not be blank");
-            }
-            content = Objects.requireNonNull(content, "content must not be null").clone();
-            if (content.length == 0) {
-                throw new IllegalArgumentException("content must not be empty");
-            }
-            if (sha256 == null || sha256.isBlank()) {
-                throw new IllegalArgumentException("sha256 must not be blank");
-            }
-        }
-
-        @Override
-        public byte[] content() {
-            return content.clone();
-        }
+    private record SheetStats(long totalRows, long successRows, long failedRows, List<String> headers) {
     }
 
-    /** 已完成文件校验、数据读取或逐行处理的导入数据。 */
-    public record Data<T>(File file, List<T> rows) {
-
-        public Data {
-            Objects.requireNonNull(file, "file must not be null");
-            rows = List.copyOf(Objects.requireNonNull(rows, "rows must not be null"));
-        }
-    }
-
-    /** Excel 上传文件校验选项。 */
+    /** 导入文件扩展名和大小限制。 */
     public record Options(Set<String> allowedExtensions, int maxBytes) {
-
         public Options {
             Objects.requireNonNull(allowedExtensions, "allowedExtensions must not be null");
             if (allowedExtensions.isEmpty()) {
@@ -214,8 +403,7 @@ public final class ExcelImports {
             LinkedHashSet<String> normalized = new LinkedHashSet<>();
             for (String extension : allowedExtensions) {
                 if (extension == null || extension.isBlank()) {
-                    throw new IllegalArgumentException(
-                            "allowedExtensions must not contain blank values");
+                    throw new IllegalArgumentException("allowedExtensions must not contain blank values");
                 }
                 String value = extension.toLowerCase(Locale.ROOT);
                 normalized.add(value.startsWith(".") ? value : "." + value);
@@ -227,63 +415,126 @@ public final class ExcelImports {
         }
 
         /**
-         * 创建仅允许 XLSX 文件的校验选项。
+         * 创建仅允许 XLSX 的文件策略。
          *
-         * @param maxBytes 文件内容允许占用的最大字节数
-         * @return 仅接受 {@code .xlsx} 扩展名的不可变选项
+         * @param maxBytes 文件最大字节数
+         * @return XLSX 导入策略
          */
         public static Options xlsx(int maxBytes) {
             return new Options(Set.of(".xlsx"), maxBytes);
         }
     }
 
-    /** 工作簿没有任何数据行。 */
-    public static final class NoDataException extends ExcelProcessingException {
+    /** Excel 解析时的工作表、表头、批次和行数限制。 */
+    public record ReadOptions(int sheetNumber, int headerRows, int batchSize, int maxRows) {
+        public static final int DEFAULT_BATCH_SIZE = 500;
+        public static final int DEFAULT_MAX_ROWS = 100_000;
 
-        public NoDataException() {
-            super("Excel workbook must contain at least one data row");
+        public ReadOptions {
+            if (sheetNumber < 0) {
+                throw new IllegalArgumentException("sheetNumber must be at least 0");
+            }
+            if (headerRows < 0) {
+                throw new IllegalArgumentException("headerRows must be at least 0");
+            }
+            if (batchSize < 1) {
+                throw new IllegalArgumentException("batchSize must be greater than 0");
+            }
+            if (maxRows < 1) {
+                throw new IllegalArgumentException("maxRows must be greater than 0");
+            }
+        }
+
+        /** @return 第一工作表、单行表头、每批 500 行且最多 100,000 行的默认配置 */
+        public static ReadOptions defaults() {
+            return new ReadOptions(0, 1, DEFAULT_BATCH_SIZE, DEFAULT_MAX_ROWS);
         }
     }
 
-    /** 单行处理失败并携带用户可定位的 Excel 行号。 */
-    public static final class RowProcessingException extends ExcelProcessingException {
-        private final int rowNumber;
+    /** 通过流式校验暂存的导入文件；关闭句柄会删除临时内容。 */
+    public static final class StagedFile implements AutoCloseable {
+        private final String filename;
+        private final Path path;
+        private final long size;
+        private final String sha256;
+        private boolean closed;
 
-        /**
-         * 创建包含一基 Excel 行号的处理异常。
-         *
-         * @param rowNumber 从 1 开始的 Excel 行号
-         * @param cause 单行处理产生的原始异常
-         */
-        public RowProcessingException(int rowNumber, RuntimeException cause) {
-            super("Excel row processing failed at row " + requirePositive(rowNumber),
-                    Objects.requireNonNull(cause, "cause must not be null"));
-            this.rowNumber = rowNumber;
+        private StagedFile(String filename, Path path, long size, String sha256) {
+            this.filename = filename;
+            this.path = path;
+            this.size = size;
+            this.sha256 = sha256;
+        }
+
+        /** @return 清除客户端本地路径后的文件名 */
+        public String filename() {
+            return filename;
+        }
+
+        /** @return 文件字节数 */
+        public long size() {
+            return size;
+        }
+
+        /** @return 原始文件字节的 SHA-256 小写十六进制值 */
+        public String sha256() {
+            return sha256;
         }
 
         /**
-         * 返回用户在工作簿中可直接定位的一基行号。
+         * 返回暂存路径，仅供框架内部解析使用。
          *
-         * @return 从 1 开始的 Excel 行号
+         * @return 暂存文件路径
          */
-        public int rowNumber() {
-            return rowNumber;
-        }
-
-        /**
-         * 返回单行处理产生的原始运行时异常。
-         *
-         * @return 业务校验或数据处理产生的原始异常
-         */
-        public RuntimeException originalCause() {
-            return (RuntimeException) getCause();
-        }
-
-        private static int requirePositive(int rowNumber) {
-            if (rowNumber < 1) {
-                throw new IllegalArgumentException("rowNumber must be positive");
+        public synchronized Path path() {
+            if (closed) {
+                throw new ExcelProcessingException("Staged Excel file is already closed");
             }
-            return rowNumber;
+            return path;
+        }
+
+        /**
+         * 打开一条读取流；关闭句柄后不可再打开。
+         *
+         * @return 由调用方关闭的文件流
+         */
+        synchronized InputStream openStream() {
+            if (closed) {
+                throw new ExcelProcessingException("Staged Excel file is already closed");
+            }
+            try {
+                return Files.newInputStream(path);
+            } catch (IOException exception) {
+                throw new ExcelProcessingException("Staged Excel file cannot be read", exception);
+            }
+        }
+
+        /**
+         * 删除暂存文件；重复调用不重复清理。
+         *
+         * @throws IOException 临时文件无法删除时抛出
+         */
+        @Override
+        public synchronized void close() throws IOException {
+            if (!closed) {
+                Files.deleteIfExists(path);
+                closed = true;
+            }
+        }
+    }
+
+    /** 从暂存文件读取的结果。 */
+    public record StagedData<T>(StagedFile file, List<T> rows) {
+        public StagedData {
+            Objects.requireNonNull(file, "file must not be null");
+            rows = List.copyOf(Objects.requireNonNull(rows, "rows must not be null"));
+        }
+    }
+
+    /** 工作簿没有任何数据行。 */
+    public static final class NoDataException extends ExcelProcessingException {
+        public NoDataException() {
+            super("Excel workbook must contain at least one data row");
         }
     }
 }

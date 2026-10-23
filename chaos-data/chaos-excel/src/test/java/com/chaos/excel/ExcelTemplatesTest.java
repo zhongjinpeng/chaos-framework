@@ -2,13 +2,15 @@ package com.chaos.excel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import cn.idev.excel.annotation.ExcelProperty;
+import com.chaos.excel.annotation.ExcelColumn;
+import com.chaos.excel.importer.ImportPlan;
+import com.chaos.excel.importer.ImportResult;
+import com.chaos.excel.importer.SheetImportSpec;
+import com.chaos.excel.template.SamplePlacement;
+import com.chaos.excel.template.TemplateOptions;
+import com.chaos.excel.template.TemplateSheet;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.Map;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Name;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -16,61 +18,48 @@ import org.junit.jupiter.api.Test;
 class ExcelTemplatesTest {
 
     @Test
-    void shouldCreateStyledMultiSheetTemplateWithNamedDropdowns() throws Exception {
-        ExcelTemplates.Definition definition = new ExcelTemplates.Definition(
-                "试剂", new int[]{20, 24}, Map.of(
-                        1, new ExcelTemplates.Dropdown("units", List.of("g", "mL"))));
+    void shouldSupportInlineSamplesAndSkipThemDuringImport() throws Exception {
+        TemplateSheet sheet = TemplateSheet.builder("试剂", TemplateRow.class)
+                .dropdown("units", List.of("g", "mL"))
+                .samples(List.of(new TemplateRow("氯化钠", "g")))
+                .build();
+        ExcelDocument document = ExcelTemplates.write("试剂模板", List.of(sheet),
+                TemplateOptions.defaults().samplePlacement(SamplePlacement.INLINE));
 
-        ExcelDocument document = ExcelTemplates.write("试剂导入模板",
-                List.of(new ExcelTemplates.Sheet("试剂", TemplateRow.class,
-                        List.of(new TemplateRow("氯化钠", "g")), definition)));
+        try (XSSFWorkbook workbook = new XSSFWorkbook(
+                new ByteArrayInputStream(document.content()))) {
+            assertThat(document.filename()).isEqualTo("试剂模板.xlsx");
+            assertThat(workbook.getSheet("试剂")).isNotNull();
+            assertThat(workbook.getSheet("示例-试剂")).isNull();
+            assertThat(workbook.isSheetHidden(workbook.getSheetIndex("_chaos_dict"))).isTrue();
 
-        try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(document.content()))) {
-            assertThat(document.filename()).isEqualTo("试剂导入模板.xlsx");
-            assertThat(workbook.getNumberOfSheets()).isEqualTo(2);
-            assertThat(workbook.isSheetHidden(workbook.getSheetIndex("_字典")))
-                    .isTrue();
-
-            Sheet sheet = workbook.getSheet("试剂");
-            assertThat(sheet.getColumnWidth(0)).isEqualTo(20 * 256);
-            assertThat(sheet.getPaneInformation().isFreezePane()).isTrue();
-            var header = sheet.getRow(0).getCell(0);
-            var headerFont = workbook.getFontAt(header.getCellStyle().getFontIndex());
-            assertThat(headerFont.getFontName()).isEqualTo("宋体");
-            assertThat(headerFont.getFontHeightInPoints()).isEqualTo((short) 12);
-            assertThat(headerFont.getBold()).isTrue();
-            assertThat(header.getCellStyle().getFillPattern())
-                    .isEqualTo(FillPatternType.SOLID_FOREGROUND);
-            assertThat(header.getCellStyle().getFillForegroundColor())
-                    .isEqualTo(IndexedColors.GREY_25_PERCENT.getIndex());
-
-            assertThat(sheet.getDataValidations()).singleElement().satisfies(validation -> {
-                assertThat(validation.getValidationConstraint().getFormula1()).isEqualTo("units");
-                assertThat(validation.getRegions().getCellRangeAddresses()).singleElement().satisfies(range -> {
-                    assertThat(range.getFirstRow()).isEqualTo(1);
-                    assertThat(range.getLastRow()).isEqualTo(4999);
-                    assertThat(range.getFirstColumn()).isEqualTo(1);
-                    assertThat(range.getLastColumn()).isEqualTo(1);
-                });
-            });
-
-            Name units = workbook.getName("units");
-            assertThat(units.getRefersToFormula()).isEqualTo("'_字典'!$A$1:$A$2");
-            assertThat(workbook.getSheet("_字典")
-                    .getRow(1).getCell(0).getStringCellValue()).isEqualTo("mL");
+            Sheet data = workbook.getSheet("试剂");
+            assertThat(data.getRow(0).getCell(0).getStringCellValue()).isEqualTo("名称 *");
+            assertThat(data.getRow(1).getCell(0).getStringCellValue()).isEqualTo("氯化钠");
+            assertThat(data.getDataValidations()).singleElement().satisfies(validation ->
+                    assertThat(validation.getValidationConstraint().getFormula1())
+                            .startsWith("chaos_dd_units_"));
         }
 
-        assertThat(ExcelOperations.readVisibleSheets(document.content(), TemplateRow.class,
-                new ExcelReadOptions(0, 1, 100, 100)))
-                .extracting(TemplateRow::getName)
-                .containsExactly("氯化钠");
+        ImportPlan plan = ImportPlan.builder()
+                .sheet(SheetImportSpec.builder("试剂", TemplateRow.class)
+                        .skipSampleRows(1)
+                        .requireData(false)
+                        .build())
+                .build();
+        try (ExcelImports.StagedFile staged = ExcelImports.stage(
+                document.filename(), new ByteArrayInputStream(document.content()),
+                ExcelImports.Options.xlsx(document.content().length))) {
+            ImportResult result = ExcelImports.execute(staged, plan);
+            assertThat(result.totalRows()).isZero();
+            assertThat(result.isSuccess()).isTrue();
+        }
     }
 
     public static class TemplateRow {
-        @ExcelProperty(value = "名称", index = 0)
+        @ExcelColumn(name = "名称", index = 0, required = true, width = 20)
         private String name;
-
-        @ExcelProperty(value = "单位", index = 1)
+        @ExcelColumn(name = "单位", index = 1, required = true, width = 12, dropdown = "units")
         private String unit;
 
         public TemplateRow() {
@@ -78,22 +67,6 @@ class ExcelTemplatesTest {
 
         TemplateRow(String name, String unit) {
             this.name = name;
-            this.unit = unit;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getUnit() {
-            return unit;
-        }
-
-        public void setUnit(String unit) {
             this.unit = unit;
         }
     }

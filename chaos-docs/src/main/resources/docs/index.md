@@ -132,6 +132,7 @@
 尚未在本仓库落地的设计方案，仅供参考：
 
 - [chaos-iam](proposals/chaos-iam.md)
+- [chaos-excel 重构方案与技术选型（POI 主引擎）](proposals/chaos-excel-refactor.md)
 
 ## Recommended Reading Order
 
