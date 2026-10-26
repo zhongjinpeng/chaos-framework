@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -83,6 +84,16 @@ class ChaosServiceAutoConfigurationTest {
     @Test
     void shouldRegisterJsonUtilsWhenObjectMapperExists() {
         contextRunner.withBean(ObjectMapper.class, ObjectMapper::new)
+                .run(context -> assertThat(context).hasSingleBean(JsonUtils.class));
+    }
+
+    @Test
+    void shouldRegisterJsonUtilsAfterJacksonAutoConfiguration() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(
+                        ChaosServiceAutoConfiguration.class,
+                        JacksonAutoConfiguration.class
+                ))
                 .run(context -> assertThat(context).hasSingleBean(JsonUtils.class));
     }
 

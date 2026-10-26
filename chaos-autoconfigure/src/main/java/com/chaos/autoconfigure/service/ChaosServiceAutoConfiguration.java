@@ -42,6 +42,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @AutoConfiguration(
         after = DataSourceTransactionManagerAutoConfiguration.class,
+        afterName = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration",
         beforeName = "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration"
 )
 @ConditionalOnClass(name = "com.chaos.service.event.DomainEventPublisher")
@@ -54,12 +55,16 @@ public class ChaosServiceAutoConfiguration {
      * @param objectMapper 应用统一 JSON 映射器
      * @return 通用 JSON 编解码工具
      */
-    @Bean
-    @ConditionalOnClass(ObjectMapper.class)
-    @ConditionalOnBean(ObjectMapper.class)
-    @ConditionalOnMissingBean
-    public JsonUtils jsonUtils(ObjectMapper objectMapper) {
-        return new JsonUtils(objectMapper);
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass({ObjectMapper.class, JsonUtils.class})
+    static class JsonConfiguration {
+
+        @Bean
+        @ConditionalOnBean(ObjectMapper.class)
+        @ConditionalOnMissingBean
+        JsonUtils jsonUtils(ObjectMapper objectMapper) {
+            return new JsonUtils(objectMapper);
+        }
     }
 
     /**
