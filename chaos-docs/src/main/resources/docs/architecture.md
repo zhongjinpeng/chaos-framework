@@ -13,7 +13,10 @@ chaos-framework
 ├── chaos-foundation
 │   ├── chaos-core                    请求上下文、错误码、异常、幂等/锁/限流 SPI、可信代理 IP 解析（不依赖任何 chaos 模块）
 │   └── chaos-domain                  DDD 基础类型（domain.model）、分页（domain.dto）、缓存 key 策略（domain.cache）
-├── chaos-process                     状态机与流程引擎契约及运行时适配器（依赖 chaos-core，当前含内存实现）
+├── chaos-process
+│   ├── chaos-process                 流程契约、状态机内核及开发运行时支持（依赖 chaos-core，当前含内存实现）
+│   ├── chaos-process-jdbc            JDBC 流程持久化适配
+│   └── chaos-process-redis           Redis 流程持久化适配
 ├── chaos-observability
 │   └── chaos-trace                   W3C trace 上下文、MDC 与日志模板、Feign 透传、Micrometer 指标约定（trace.monitor）
 ├── chaos-audit
@@ -49,7 +52,7 @@ chaos-framework
 ├── chaos-starters
 │   ├── 场景 starter                  chaos-web-service-starter、chaos-gateway-starter、chaos-auth-server-starter（一个应用选一个）
 │   └── 能力 starter                  application（原 service）, audit, audit-jdbc, authorization, cloud, cloud-nacos,
-│                                     cloud-reactive, gateway-nacos, job, mq, mybatis, redis, security, storage, tenant, web
+│                                     cloud-reactive, gateway-nacos, job, mq, mybatis, process, redis, security, storage, tenant, web
 ├── chaos-archetypes                  项目脚手架：chaos-archetype-web-service / -gateway / -auth-server（发布，不进 BOM）
 ├── chaos-test-support                业务项目测试支持：上下文夹具、LoginUser/MockMvc、内存 RedisTemplate、Testcontainers（test scope 引入）
 ├── chaos-architecture-tests          仓库级架构测试与依赖方向规则（不发布）
@@ -159,7 +162,9 @@ flowchart TB
 | chaos-dependencies | Public BOM and single source of truth for all dependency versions. |
 | chaos-foundation/chaos-core | Minimal constants, request context, exception contracts, idempotency/lock/rate-limit SPIs and trusted-proxy client IP resolution. Depends on no chaos module. |
 | chaos-foundation/chaos-domain | DDD aggregate and domain event abstractions (`domain.model`), page model (`domain.dto`) and cache key strategy (`domain.cache`). |
-| chaos-process | Framework-neutral state-machine and process contracts plus runtime adapters; the current in-memory implementation is for development and tests, while persistence adapters are added separately. Depends only on `chaos-core`. |
+| chaos-process/chaos-process | Framework-neutral process contracts (`com.chaos.process`), state-machine kernel (`com.chaos.process.statemachine`) and development/test adapters (`com.chaos.process.support`). Depends only on `chaos-core`. |
+| chaos-process/chaos-process-jdbc | JDBC persistence adapter for `ProcessEngine`. |
+| chaos-process/chaos-process-redis | Redis persistence adapter for `ProcessEngine`. |
 | chaos-observability/chaos-trace | Trace context, W3C Trace Context compatibility, baggage, propagation headers, MDC keys and logging templates, OpenFeign trace interceptor, Micrometer observation filter and meter names. |
 | chaos-audit/chaos-audit | Audit event model and default structured audit log publisher. |
 | chaos-audit/chaos-audit-jdbc | JDBC audit persistence adapter. |

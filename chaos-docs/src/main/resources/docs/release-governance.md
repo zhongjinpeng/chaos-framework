@@ -172,6 +172,7 @@ BOM 不包含：`chaos-architecture-tests`（仓库内部架构测试，不发�
 | `chaos-gateway-starter` | `chaos-audit-starter`、`chaos-autoconfigure`（gateway）、Spring Cloud Gateway、Resource Server、oauth2-oidc-sdk、Actuator、Prometheus、Validation | API Gateway（同时是网关场景 starter） |
 | `chaos-gateway-nacos-starter` | `chaos-gateway-starter`、`chaos-autoconfigure`（gateway-nacos）、Nacos Config、Validation | Gateway 动态路由 |
 | `chaos-job-starter` | `chaos-autoconfigure`（job）、Spring Boot Starter | 定时任务服务（不再强制带入 Actuator） |
+| `chaos-process-starter` | `chaos-autoconfigure`（process）、`chaos-process`、Spring Boot Starter | 状态机与流程引擎；内存实现仅用于开发和测试 |
 | `chaos-tenant-starter` | `chaos-autoconfigure`（tenant）、Validation | 租户治理 |
 | `chaos-redis-starter` | `chaos-autoconfigure`（redis）、Redisson | Redis 基础设施能力 |
 | `chaos-mybatis-starter` | `chaos-autoconfigure`（mybatis）、MyBatis Plus、JSQLParser、Validation | 数据访问服务 |

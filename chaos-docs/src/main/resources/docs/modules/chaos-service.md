@@ -2,7 +2,7 @@
 
 ## 职责
 
-应用服务层能力：事务执行器、重试执行器、领域事件发布、异步上下文传播和通用观测配置。
+应用服务层能力：事务执行器、重试执行器、领域事件发布、JSON 编解码、异步上下文传播和通用观测配置。
 
 ## 依赖方式
 
@@ -64,6 +64,19 @@ TaskDecorator taskDecorator() {
 - 提交后监听器抛出的异常只记录 ERROR 日志，不传回调用方，避免调用方误判失败而重试造成重复数据；无事务时异常照常抛出。
 - 需要可靠投递时使用 outbox（chaos-mq-jdbc）在业务事务内落库。
 
+### JSON 编解码
+
+框架自动注册 `JsonUtils`，并复用应用的 `ObjectMapper`，因此 Spring Boot 配置的 Java Time 模块、命名策略和日期格式都会生效。业务代码通过构造器注入使用，不创建静态全局 Mapper：
+
+```java
+private final JsonUtils jsonUtils;
+
+String json = jsonUtils.toJson(value);
+OrderSnapshot snapshot = jsonUtils.fromJson(json, OrderSnapshot.class);
+```
+
+泛型反序列化使用 Jackson `TypeReference`。需要生成内容摘要或签名时，可用 `toCanonicalJson(JsonNode)` 递归按对象字段名排序；数组顺序保持不变。编解码失败统一抛出 `JsonOperationException`，业务边界可按需转换为业务异常。
+
 ### 指标
 
 通用标签只保留 `framework=chaos`。旧版本给所有指标追加 `meter.namespace=http.server.requests`，属于错误标签，已移除。
@@ -113,7 +126,7 @@ ThreadPoolTaskExecutor applicationTaskExecutor(TaskDecorator taskDecorator) {
 - 优先注册 Spring Bean 覆盖默认实现。
 - 不在业务代码中依赖 autoconfigure 类。
 - 不跨层调用 infra 实现，domain/application 只依赖接口。
-- 需要替换事务、重试或领域事件实现时，注册同类型 Bean 即可覆盖默认实现。
+- 需要替换事务、重试、领域事件或 JSON 工具实现时，注册同类型 Bean 即可覆盖默认实现。
 - 需要自定义异步上下文传播时，注册类型为 `TaskDecorator` 的 Bean（建议组合 `TraceContextTaskDecorator`）。
 
 ## 注意事项

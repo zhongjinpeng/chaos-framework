@@ -14,7 +14,8 @@
 | 非 Web 服务（MQ 消费者、批处理） | `chaos-application-starter` | — |
 
 按需追加能力 starter：`chaos-mybatis-starter`（数据库、多租户）、`chaos-redis-starter`（生产必需：集群限流、幂等、token 黑名单）、
-`chaos-mq-starter`、`chaos-job-starter`、`chaos-storage-starter`、`chaos-cloud-starter`、`chaos-cloud-nacos-starter`。
+`chaos-mq-starter`、`chaos-job-starter`、`chaos-process-starter`（状态机与流程引擎）、`chaos-storage-starter`、
+`chaos-cloud-starter`、`chaos-cloud-nacos-starter`。
 Excel 文件处理直接引入 `com.chaos:chaos-excel`。
 
 ## 快速开始

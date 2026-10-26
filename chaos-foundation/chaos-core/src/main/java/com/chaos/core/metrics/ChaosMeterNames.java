@@ -79,6 +79,26 @@ public final class ChaosMeterNames {
     public static final String AUDIT_EVENTS = "chaos.audit.events";
 
     /**
+     * 状态机转换次数。标签：{@link #TAG_OUTCOME}（completed / invalid / guard-rejected / action-error）。
+     */
+    public static final String PROCESS_STATE_TRANSITIONS = "chaos.process.state.transitions";
+
+    /**
+     * 流程实例启动次数。标签：{@link #TAG_OUTCOME}（started / replayed / conflict）。
+     */
+    public static final String PROCESS_INSTANCES_STARTED = "chaos.process.instances.started";
+
+    /**
+     * 流程任务领取次数。标签：{@link #TAG_OUTCOME}（claimed / conflict / forbidden）。
+     */
+    public static final String PROCESS_TASKS_CLAIMED = "chaos.process.tasks.claimed";
+
+    /**
+     * 流程任务完成次数。标签：{@link #TAG_OUTCOME}（completed / replayed / conflict）。
+     */
+    public static final String PROCESS_TASKS_COMPLETED = "chaos.process.tasks.completed";
+
+    /**
      * HTTP 服务端请求指标名（Spring Boot 内置，列在这里便于统一引用）。
      */
     public static final String HTTP_SERVER_REQUESTS = "http.server.requests";

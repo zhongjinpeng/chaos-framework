@@ -25,7 +25,8 @@ import org.springframework.context.annotation.Configuration;
         com.chaos.autoconfigure.gateway.ChaosGatewayAutoConfiguration.class,
         com.chaos.autoconfigure.tenant.ChaosTenantAutoConfiguration.class,
         com.chaos.autoconfigure.security.ChaosSecurityAutoConfiguration.class,
-        com.chaos.autoconfigure.mq.ChaosMqOutboxAutoConfiguration.class
+        com.chaos.autoconfigure.mq.ChaosMqOutboxAutoConfiguration.class,
+        com.chaos.autoconfigure.process.ChaosProcessAutoConfiguration.class
 })
 public class ChaosMetricsAutoConfiguration {
 

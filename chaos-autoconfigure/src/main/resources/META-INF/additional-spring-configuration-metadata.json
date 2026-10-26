@@ -82,6 +82,27 @@
       ]
     },
     {
+      "name": "chaos.process.engine",
+      "values": [
+        {
+          "value": "memory",
+          "description": "使用单进程内存引擎，仅适用于开发和测试（默认）。"
+        },
+        {
+          "value": "none",
+          "description": "不自动创建流程引擎，由应用提供 ProcessEngine Bean。"
+        },
+        {
+          "value": "jdbc",
+          "description": "使用 JDBC 持久化流程引擎。"
+        },
+        {
+          "value": "redis",
+          "description": "使用 Redis 持久化流程引擎。"
+        }
+      ]
+    },
+    {
       "name": "chaos.tenant.default-isolation-mode",
       "values": [
         {

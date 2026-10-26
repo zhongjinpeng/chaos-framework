@@ -71,6 +71,20 @@ private Long id;
 
 生产多节点建议显式配置 `worker-id` 和 `datacenter-id`，两者取值范围都是 `0-31`，同一套业务库内每个节点组合应保持唯一。不配置时使用 MyBatis Plus 默认的本机信息推导策略。
 
+不可变 `record` 作为插入参数且后续流程需要数据库自增键时，使用 `GeneratedKey<T>` 作为独立 Mapper 参数：
+
+```java
+int insert(@Param("value") OrderRow value, @Param("key") GeneratedKey<Long> key);
+```
+
+```xml
+<insert id="insert" useGeneratedKeys="true" keyProperty="key.value" keyColumn="id">
+    INSERT INTO biz_order (order_no) VALUES (#{value.orderNo})
+</insert>
+```
+
+调用方在插入后通过 `key.requiredValue()` 获取生成键；驱动未回填时该方法抛出 `IllegalStateException`。`GeneratedKey<T>` 只承载数据库生成的技术键，业务字段、唯一约束冲突转换和事务编排仍由业务仓储负责。可变 PO 能直接接收主键回填时，继续使用实体自身的主键属性，不需要额外包装。
+
 如需接入业务自己的号段、Leaf、Redis 或其他发号器，注册 Spring Bean 覆盖默认实现：
 
 ```java

@@ -6,10 +6,12 @@ import com.chaos.service.context.ChaosContextThreadLocalAccessor;
 import com.chaos.service.context.TraceContextTaskDecorator;
 import com.chaos.service.event.DomainEventPublisher;
 import com.chaos.service.event.TransactionalDomainEventPublisher;
+import com.chaos.service.json.JsonUtils;
 import com.chaos.service.retry.RetryExecutor;
 import com.chaos.service.retry.SpringRetryExecutor;
 import com.chaos.service.transaction.SpringTransactionExecutor;
 import com.chaos.service.transaction.TransactionExecutor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.context.ContextRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
@@ -45,6 +47,20 @@ import org.springframework.transaction.support.TransactionTemplate;
 @ConditionalOnClass(name = "com.chaos.service.event.DomainEventPublisher")
 @EnableConfigurationProperties(ChaosServiceProperties.class)
 public class ChaosServiceAutoConfiguration {
+
+    /**
+     * 注册复用应用 Jackson 配置的 JSON 工具。
+     *
+     * @param objectMapper 应用统一 JSON 映射器
+     * @return 通用 JSON 编解码工具
+     */
+    @Bean
+    @ConditionalOnClass(ObjectMapper.class)
+    @ConditionalOnBean(ObjectMapper.class)
+    @ConditionalOnMissingBean
+    public JsonUtils jsonUtils(ObjectMapper objectMapper) {
+        return new JsonUtils(objectMapper);
+    }
 
     /**
      * 事务执行器（需要 spring-tx）。

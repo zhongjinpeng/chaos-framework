@@ -23,12 +23,14 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.mybatis`](#chaosmybatis)（16 项）
 - [`chaos.nacos`](#chaosnacos)（4 项）
 - [`chaos.openapi`](#chaosopenapi)（7 项）
+- [`chaos.process`](#chaosprocess)（2 项）
 - [`chaos.production-safety`](#chaosproduction-safety)（5 项）
 - [`chaos.redis`](#chaosredis)（1 项）
 - [`chaos.security`](#chaossecurity)（21 项）
 - [`chaos.service`](#chaosservice)（3 项）
 - [`chaos.storage`](#chaosstorage)（9 项）
 - [`chaos.tenant`](#chaostenant)（4 项）
+- [`chaos.time`](#chaostime)（1 项）
 - [`chaos.web`](#chaosweb)（18 项）
 
 ## chaos.audit
@@ -250,6 +252,13 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.openapi.oauth2.scopes` | `Map<String,String>` |  | OAuth2 scope 与展示说明；配置的全部 scope 同时作为全局安全要求。 |  | `chaos-autoconfigure` |
 | `chaos.openapi.oauth2.token-url-base` | `String` | `""` | 相对 token URL 的统一基地址；为空时保留相对地址，配置后可确保从业务服务端口打开 Swagger UI 仍通过网关登录。 |  | `chaos-autoconfigure` |
 
+## chaos.process
+
+| 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
+| --- | --- | --- | --- | --- | --- |
+| `chaos.process.enabled` | `Boolean` | `true` | 是否启用流程引擎自动装配。 |  | `chaos-autoconfigure` |
+| `chaos.process.engine` | `EngineType` | `memory` | 自动创建的流程引擎类型。内存实现仅用于开发和测试；生产环境必须提供持久化实现。 | `memory`, `none`, `jdbc`, `redis` | `chaos-autoconfigure` |
+
 ## chaos.production-safety
 
 | 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
@@ -322,6 +331,12 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.tenant.fail-closed` | `Boolean` | `true` | 租户状态未知、缺失或不可访问时是否拒绝请求。 |  | `chaos-autoconfigure` |
 | `chaos.tenant.servlet-filter.enabled` | `Boolean` | `false` | 是否在 Servlet 服务中启用租户状态校验过滤器。 默认关闭以保持兼容；启用前需要接入真实的 TenantStatusProvider，并确认租户 ID 来自认证结果。 |  | `chaos-autoconfigure` |
 | `chaos.tenant.servlet-filter.exclude-paths` | `List<String>` |  | 不校验租户的路径（Ant 风格），例如 `/actuator/**`、登录接口。 |  | `chaos-autoconfigure` |
+
+## chaos.time
+
+| 配置项 | 类型 | 默认值 | 说明 | 可选值 | 所属 artifact |
+| --- | --- | --- | --- | --- | --- |
+| `chaos.time.zone-id` | `ZoneId` | `Asia/Shanghai` | 业务日期和本地日期时间使用的时区，默认中国标准时间。 |  | `chaos-autoconfigure` |
 
 ## chaos.web
 

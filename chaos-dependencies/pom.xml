@@ -199,6 +199,16 @@
                 <artifactId>chaos-process</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process-jdbc</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <!-- chaos-core 的测试替身（RecordingChaosMetrics 等），仅供框架内部模块以 test 作用域复用。 -->
             <dependency>
                 <groupId>com.chaos</groupId>
@@ -393,6 +403,21 @@
             <dependency>
                 <groupId>com.chaos</groupId>
                 <artifactId>chaos-job-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process-jdbc-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-process-redis-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

@@ -1,5 +1,6 @@
 package com.chaos.excel.importer;
 
+import com.chaos.core.importing.ImportRowError;
 import com.chaos.excel.ExcelFile;
 import com.chaos.excel.error.ImportErrorReport;
 import java.util.List;
@@ -18,7 +19,7 @@ public final class ImportResult {
     private final long totalRows;
     private final long successRows;
     private final long failedRows;
-    private final List<ImportError> errors;
+    private final List<ImportRowError> errors;
     private final boolean errorsTruncated;
     private final Map<String, SheetResult> sheets;
     private final Map<String, List<String>> sheetHeaders;
@@ -41,7 +42,7 @@ public final class ImportResult {
             long totalRows,
             long successRows,
             long failedRows,
-            List<ImportError> errors,
+            List<ImportRowError> errors,
             boolean errorsTruncated,
             Map<String, SheetResult> sheets,
             Map<String, List<String>> sheetHeaders) {
@@ -85,7 +86,7 @@ public final class ImportResult {
     }
 
     /** @return 有界错误列表 */
-    public List<ImportError> errors() {
+    public List<ImportRowError> errors() {
         return errors;
     }
 
@@ -142,7 +143,7 @@ public final class ImportResult {
      * @param sheetName Sheet 名
      * @return 该 Sheet 的不可变错误列表
      */
-    public List<ImportError> errorsForSheet(String sheetName) {
+    public List<ImportRowError> errorsForSheet(String sheetName) {
         if (sheetName == null) {
             return List.of();
         }

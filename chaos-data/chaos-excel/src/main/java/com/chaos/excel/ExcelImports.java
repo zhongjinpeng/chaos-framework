@@ -1,7 +1,7 @@
 package com.chaos.excel;
 
 import com.chaos.excel.importer.ErrorPolicy;
-import com.chaos.excel.importer.ImportError;
+import com.chaos.core.importing.ImportRowError;
 import com.chaos.excel.importer.ImportOptions;
 import com.chaos.excel.importer.ImportPlan;
 import com.chaos.excel.importer.ImportResult;
@@ -121,7 +121,7 @@ public final class ExcelImports {
                     "Excel workbook contains too many sheets: " + sheetNames.size());
         }
         Set<String> sheetsByName = Set.copyOf(sheetNames);
-        List<ImportError> errors = new ArrayList<>();
+        List<ImportRowError> errors = new ArrayList<>();
         boolean[] truncated = {false};
         Map<String, SheetResult> sheetResults = new LinkedHashMap<>();
         Map<String, List<String>> sheetHeaders = new LinkedHashMap<>();
@@ -153,7 +153,7 @@ public final class ExcelImports {
             Path path,
             SheetImportSpec<T> spec,
             ImportPlan plan,
-            List<ImportError> errors,
+            List<ImportRowError> errors,
             boolean[] truncated) {
         ImportOptions options = plan.options();
         RowMapper<T> mapper = RowMapper.of(spec.rowType());
@@ -185,7 +185,7 @@ public final class ExcelImports {
                             spec.handler().handle(row, rowNumber);
                             success[0]++;
                         } catch (RowMappingException exception) {
-                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportError(
+                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportRowError(
                                     spec.sheetName(),
                                     rowNumber,
                                     exception.columnIndex(),
@@ -196,7 +196,7 @@ public final class ExcelImports {
                             failed[0]++;
                         } catch (RowValidationException exception) {
                             int columnIndex = columnIndex(mapper, exception.columnName());
-                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportError(
+                            handleRowError(plan.errorPolicy(), maxErrors, errors, truncated, new ImportRowError(
                                     spec.sheetName(),
                                     rowNumber,
                                     columnIndex,
@@ -217,9 +217,9 @@ public final class ExcelImports {
     private static void handleRowError(
             ErrorPolicy policy,
             int maxErrors,
-            List<ImportError> errors,
+            List<ImportRowError> errors,
             boolean[] truncated,
-            ImportError error,
+            ImportRowError error,
             RuntimeException cause) {
         if (!policy.isCollect()) {
             throw new ExcelProcessingException(
@@ -251,6 +251,38 @@ public final class ExcelImports {
             }
         }
         return -1;
+    }
+
+    /**
+     * 按工作簿顺序列出全部 Sheet 名称，供调用方据此构建多 Sheet 导入计划。
+     *
+     * <p>该方法只解析 workbook.xml，不加载单元格内容；返回结果可用于
+     * {@link com.chaos.excel.importer.SheetImportSpec#builder(String, Class)} 或
+     * {@link #read} 的工作表序号定位。</p>
+     *
+     * @param file 已完成上传校验的暂存文件
+     * @return 按工作簿顺序排列的不可变 Sheet 名称列表
+     * @throws ExcelProcessingException 暂存文件已关闭或工作簿结构无法解析时抛出
+     */
+    public static List<String> sheetNames(StagedFile file) {
+        Objects.requireNonNull(file, "file must not be null");
+        return List.copyOf(PoiWorkbookInspector.sheetNames(file.path()));
+    }
+
+    /**
+     * 按工作簿顺序列出可见 Sheet 名称，跳过隐藏 Sheet。
+     *
+     * <p>模板生成的 {@code _chaos_dict} 等隐藏页不会出现在结果中，因此该方法适合
+     * “读取用户填写的全部工作表”这类场景；需要按名称校验必需 Sheet 时仍可使用
+     * {@link #sheetNames(StagedFile)}。</p>
+     *
+     * @param file 已完成上传校验的暂存文件
+     * @return 按工作簿顺序排列的不可变可见 Sheet 名称列表
+     * @throws ExcelProcessingException 暂存文件已关闭或工作簿结构无法解析时抛出
+     */
+    public static List<String> visibleSheetNames(StagedFile file) {
+        Objects.requireNonNull(file, "file must not be null");
+        return List.copyOf(PoiWorkbookInspector.visibleSheetNames(file.path()));
     }
 
     /**

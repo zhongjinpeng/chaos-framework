@@ -14,6 +14,10 @@
     <description>Unified streaming XLSX import, export and template generation based on Apache POI.</description>
     <dependencies>
         <dependency>
+            <groupId>com.chaos</groupId>
+            <artifactId>chaos-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
         </dependency>

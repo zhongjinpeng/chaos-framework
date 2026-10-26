@@ -30,6 +30,7 @@ starter 分两层：
 | Redis | `chaos-redis-starter` | Redisson、分布式锁、集群限流、幂等存储、布隆过滤器、延迟队列；**多实例 / 生产环境必需** |
 | 可靠消息 | `chaos-mq-starter` | outbox + Kafka / RocketMQ |
 | 定时任务 | `chaos-job-starter` | `@EnableScheduling` + 分布式锁互斥执行 |
+| 状态机与流程 | `chaos-process-starter` | 无 Spring 依赖的状态机内核、流程端口；开发环境自动提供内存引擎，生产必须替换持久化实现 |
 | 对象存储 | `chaos-storage-starter` | MinIO / OSS |
 | 服务间调用 | `chaos-cloud-starter` | OpenFeign + LoadBalancer + trace 透传（Servlet）；响应式服务用 `chaos-cloud-reactive-starter` |
 | Nacos | `chaos-cloud-nacos-starter` / `chaos-gateway-nacos-starter` | 注册与配置约定 / 网关动态路由 |

@@ -62,6 +62,7 @@
 | P2 | 已完成 | Testcontainers 集成测试 | 提升真实基础设施验证能力 | Redis、MySQL、Kafka 关键链路有集成测试；RocketMQ 使用独立 profile 策略 |
 | P2 | 已完成 | 示例工程完整链路 | 给引用方可运行落地样板 | 增加 auth-server、gateway、order-service；覆盖登录、鉴权、租户、MyBatis、Redis/reference token、互踢、Prometheus |
 | P2 | 已完成 | 发布治理 | 支撑 framework 产品化发布 | BOM 兼容矩阵、依赖收敛、API 变更检查、changelog、starter 依赖树文档 |
+| P2 | 已完成 | 状态机与流程引擎基础能力 | 提供业务状态转换和流程待办的统一扩展点 | 独立核心模块与 Starter；状态机 Guard/Action；流程版本、候选人、租约、乐观锁和幂等；生产内存实现阻断；指标、诊断、测试和文档闭环 |
 | P0 | 已完成 | 授权服务器生产安全检查 | 提示生产环境中的开发默认值 | prod/production profile 下检查 localhost issuer、noop secret、memory client、临时 JWK；同时识别内存授权仓储、Noop JWT 撤销、空审计和互踢本地索引；默认 fail-fast 阻断启动（`chaos.authorization.production-safety.fail-fast=false` 可降级为告警） |
 | P0 | 已完成 | 异步上下文传播治理 | 避免线程池和异步任务 trace/租户/MDC 丢失或串扰 | 提供 TraceContextSnapshot、Scope、Runnable wrap 和 TaskDecorator 自动装配；补充测试与文档 |
 | P0 | 已完成 | CI 与示例链路 Smoke | 提升提交质量和示例可验证性 | GitHub Actions 跑单测、发布治理 validate、结构扫描；提供 JWT 示例链路 smoke 脚本 |

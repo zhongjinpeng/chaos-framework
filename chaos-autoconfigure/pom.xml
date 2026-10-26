@@ -78,6 +78,21 @@
         </dependency>
         <dependency>
             <groupId>com.chaos</groupId>
+            <artifactId>chaos-process</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.chaos</groupId>
+            <artifactId>chaos-process-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.chaos</groupId>
+            <artifactId>chaos-process-redis</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.chaos</groupId>
             <artifactId>chaos-mq</artifactId>
             <optional>true</optional>
         </dependency>
@@ -149,6 +164,11 @@
         <dependency>
             <groupId>com.chaos</groupId>
             <artifactId>chaos-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.chaos</groupId>
+            <artifactId>chaos-excel</artifactId>
             <optional>true</optional>
         </dependency>
 

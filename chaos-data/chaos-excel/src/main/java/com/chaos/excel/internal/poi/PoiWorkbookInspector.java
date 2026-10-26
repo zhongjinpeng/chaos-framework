@@ -27,6 +27,20 @@ public final class PoiWorkbookInspector {
      * @return Sheet 名列表
      */
     public static List<String> sheetNames(Path path) {
+        return readSheetNames(path, false);
+    }
+
+    /**
+     * 按工作簿顺序读取可见 Sheet 名称，跳过 {@code hidden} 与 {@code veryHidden}。
+     *
+     * @param path XLSX 文件
+     * @return 可见 Sheet 名列表
+     */
+    public static List<String> visibleSheetNames(Path path) {
+        return readSheetNames(path, true);
+    }
+
+    private static List<String> readSheetNames(Path path, boolean visibleOnly) {
         try (OPCPackage packageFile = OPCPackage.open(path.toFile());
                 InputStream workbook = new XSSFReader(packageFile).getWorkbookData()) {
             XMLInputFactory factory = XMLInputFactory.newFactory();
@@ -39,7 +53,8 @@ public final class PoiWorkbookInspector {
                     if (reader.next() == XMLStreamConstants.START_ELEMENT
                             && "sheet".equals(reader.getLocalName())) {
                         String name = attribute(reader, "name");
-                        if (name != null && !name.isBlank()) {
+                        if (name != null && !name.isBlank()
+                                && (!visibleOnly || isVisible(attribute(reader, "state")))) {
                             names.add(name);
                         }
                     }
@@ -53,6 +68,10 @@ public final class PoiWorkbookInspector {
         } catch (Exception exception) {
             throw new ExcelProcessingException("Excel workbook cannot be inspected", exception);
         }
+    }
+
+    private static boolean isVisible(String state) {
+        return state == null || state.isBlank() || "visible".equals(state);
     }
 
     private static String attribute(XMLStreamReader reader, String name) {

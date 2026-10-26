@@ -4,6 +4,7 @@ com.chaos.autoconfigure.authorization.ChaosAuthorizationAutoConfiguration
 com.chaos.autoconfigure.cloud.ChaosCloudAutoConfiguration
 com.chaos.autoconfigure.cloud.nacos.ChaosCloudNacosAutoConfiguration
 com.chaos.autoconfigure.diagnostics.ChaosDiagnosticsAutoConfiguration
+com.chaos.autoconfigure.excel.ChaosExcelAutoConfiguration
 com.chaos.autoconfigure.gateway.ChaosGatewayAutoConfiguration
 com.chaos.autoconfigure.gateway.nacos.ChaosGatewayNacosAutoConfiguration
 com.chaos.autoconfigure.job.ChaosJobAutoConfiguration
@@ -11,10 +12,12 @@ com.chaos.autoconfigure.metrics.ChaosMetricsAutoConfiguration
 com.chaos.autoconfigure.mq.ChaosMqAutoConfiguration
 com.chaos.autoconfigure.mq.ChaosMqOutboxAutoConfiguration
 com.chaos.autoconfigure.mybatis.ChaosMybatisAutoConfiguration
+com.chaos.autoconfigure.process.ChaosProcessAutoConfiguration
 com.chaos.autoconfigure.redis.ChaosRedisAutoConfiguration
 com.chaos.autoconfigure.security.ChaosSecurityAutoConfiguration
 com.chaos.autoconfigure.security.redis.ChaosSecurityRedisAutoConfiguration
 com.chaos.autoconfigure.service.ChaosServiceAutoConfiguration
 com.chaos.autoconfigure.storage.ChaosStorageAutoConfiguration
 com.chaos.autoconfigure.tenant.ChaosTenantAutoConfiguration
+com.chaos.autoconfigure.time.ChaosTimeAutoConfiguration
 com.chaos.autoconfigure.web.ChaosWebAutoConfiguration

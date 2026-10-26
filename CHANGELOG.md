@@ -2,10 +2,19 @@
 
 ## Unreleased
 
+- `chaos-core` 新增通用应用契约：`com.chaos.core.file.AttachmentFile`、`com.chaos.core.importing`（导入来源、导入结果、行级错误、行处理器/校验器、文件级拒绝异常），供 Application 层直接依赖，不泄漏 Excel/Web 类型。
+- `chaos-core` 的 `ImportRowError` 统一承载工作表、行号、列、错误码、原因和原始单元格；`chaos-excel` 原 `ImportError` 已合并到该类型，不再保留重复模型。
+- `chaos-excel` 新增 `com.chaos.excel.support.ExcelImportSupport`、`ExcelImportSourceFactory` 与 `ExcelFiles`：统一严格表头导入计划、行级错误收集、框架异常翻译、暂存文件访问和 `ExcelFile -> AttachmentFile` 转换。
+- `chaos-web` 新增 `com.chaos.web.http.ExcelImportUploads`、`ImportFileResponses`，并为 `AttachmentResponses` 增加 `of(AttachmentFile)` / `inline(AttachmentFile)` 重载。
+- `chaos-autoconfigure` 新增 `ChaosExcelAutoConfiguration`：默认注册 `ImportSourceFactory` 和 `ExcelImportUploads`，业务项目提供同类型 Bean 即可覆盖。
+- `chaos-service` 新增 `com.chaos.service.transaction.TransactionMarks`，统一导入错误场景的事务只回滚标记。
 - 重构 `chaos-excel`：移除 FastExcel，改为 Apache POI 5.5.1 单引擎；模板/错误文件使用 `XSSFWorkbook`/`SXSSFWorkbook`，导入使用 `XSSFReader` + StAX 保留原始单元格类型。
 - `chaos-excel` 新增 `@ExcelColumn` 行模型注解、`ImportPlan`/`ImportResult` 多 Sheet 导入、行级错误收集与错误文件下载、多 Sheet 导出、模板独立 `示例-*` 页与下拉/必填/说明页。`@ExcelProperty` 需迁移为 `@ExcelColumn`。
-- `chaos-excel` 删除已废弃 API：`ImportOperationType`、`readVisibleSheets`、`processBatches`/`processRequired`、旧模板 `Sheet`/`Definition`/`Dropdown`；保留 `read`/`readRequired`/`readBatches` 简单读取入口。`PoiZipGuard` 增加压缩炸弹预检。
+- `chaos-excel` 删除已废弃 API：`ImportOperationType`、`readVisibleSheets`、`processBatches`/`processRequired`、旧模板 `Sheet`/`Definition`/`Dropdown`；保留 `read`/`readRequired`/`readBatches` 简单读取入口，并新增 `ExcelImports.sheetNames(StagedFile)` 与 `ExcelImports.visibleSheetNames(StagedFile)` 供调用方按名称构建多 Sheet 导入计划。`PoiZipGuard` 增加压缩炸弹预检。
 - BOM 将 `poi.version` 升级到 `5.5.1`，`commons-io.version` 对齐到 `2.21.0`，移除 `fastexcel` 依赖。
+- 新增 `chaos-process-starter`、流程自动装配和 `chaos.process.*` 配置，提供状态机 Guard/Action、流程定义、实例、候选人、领取租约、乐观版本及启动/完成幂等能力。
+- 状态机 API 移至 `com.chaos.process.statemachine`，内存流程引擎移至 `com.chaos.process.support`；旧包 API 保留为 deprecated 兼容层，业务代码应迁移到新包。
+- 生产环境检测到 `InMemoryProcessEngine` 时默认阻断启动；新增流程低基数指标、启动报告及 `chaosRuntime` 诊断信息。
 - 精简 `/actuator/health` 中的 `chaosRuntime`：仅展示已启用能力并省略空区块，过滤 shell、classpath 与 IDE 噪声。
 - 增加服务版本、构建时间、启动时间和运行时长；`chaos-boot-parent` 默认生成 Spring Boot build-info。
 - 由框架提供完整 Health 详情与低价值健康指标的低优先级默认值，业务服务无需重复配置。

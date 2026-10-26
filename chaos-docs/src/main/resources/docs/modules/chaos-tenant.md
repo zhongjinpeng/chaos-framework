@@ -41,6 +41,21 @@ chaos:
 - **不读取任何客户端请求头**；
 - 拒绝时返回 `403` 和统一 JSON，不回显租户状态细节，并计入 `chaos.tenant.denied` 指标。
 
+### 接口租户访问策略
+
+`TenantAccessServletFilter` 校验租户生命周期状态；接口允许哪类租户调用是另一层约束。Spring MVC 应用可以使用框架提供的策略机制：
+
+```java
+@RequireTenantAccess(TenantAccessPolicies.ORGANIZATION)
+@RestController
+class OrderController {
+}
+```
+
+策略名及含义由应用定义。应用实现 `TenantAccessAuthorizer` 判断当前 tenantId 是否满足策略，并通过 `TenantAccessDeniedHandler` 选择稳定的业务异常；随后把 `TenantPolicyAccessInterceptor` 注册到 MVC。框架负责方法级覆盖类级、OPTIONS/非 Controller 放行、从可信 `RequestContext` 获取租户以及执行/观察模式，不内置“平台租户”“公共读取”等业务概念。
+
+该注解只约束调用方，不授予跨租户行读取权限。公共数据可见性、写入归属和数据权限谓词仍须由应用服务与持久化层显式实现。
+
 ### 线程上下文清理
 
 `TenantContext` 已接入 `ContextPropagation.clearAll()`，chaos-web 的 `TraceFilter` 在请求结束时兜底清理；
@@ -57,6 +72,10 @@ chaos:
 | TenantStatusProvider | 租户状态查询端口 |
 | TenantAccessValidator | 租户访问决策服务 |
 | TenantContext | 当前线程租户治理上下文 |
+| RequireTenantAccess | 声明应用自定义的接口租户访问策略 |
+| TenantAccessAuthorizer | 应用解释策略名并执行访问判定的 SPI |
+| TenantAccessDeniedHandler | 应用创建拒绝异常的 SPI |
+| TenantPolicyAccessInterceptor | Spring MVC 策略执行器 |
 
 ## 示例
 

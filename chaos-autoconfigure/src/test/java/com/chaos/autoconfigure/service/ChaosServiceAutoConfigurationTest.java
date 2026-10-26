@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.chaos.core.exception.BizException;
 import com.chaos.core.exception.CommonErrorCode;
 import com.chaos.service.context.TraceContextTaskDecorator;
+import com.chaos.service.json.JsonUtils;
 import com.chaos.service.retry.RetryExecutor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -76,6 +78,21 @@ class ChaosServiceAutoConfigurationTest {
         contextRunner.run(context -> assertThat(context).doesNotHaveBean("chaosContextRegistryRegistrar"));
         contextRunner.withPropertyValues("chaos.service.context-propagation.micrometer-enabled=true")
                 .run(context -> assertThat(context).hasBean("chaosContextRegistryRegistrar"));
+    }
+
+    @Test
+    void shouldRegisterJsonUtilsWhenObjectMapperExists() {
+        contextRunner.withBean(ObjectMapper.class, ObjectMapper::new)
+                .run(context -> assertThat(context).hasSingleBean(JsonUtils.class));
+    }
+
+    @Test
+    void shouldBackOffWhenCustomJsonUtilsExists() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonUtils custom = new JsonUtils(objectMapper);
+        contextRunner.withBean(ObjectMapper.class, () -> objectMapper)
+                .withBean(JsonUtils.class, () -> custom)
+                .run(context -> assertThat(context.getBean(JsonUtils.class)).isSameAs(custom));
     }
 
     @Configuration(proxyBeanMethods = false)

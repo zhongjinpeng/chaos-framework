@@ -59,7 +59,7 @@ The module dependency flows top-down. Directory layout (directory name = artifac
 
 - **chaos-dependencies** — Public BOM and version source of truth.
 - **chaos-foundation/** — `chaos-core` (request context `RequestContext`/`RequestContextSnapshot`, error codes `ErrorCode`/`ChaosException`/`BizException`, `ChaosHeaders`, idempotency contracts `core.idempotent` with dev-only in-memory impl in `core.idempotent.support`, `core.lock`, rate limiter SPI + in-memory impl `core.ratelimit`, governance metrics SPI `core.metrics` (`ChaosMetrics`/`ChaosMeterNames`, Micrometer impl lives in `chaos-trace`), framework message bundles `com/chaos/core/i18n/messages/`, trusted-proxy client IP resolution `core.net.ForwardedClientIpResolver`) and `chaos-domain` (DDD primitives `domain.model.AggregateRoot`/`DomainEvent`, `domain.dto.PageQuery`/`PageResult`, `domain.cache` key strategy). `chaos-core` depends on no chaos module.
-- **chaos-process** — Framework-neutral state-machine and process contracts plus runtime adapters (`com.chaos.process`), depending only on `chaos-core`; the in-memory implementation is for development and tests.
+- **chaos-process/** — Process capability domain: `chaos-process` contains framework-neutral process contracts (`com.chaos.process`), the state-machine kernel (`com.chaos.process.statemachine`) and development/test adapters (`com.chaos.process.support`); `chaos-process-jdbc` and `chaos-process-redis` provide persistence adapters. The modules depend only on `chaos-core` plus their respective infrastructure libraries.
 - **chaos-observability/chaos-trace** — W3C trace context propagation, MDC keys/`MdcSupport` and logback/log4j2 templates (`com.chaos.trace.log`), OpenFeign trace interceptor (`trace.feign`), Micrometer observation filter and `MicrometerChaosMetrics` (`trace.monitor`; micrometer is optional).
 - **chaos-audit/** — `chaos-audit` (audit events, incl. `AsyncAuditEventPublisher`) and `chaos-audit-jdbc` (JDBC audit persistence).
 - **chaos-service** — Application-layer utilities: `TransactionExecutor`, `RetryExecutor`, `DomainEventPublisher`, `TraceContextTaskDecorator`.
@@ -101,7 +101,7 @@ Enforced by `DependencyDirectionArchitectureTest` / `LayerBoundaryArchitectureTe
 
 Starters come in two layers:
 - **Scenario starters** (pick one per application): `chaos-web-service-starter` (servlet business service = web + security + tenant + audit + application), `chaos-gateway-starter` (API gateway), `chaos-auth-server-starter` (authorization server = authorization + Actuator/Prometheus).
-- **Capability starters** (add as needed): `application`, `audit`, `audit-jdbc`, `authorization`, `cloud`, `cloud-nacos`, `cloud-reactive`, `gateway-nacos`, `job`, `mq`, `mybatis`, `redis`, `security`, `storage`, `tenant`, `web`.
+- **Capability starters** (add as needed): `application`, `audit`, `audit-jdbc`, `authorization`, `cloud`, `cloud-nacos`, `cloud-reactive`, `gateway-nacos`, `job`, `mq`, `mybatis`, `process`, `redis`, `security`, `storage`, `tenant`, `web`.
 
 `chaos-boot-parent` is the recommended parent for applications (inherits `chaos-dependencies`; Java 21, `-parameters`, surefire/failsafe, spring-boot `repackage` in pluginManagement). It must not inherit `chaos-parent` or carry framework release governance plugins.
 

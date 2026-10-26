@@ -2,7 +2,7 @@ package com.chaos.excel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.chaos.excel.importer.ImportError;
+import com.chaos.core.importing.ImportRowError;
 import com.chaos.excel.importer.ImportResult;
 import com.chaos.excel.importer.SheetResult;
 import java.util.List;
@@ -14,7 +14,7 @@ class ImportResultTest {
 
     @Test
     void shouldExposeDerivedStatisticsAndCacheErrorFile() {
-        ImportError error = new ImportError(
+        ImportRowError error = new ImportRowError(
                 "试剂", 3, 1, "单位", "EXCEL_ENUM", "单位不在下拉列表中",
                 Map.of(0, "氯化钠", 1, "kg"));
         ImportResult result = new ImportResult(

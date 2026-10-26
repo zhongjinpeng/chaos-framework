@@ -14,11 +14,11 @@
 
 | 前缀 | 模块 | 关键配置 | 默认值 | 风险提示 |
 | --- | --- | --- | --- | --- |
-| `chaos.production-safety` | chaos-autoconfigure（support 包；web/security/tenant/gateway/mybatis 等自动装配共用） | `enabled`、`production-mode`、`profiles`、`fail-fast`、`allow-unsafe-defaults` | `true`、空（按 profile 判断）、`prod,production,prd`、`true`、`false` | 生产模式下检测 `NoopJwtRevocationService`、`NoopTenantStatusProvider`、`NoopDataScopeProvider`、`InMemoryRateLimiter`、`InMemoryIdempotentRepository`、`InMemoryGatewayRateLimiter` 等兜底实现，**默认抛异常阻断启动**。`fail-fast=false` 降级为告警；`allow-unsafe-defaults=true` 仅用于迁移期 |
+| `chaos.production-safety` | chaos-autoconfigure（support 包；web/security/tenant/gateway/mybatis/process 等自动装配共用） | `enabled`、`production-mode`、`profiles`、`fail-fast`、`allow-unsafe-defaults` | `true`、空（按 profile 判断）、`prod,production,prd`、`true`、`false` | 生产模式下检测 `NoopJwtRevocationService`、`NoopTenantStatusProvider`、`NoopDataScopeProvider`、`InMemoryRateLimiter`、`InMemoryIdempotentRepository`、`InMemoryGatewayRateLimiter`、`InMemoryProcessEngine` 等兜底实现，**默认抛异常阻断启动**。`fail-fast=false` 降级为告警；`allow-unsafe-defaults=true` 仅用于迁移期 |
 | `chaos.diagnostics` | chaos-autoconfigure（diagnostics 包） | `startup-report.enabled`、`startup-report.level`、`startup-report.identifiers`、`runtime-health.include-configuration-details`、`web-stack-check.enabled`、`outbox-schema-check.enabled` | `true`、`info`、空、`true`、`true`、`true` | 启动日志只输出运行摘要和有效诊断；`/actuator/health` 的 `chaosRuntime` 组件返回完整诊断报告及已脱敏的配置明细；Servlet 应用混入 chaos-gateway 时阻断启动；JDBC outbox 缺表时输出带建表脚本路径的 WARN。详见 [diagnostics.md](diagnostics.md) |
 | `chaos.authorization.production-safety` | chaos-authorization | `enabled`、`production-mode`、`profiles`、`fail-fast`、`allow-*` | `true`、空、`prod,production,prd`（与全局 `chaos.production-safety.profiles` 一致）、`true`、全部 `false` | 检查 localhost issuer、`{noop}` client secret、memory client、临时生成的 JWK、内存授权仓储/会话索引、Noop JWT 撤销、Noop 互踢、空审计，**默认阻断启动**；逐项放行用 `allow-memory-client-store`、`allow-memory-authorization-store`、`allow-memory-session-registry`、`allow-generated-jwk`、`allow-noop-client-secret`、`allow-localhost-issuer`、`allow-noop-jwt-revocation-service`、`allow-noop-kickout-service`、`allow-noop-audit-publisher` |
 
-## Web / Service / Tenant
+## Web / Service / Tenant / Process
 
 | 前缀 | 模块 | Starter | 关键配置 | 默认值 | 风险提示 |
 | --- | --- | --- | --- | --- | --- |
@@ -34,6 +34,8 @@
 | `chaos.service.context-propagation` | chaos-autoconfigure | chaos-application-starter | `micrometer-enabled` | `false` | 开启后注册到 Micrometer ContextRegistry，Reactor/CompletableFuture 也能传播上下文；与 Micrometer Tracing 的 MDC 管理共存时需验证日志字段 |
 | `chaos.tenant` | chaos-autoconfigure | chaos-tenant-starter | `enabled`、`fail-closed`、`header-name`、`default-isolation-mode` | `true`、`true`、`X-Tenant-Id`、`SHARED_SCHEMA` | 生产应替换真实 `TenantStatusProvider` |
 | `chaos.tenant.servlet-filter` | chaos-autoconfigure | chaos-tenant-starter | `enabled`、`exclude-paths` | `false`、`/actuator/**,/error` | 开启后 Servlet 服务入口也按租户状态 fail-closed 校验，并负责清理 `TenantContext` |
+| `chaos.time` | chaos-autoconfigure | 任意 Chaos starter | `zone-id` | `Asia/Shanghai` | 统一应用 `Clock` 与 `DateTimeUtils` 的业务时区；仅非中国标准时间的应用需要覆盖 |
+| `chaos.process` | chaos-autoconfigure | chaos-process-starter | `enabled`、`engine` | `true`、`MEMORY` | 内存引擎只适合开发和测试，生产模式会阻断启动；生产应用应提供具备事务、乐观锁和幂等唯一约束的 `ProcessEngine` Bean，并设置 `engine=none` |
 
 ## Security / Authorization
 

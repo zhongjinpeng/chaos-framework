@@ -16,7 +16,7 @@
     <!--
         starter 分两层：
         - 场景 starter（chaos-web-service-starter、chaos-gateway-starter、chaos-auth-server-starter）：按“要搭什么服务”选择，一个就够；
-        - 能力 starter（其余）：按“还需要什么能力”追加，例如 mybatis、redis、mq、job、storage、cloud。
+        - 能力 starter（其余）：按“还需要什么能力”追加，例如 mybatis、redis、mq、job、process、storage、cloud。
     -->
     <modules>
         <!-- 场景 starter -->
@@ -33,6 +33,9 @@
         <module>chaos-gateway-starter</module>
         <module>chaos-gateway-nacos-starter</module>
         <module>chaos-job-starter</module>
+        <module>chaos-process-starter</module>
+        <module>chaos-process-jdbc-starter</module>
+        <module>chaos-process-redis-starter</module>
         <module>chaos-tenant-starter</module>
         <module>chaos-authorization-starter</module>
         <module>chaos-security-starter</module>

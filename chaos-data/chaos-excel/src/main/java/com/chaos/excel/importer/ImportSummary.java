@@ -1,6 +1,6 @@
 package com.chaos.excel.importer;
 
-import java.util.List;
+import com.chaos.core.importing.ImportRowError;import java.util.List;
 
 /**
  * 导入结果摘要，适合直接作为接口响应体。
@@ -16,7 +16,7 @@ public record ImportSummary(
         long successRows,
         long failedRows,
         boolean hasErrors,
-        List<ImportError> errors) {
+        List<ImportRowError> errors) {
 
     public ImportSummary {
         errors = errors == null ? List.of() : List.copyOf(errors);

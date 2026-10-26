@@ -3,7 +3,7 @@ package com.chaos.excel.error;
 import com.chaos.excel.ExcelDocument;
 import com.chaos.excel.ExcelFile;
 import com.chaos.excel.ExcelProcessingException;
-import com.chaos.excel.importer.ImportError;
+import com.chaos.core.importing.ImportRowError;
 import com.chaos.excel.importer.ImportResult;
 import com.chaos.excel.internal.FileNames;
 import java.io.ByteArrayOutputStream;
@@ -50,9 +50,9 @@ public final class ImportErrorReport {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             Styles styles = new Styles(workbook);
-            Map<String, List<ImportError>> bySheet = groupBySheet(result.errors());
+            Map<String, List<ImportRowError>> bySheet = groupBySheet(result.errors());
             Set<String> sheetNames = new LinkedHashSet<>();
-            for (Map.Entry<String, List<ImportError>> entry : bySheet.entrySet()) {
+            for (Map.Entry<String, List<ImportRowError>> entry : bySheet.entrySet()) {
                 writeSheet(workbook, styles, entry.getKey(), entry.getValue(),
                         result.sheetHeaders().getOrDefault(entry.getKey(), List.of()), sheetNames);
             }
@@ -65,9 +65,9 @@ public final class ImportErrorReport {
         }
     }
 
-    private static Map<String, List<ImportError>> groupBySheet(List<ImportError> errors) {
-        Map<String, List<ImportError>> grouped = new LinkedHashMap<>();
-        for (ImportError error : errors) {
+    private static Map<String, List<ImportRowError>> groupBySheet(List<ImportRowError> errors) {
+        Map<String, List<ImportRowError>> grouped = new LinkedHashMap<>();
+        for (ImportRowError error : errors) {
             grouped.computeIfAbsent(error.sheetName(), key -> new ArrayList<>()).add(error);
         }
         return grouped;
@@ -77,7 +77,7 @@ public final class ImportErrorReport {
             XSSFWorkbook workbook,
             Styles styles,
             String sourceSheet,
-            List<ImportError> errors,
+            List<ImportRowError> errors,
             List<String> headers,
             Set<String> sheetNames) {
         String sheetName = FileNames.sheetName("错误-" + sourceSheet, sheetNames);
@@ -95,7 +95,7 @@ public final class ImportErrorReport {
         writeHeader(header, column++, "错误原因", styles.header);
         writeHeader(header, column, "错误码", styles.header);
         int rowIndex = 1;
-        for (ImportError error : errors) {
+        for (ImportRowError error : errors) {
             Row row = sheet.createRow(rowIndex++);
             int cell = 0;
             row.createCell(cell++).setCellValue(error.rowNumber());

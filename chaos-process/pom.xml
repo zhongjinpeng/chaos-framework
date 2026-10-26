@@ -9,22 +9,13 @@
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>chaos-process</artifactId>
-    <name>chaos-process</name>
-    <description>Process engine runtime adapters built on the framework process contracts.</description>
-    <dependencies>
-        <dependency>
-            <groupId>com.chaos</groupId>
-            <artifactId>chaos-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <artifactId>chaos-process-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>chaos-process-parent</name>
+    <description>Process capability domain aggregator.</description>
+    <modules>
+        <module>chaos-process</module>
+        <module>chaos-process-jdbc</module>
+        <module>chaos-process-redis</module>
+    </modules>
 </project>

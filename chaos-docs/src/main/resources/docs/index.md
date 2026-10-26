@@ -14,6 +14,7 @@
 | 导入导出 Excel | `+ chaos-excel` | 无需配置 | [chaos-excel](modules/chaos-excel.md) | — |
 | 上线多实例 | `+ chaos-redis-starter` | [addons/redis.yml](templates/addons/redis.yml) | 各场景清单 §1 | 生产安全检查报错会列出缺少的实现 |
 | 发可靠消息 | `+ chaos-mq-starter` + 建 outbox 表 | [addons/mq.yml](templates/addons/mq.yml) | [chaos-mq-jdbc](modules/chaos-mq-jdbc.md) | outbox 表缺失时启动 WARN 给出建表脚本 |
+| 使用状态机 / 流程引擎 | `+ chaos-process-starter` | [addons/process.yml](templates/addons/process.yml) | [状态机与流程引擎](capabilities/process-engine.md) | 生产环境使用内存引擎时阻断启动 |
 | 存文件 | `+ chaos-storage-starter` | [addons/storage.yml](templates/addons/storage.yml) | [chaos-storage](modules/chaos-storage.md) | — |
 
 ## Start Here

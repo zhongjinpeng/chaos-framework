@@ -127,8 +127,8 @@ public final class ProductionSafety {
                 "生产安全检查未通过，容器中存在 " + violations.size() + " 个只适用于开发环境的实现",
                 violations,
                 List.of(
-                        "按上面每一项替换为生产实现，常见做法是引入 chaos-redis-starter 并配置 spring.data.redis.*，"
-                                + "Redis 版限流、幂等、JWT 撤销实现会自动替换内存/Noop 兜底实现",
+                        "按上面每一项的具体建议替换生产实现；限流、幂等和 JWT 撤销场景可引入 chaos-redis-starter "
+                                + "并配置 spring.data.redis.*",
                         "确认当前确实是生产环境：生产 profile 由 chaos.production-safety.profiles 决定（默认 prod,production,prd），"
                                 + "也可以用 chaos.production-safety.production-mode 显式声明",
                         "迁移期确需临时放行：chaos.production-safety.fail-fast=false（只告警）"

@@ -8,6 +8,7 @@ import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Finding;
 import com.chaos.autoconfigure.diagnostics.ChaosFeatureReport.Severity;
 import com.chaos.autoconfigure.gateway.ChaosGatewayAutoConfiguration;
 import com.chaos.autoconfigure.job.ChaosJobAutoConfiguration;
+import com.chaos.autoconfigure.process.ChaosProcessAutoConfiguration;
 import com.chaos.core.diagnostic.ChaosDiagnosticException;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,8 @@ class ChaosDiagnosticsAutoConfigurationTest {
             .withConfiguration(AutoConfigurations.of(
                     ChaosDiagnosticsAutoConfiguration.class,
                     ChaosJobAutoConfiguration.class,
-                    ChaosGatewayAutoConfiguration.class));
+                    ChaosGatewayAutoConfiguration.class,
+                    ChaosProcessAutoConfiguration.class));
 
     /**
      * 报告区分已启用、应用类型不符、被配置关闭与未导入，并附带关键配置。
@@ -47,6 +49,10 @@ class ChaosDiagnosticsAutoConfigurationTest {
             assertThat(report.application()).isEqualTo("diagnostics-demo");
             assertThat(feature(report, "job").enabled()).isTrue();
             assertThat(feature(report, "job").settings()).containsEntry("scheduling-enabled", "true");
+            assertThat(feature(report, "process").enabled()).isTrue();
+            assertThat(feature(report, "process").settings())
+                    .containsEntry("engine", "MEMORY")
+                    .containsEntry("implementation", "InMemoryProcessEngine");
             assertThat(feature(report, "gateway").category()).isEqualTo(DisabledCategory.WEB_APPLICATION_TYPE);
             assertThat(feature(report, "mybatis").category()).isEqualTo(DisabledCategory.NOT_IMPORTED);
         });

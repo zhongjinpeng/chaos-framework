@@ -1,0 +1,5 @@
+chaos:
+  process:
+    enabled: true
+    # 仅用于本地开发和测试；生产环境提供持久化 ProcessEngine Bean 后改为 none。
+    engine: memory

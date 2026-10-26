@@ -28,6 +28,8 @@ public final class ChaosFeatureCatalog {
             entry("application", "service.ChaosServiceAutoConfiguration", context -> Map.of()),
             entry("tenant", "tenant.ChaosTenantAutoConfiguration", context -> settings(
                     "servlet-filter", value(context, "chaos.tenant.servlet-filter.enabled", "false"))),
+            entry("time", "time.ChaosTimeAutoConfiguration", context -> settings(
+                    "zone-id", value(context, "chaos.time.zone-id", "Asia/Shanghai"))),
             entry("audit", "audit.ChaosAuditAutoConfiguration", context -> settings(
                     "publisher", beanTypes(context, "com.chaos.audit.AuditEventPublisher"),
                     "async", value(context, "chaos.audit.async.enabled", "false"))),
@@ -82,6 +84,9 @@ public final class ChaosFeatureCatalog {
                     "reporter", beanTypes(context, "com.chaos.core.metrics.ChaosMetrics"))),
             entry("job", "job.ChaosJobAutoConfiguration", context -> settings(
                     "scheduling-enabled", value(context, "chaos.job.scheduling-enabled", "true"))),
+            entry("process", "process.ChaosProcessAutoConfiguration", context -> settings(
+                    "engine", value(context, "chaos.process.engine", "MEMORY"),
+                    "implementation", beanTypes(context, "com.chaos.process.ProcessEngine"))),
             entry("storage", "storage.ChaosStorageAutoConfiguration", context -> settings(
                     "provider", value(context, "chaos.storage.provider", "NONE")))
     );
