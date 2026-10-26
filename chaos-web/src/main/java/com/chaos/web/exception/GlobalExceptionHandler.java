@@ -7,6 +7,7 @@ import com.chaos.web.i18n.ChaosMessageKeys;
 import com.chaos.web.i18n.ErrorMessageResolver;
 import com.chaos.web.i18n.MessageSourceErrorMessageResolver;
 import com.chaos.web.result.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +45,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  *     交给 {@code ExceptionTranslationFilter} 按认证状态返回 401 或 403，而不是被兜底成 500。</li>
  *     <li>5xx 的 {@link ChaosException} 记录 error 日志并保留堆栈，但响应只返回错误码默认消息，
  *     避免把数据库、下游服务等内部信息泄露给调用方。</li>
+ *     <li>参数校验失败只记录请求定位信息和字段路径，不记录字段值和堆栈，避免日志噪音和敏感信息泄露。</li>
  *     <li>所有对外文案统一经过 {@link ErrorMessageResolver} 解析。此前错误码默认消息是英文、而这里的参数校验
  *     提示是硬编码中文，同一个服务的错误响应会中英混杂，且客户端语言完全无法影响文案；
  *     统一解析后 {@code Accept-Language} 对框架内置提示同样生效。</li>
@@ -106,7 +108,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Result<Void>> handleChaosException(ChaosException ex) {
         HttpStatus status = resolveStatus(ex.errorCode().code());
         if (status.is5xxServerError()) {
-            log.error("Server error: code={}", ex.errorCode().code(), ex);
+            log.error("Server error: code=" + ex.errorCode().code(), ex);
             return ResponseEntity.status(status).body(failure(ex.errorCode()));
         }
         log.debug("Business rejected: code={}, message={}", ex.errorCode().code(), ex.getMessage());
@@ -118,7 +120,12 @@ public class GlobalExceptionHandler {
      * 处理 {@code @RequestBody} 参数校验异常。
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Result<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Result<Void>> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        logValidation(request, ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getField)
+                .distinct()
+                .toList());
         return ResponseEntity.badRequest().body(badRequest(fieldErrorMessage(ex.getBindingResult().getFieldErrors())));
     }
 
@@ -126,7 +133,11 @@ public class GlobalExceptionHandler {
      * 处理表单和查询参数绑定异常。
      */
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<Result<Void>> handleBindException(BindException ex) {
+    public ResponseEntity<Result<Void>> handleBindException(BindException ex, HttpServletRequest request) {
+        logValidation(request, ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getField)
+                .distinct()
+                .toList());
         return ResponseEntity.badRequest().body(badRequest(fieldErrorMessage(ex.getBindingResult().getFieldErrors())));
     }
 
@@ -134,7 +145,12 @@ public class GlobalExceptionHandler {
      * 处理方法参数约束校验异常。
      */
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Result<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+    public ResponseEntity<Result<Void>> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        logValidation(request, ex.getConstraintViolations().stream()
+                .map(violation -> String.valueOf(violation.getPropertyPath()))
+                .distinct()
+                .toList());
         String message = ex.getConstraintViolations().stream()
                 .map(violation -> validationField(String.valueOf(violation.getPropertyPath()), violation.getMessage()))
                 .collect(Collectors.joining(VALIDATION_SEPARATOR));
@@ -244,7 +260,7 @@ public class GlobalExceptionHandler {
     private ResponseEntity<Result<Void>> handleErrorResponse(Exception ex, HttpStatusCode statusCode) {
         ErrorCode errorCode = errorCodeFor(statusCode);
         if (statusCode.is5xxServerError()) {
-            log.error("Framework server error: status={}", statusCode.value(), ex);
+            log.error("Framework server error: status=" + statusCode.value(), ex);
         } else {
             log.debug("Framework client error: status={}, exception={}", statusCode.value(), ex.toString());
         }
@@ -277,6 +293,15 @@ public class GlobalExceptionHandler {
      */
     private Result<Void> badRequest(String message) {
         return Result.failure(CommonErrorCode.BAD_REQUEST, message);
+    }
+
+    /**
+     * 记录参数校验失败字段，仅输出字段路径，不输出用户输入值。
+     */
+    private void logValidation(HttpServletRequest request, List<String> fields) {
+        log.debug("Request validation failed: method={}, path={}, fields={}",
+                request.getMethod(), request.getRequestURI(),
+                fields.isEmpty() ? "<global>" : String.join(",", fields));
     }
 
     /**
