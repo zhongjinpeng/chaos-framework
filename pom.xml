@@ -23,6 +23,19 @@
     <name>chaos-framework</name>
     <description>Enterprise Spring Boot and Spring Cloud framework based on DDD and Hexagonal Architecture.</description>
 
+    <distributionManagement>
+        <repository>
+            <id>gongcelian-releases</id>
+            <name>Gongcelian Nexus Releases</name>
+            <url>http://112.124.23.38:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>gongcelian-snapshots</id>
+            <name>Gongcelian Nexus Snapshots</name>
+            <url>http://112.124.23.38:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <modules>
         <module>chaos-dependencies</module>
         <module>chaos-boot-parent</module>
