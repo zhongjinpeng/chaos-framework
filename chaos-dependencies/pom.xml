@@ -25,6 +25,20 @@
     <description>Public BOM for Chaos Framework consumers.</description>
     <url>${chaos.project.url}</url>
 
+    <!-- This BOM has no parent, so it must declare the Nexus deployment targets itself. -->
+    <distributionManagement>
+        <repository>
+            <id>gongcelian-releases</id>
+            <name>Gongcelian Nexus Releases</name>
+            <url>http://112.124.23.38:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>gongcelian-snapshots</id>
+            <name>Gongcelian Nexus Snapshots</name>
+            <url>http://112.124.23.38:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <!-- 发布到 Maven Central 必需的元数据。占位值会在 chaos-release profile 的 deploy 阶段被 enforcer 拦截。 -->
     <licenses>
         <license>
