@@ -46,6 +46,7 @@
         <module>chaos-tenant</module>
         <module>chaos-security</module>
         <module>chaos-web</module>
+        <module>chaos-http-client</module>
         <module>chaos-data</module>
         <module>chaos-mq</module>
         <module>chaos-service</module>

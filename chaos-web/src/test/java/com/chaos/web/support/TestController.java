@@ -95,6 +95,14 @@ public class TestController {
         return required;
     }
 
+    /**
+     * 可预期的参数拒绝：应返回 400 而不是 500。
+     */
+    @GetMapping("/invalid-argument")
+    public String invalidArgument() {
+        throw new IllegalArgumentException("quantities must be positive");
+    }
+
     @GetMapping("/boom")
     public String boom() {
         throw new IllegalStateException("boom");

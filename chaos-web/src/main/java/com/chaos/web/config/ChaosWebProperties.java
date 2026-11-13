@@ -27,6 +27,7 @@ public class ChaosWebProperties {
         this.safeLongSerialization = safeLongSerialization;
     }
 
+
     /**
      * 是否启用统一响应包装。
      */
@@ -82,6 +83,18 @@ public class ChaosWebProperties {
     @Valid
     @NotNull(message = "chaos.web.i18n must not be null")
     private I18n i18n = new I18n();
+
+    /**
+     * Jackson 允许读取的最大字符串长度；非正数表示沿用 Jackson 默认值。
+     */
+    private int maxStringLength;
+
+    /**
+     * 默认 OpenAPI 分组配置。
+     */
+    @Valid
+    @NotNull(message = "chaos.web.open-api must not be null")
+    private OpenApi openApi = new OpenApi();
 
     public boolean isResponseWrapEnabled() {
         return responseWrapEnabled;
@@ -153,6 +166,22 @@ public class ChaosWebProperties {
 
     public void setI18n(I18n i18n) {
         this.i18n = i18n == null ? new I18n() : i18n;
+    }
+
+    public int getMaxStringLength() {
+        return maxStringLength;
+    }
+
+    public void setMaxStringLength(int maxStringLength) {
+        this.maxStringLength = maxStringLength;
+    }
+
+    public OpenApi getOpenApi() {
+        return openApi;
+    }
+
+    public void setOpenApi(OpenApi openApi) {
+        this.openApi = openApi == null ? new OpenApi() : openApi;
     }
 
     /**
@@ -229,6 +258,38 @@ public class ChaosWebProperties {
 
         public void setTrustIdentityHeaders(boolean trustIdentityHeaders) {
             this.trustIdentityHeaders = trustIdentityHeaders;
+        }
+    }
+
+    /**
+     * 默认 OpenAPI 分组。
+     */
+    public static class OpenApi {
+
+        /**
+         * 分组名称；为空时不注册分组文档。
+         */
+        private String group;
+
+        /**
+         * 分组匹配的路径模式。
+         */
+        private List<String> paths = new ArrayList<>();
+
+        public String getGroup() {
+            return group;
+        }
+
+        public void setGroup(String group) {
+            this.group = group;
+        }
+
+        public List<String> getPaths() {
+            return paths;
+        }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths == null ? new ArrayList<>() : paths;
         }
     }
 

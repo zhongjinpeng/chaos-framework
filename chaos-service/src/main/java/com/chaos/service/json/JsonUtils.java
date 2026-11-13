@@ -129,6 +129,35 @@ public final class JsonUtils {
         return toJson(sort(Objects.requireNonNull(source, "source must not be null")));
     }
 
+    /**
+     * 将对象序列化为字段顺序稳定的 JSON 文本。
+     *
+     * <p>等价于先 {@link #toJson(Object)} 再 {@link #readTree(String)} 后按字段名递归排序，
+     * 供摘要计算、幂等键和请求指纹等需要稳定文本的场景直接使用。
+     *
+     * @param value 待序列化对象，可为 {@code null}
+     * @return 字段按字典序排列的 JSON 文本
+     * @throws JsonOperationException 对象无法序列化时抛出
+     */
+    public String toCanonicalJson(Object value) {
+        return toCanonicalJson(readTree(toJson(value)));
+    }
+
+    /**
+     * 将对象序列化为字段顺序稳定的 JSON 对象文本。
+     *
+     * @param value 待序列化对象，必须序列化为 JSON 对象
+     * @return 字段按字典序排列的 JSON 对象文本
+     * @throws JsonOperationException 序列化失败或结果不是 JSON 对象时抛出
+     */
+    public String toCanonicalObject(Object value) {
+        JsonNode node = readTree(toJson(value));
+        if (!node.isObject()) {
+            throw new JsonOperationException("JSON value must be an object", null);
+        }
+        return toCanonicalJson(node);
+    }
+
     private JsonNode sort(JsonNode source) {
         if (source.isObject()) {
             ObjectNode sorted = JsonNodeFactory.instance.objectNode();

@@ -107,4 +107,15 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string(not(containsString("boom"))));
     }
+
+    /**
+     * 可预期的参数拒绝应返回 400 并保留业务文案，而不是被兜底成 500。
+     */
+    @Test
+    void shouldMapIllegalArgumentExceptionToBadRequest() throws Exception {
+        mockMvc.perform(get("/invalid-argument"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("quantities must be positive"));
+    }
 }

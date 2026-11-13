@@ -48,8 +48,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Optional;
+import com.chaos.web.openapi.ResultOperationCustomizer;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SwaggerUiOAuthProperties;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -499,5 +502,36 @@ public class ChaosWebAutoConfiguration {
                 return Optional.of(new CurrentSpanProvider.SpanIds(span.context().traceId(), span.context().spanId()));
             };
         }
+    }
+
+    /**
+     * 注册 Jackson 大报文读取上限；未配置时不改变默认值。
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "chaosJacksonStreamConstraintsCustomizer")
+    public Jackson2ObjectMapperBuilderCustomizer chaosJacksonStreamConstraintsCustomizer(
+            ChaosWebProperties properties) {
+        int maxStringLength = properties.getMaxStringLength();
+        return builder -> {
+            if (maxStringLength > 0) {
+                builder.postConfigurer(mapper -> mapper.getFactory().setStreamReadConstraints(
+                        StreamReadConstraints.builder().maxStringLength(maxStringLength).build()));
+            }
+        };
+    }
+
+    /**
+     * 注册默认 OpenAPI 分组；只有配置了分组名称的服务才会注册。
+     */
+    @Bean
+    @ConditionalOnClass(name = "org.springdoc.core.models.GroupedOpenApi")
+    @ConditionalOnMissingBean(GroupedOpenApi.class)
+    @ConditionalOnProperty(prefix = "chaos.web.open-api", name = "group")
+    public GroupedOpenApi chaosOpenApiGroup(ChaosWebProperties properties) {
+        return GroupedOpenApi.builder()
+                .group(properties.getOpenApi().getGroup())
+                .pathsToMatch(properties.getOpenApi().getPaths().toArray(String[]::new))
+                .addOperationCustomizer(new ResultOperationCustomizer())
+                .build();
     }
 }

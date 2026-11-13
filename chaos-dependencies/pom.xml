@@ -282,6 +282,16 @@
             </dependency>
             <dependency>
                 <groupId>com.chaos</groupId>
+                <artifactId>chaos-http-client</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
+                <artifactId>chaos-transaction</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-service</artifactId>
                 <version>${revision}</version>
             </dependency>

@@ -35,4 +35,24 @@ class JsonUtilsTest {
                 .isInstanceOf(JsonOperationException.class)
                 .hasMessage("JSON parsing failed");
     }
+
+    @Test
+    void shouldCanonicalizeObjectWithoutExplicitTreeConversion() {
+        String result = jsonUtils.toCanonicalJson(Map.of("z", 1, "a", Map.of("y", 2, "x", 3)));
+
+        assertThat(result).isEqualTo("{\"a\":{\"x\":3,\"y\":2},\"z\":1}");
+    }
+
+    @Test
+    void shouldRejectNonObjectWhenCanonicalObjectRequired() {
+        assertThatThrownBy(() -> jsonUtils.toCanonicalObject(List.of(1, 2)))
+                .isInstanceOf(JsonOperationException.class)
+                .hasMessage("JSON value must be an object");
+    }
+
+    @Test
+    void shouldCanonicalizeObjectWithSortedFields() {
+        assertThat(jsonUtils.toCanonicalObject(Map.of("b", 1, "a", 2)))
+                .isEqualTo("{\"a\":2,\"b\":1}");
+    }
 }

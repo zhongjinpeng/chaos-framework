@@ -236,6 +236,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理调用方可预期的参数或状态拒绝。
+     *
+     * <p>领域与应用层用 {@link IllegalArgumentException} 表达输入不合法；不在此转换为 400，
+     * 就会被兜底成 500，让调用方误以为是服务故障。这里只记录 debug 日志，不回显堆栈。</p>
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Result<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.debug("Invalid argument: {}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(Result.failure(CommonErrorCode.BAD_REQUEST, ex.getMessage()));
+    }
+
+    /**
      * 处理未被业务显式捕获的异常。
      *
      * @throws Exception Spring Security 异常原样抛出，交由安全过滤器链处理

@@ -31,7 +31,7 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.storage`](#chaosstorage)（9 项）
 - [`chaos.tenant`](#chaostenant)（4 项）
 - [`chaos.time`](#chaostime)（1 项）
-- [`chaos.web`](#chaosweb)（19 项）
+- [`chaos.web`](#chaosweb)（22 项）
 
 ## chaos.audit
 
@@ -353,6 +353,9 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.web.idempotent.replay.max-local-records` | `Integer` | `1000` | 内存响应快照存储最多保留的条数，仅在没有 Redis 实现时生效。 |  | `chaos-web` |
 | `chaos.web.idempotent.replay.stored-headers` | `List<String>` | `Location` | 需要一并回放的响应头。 默认只有 `Location`：创建类接口的资源地址在响应头里，不回放就无法与首次响应等价。 其余响应头由本次请求重新生成，回放旧值会产生误导。 | `Location` | `chaos-web` |
 | `chaos.web.idempotent.ttl` | `Duration` | `5m` | 幂等 key 保留时间。 |  | `chaos-web` |
+| `chaos.web.max-string-length` | `Integer` | `0` | Jackson 允许读取的最大字符串长度；非正数表示沿用 Jackson 默认值。 |  | `chaos-web` |
+| `chaos.web.open-api.group` | `String` |  | 分组名称；为空时不注册分组文档。 |  | `chaos-web` |
+| `chaos.web.open-api.paths` | `List<String>` |  | 分组匹配的路径模式。 |  | `chaos-web` |
 | `chaos.web.rate-limit.default-permits-per-second` | `Integer` | `100` | 默认每秒许可数，未在 `@RateLimit` 指定时生效。 |  | `chaos-web` |
 | `chaos.web.rate-limit.enabled` | `Boolean` | `true` | 是否启用限流拦截器。 |  | `chaos-web` |
 | `chaos.web.rate-limit.max-local-keys` | `Integer` | `10000` | 默认内存限流器最多保留的 key 数。 |  | `chaos-web` |
