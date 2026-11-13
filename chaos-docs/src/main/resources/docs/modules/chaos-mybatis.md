@@ -269,3 +269,21 @@ public class OrderRepositoryImpl extends BaseRepository implements OrderReposito
 ```
 
 父类通过继承的 Spring 注入方法接收统一生成器；子类无需重复声明字段或构造参数。普通 BaseMapper.insert 仍使用 ASSIGN_ID。批量数据应在 Java 中准备每行 ID，XML 只绑定参数，不调用 OGNL 静态发号。测试手动 new 仓储时调用 `setIdGenerator` 提供确定性策略，未注入时调用 nextId 立即失败。
+
+
+### 通用仓储支持
+
+`BaseRepository` 只提供受保护的技术操作，不要求统一 Mapper、PO、聚合类型或保存模板：
+
+- `assignIds(values)` 为每行生成 `IdentifiedRow<T>(id, value)`，保留输入顺序与重复值，空输入不发号。Mapper 使用该行类型，XML 继续绑定 `row.id` 和 `row.value`。
+- `requireOneRow(rows, failure)` 要求恰好一行；`requireAffectedRow(rows, failure)` 保留零行失败的契约。后者不要用于 JDBC 批处理返回码。异常由业务传入，框架不自动判断为版本冲突，也不修改版本。
+- `translateDuplicateKey(operation, translator)` 接收 Supplier 或 Runnable，仅转换 `DuplicateKeyException`。转换器收到原始异常，决定业务错误码和 cause；其余异常原样传播，不重试。
+- `forEachBatch(values, batchSize, operation)` 按原顺序同步分批，批次为只读视图，空输入不执行；任一批失败立即终止。它不管理事务、提交或重试，也不会把循环单条写入变成 JDBC 批量操作。
+
+关联更新顺序、租户过滤、聚合恢复和版本回填由具体仓储决定。应用事务仍覆盖完整用例；不要在基类上统一添加事务注解。
+
+### 分页结果适配
+
+`PageResults.from(page, converter::toDomain)` 将 IPage 转为 PageResult，保留数据库返回的实际页码、大小和总数，包括空页。需要整页批量加载关联时，先完成装配，再使用 `PageResults.withRecords(page, records)`；不要在逐条转换函数里增加查询。
+
+该工具可由 Repository 和 QueryAdapter 独立使用，无需为了分页继承 BaseRepository。适配器位于 chaos-mybatis，并显式依赖 chaos-domain 的分页契约，依赖方向为基础设施到领域基础模块。分别查询 count/list 或来自远程服务的分页继续按其已有元数据构造 PageResult。

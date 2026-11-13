@@ -23,6 +23,11 @@
             <groupId>com.chaos</groupId>
             <artifactId>chaos-core</artifactId>
         </dependency>
+        <!-- 分页适配器向领域分页契约转换；领域模块不反向依赖 MyBatis。 -->
+        <dependency>
+            <groupId>com.chaos</groupId>
+            <artifactId>chaos-domain</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.chaos</groupId>
             <artifactId>chaos-trace</artifactId>
