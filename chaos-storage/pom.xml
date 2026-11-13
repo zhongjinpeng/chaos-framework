@@ -18,6 +18,7 @@
 
     <modules>
         <module>chaos-storage</module>
+        <module>chaos-storage-document</module>
         <module>chaos-storage-oss</module>
         <module>chaos-storage-minio</module>
     </modules>

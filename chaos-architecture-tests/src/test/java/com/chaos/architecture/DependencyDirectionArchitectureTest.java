@@ -104,6 +104,7 @@ class DependencyDirectionArchitectureTest {
             Map.entry("chaos-gateway-nacos", "com.chaos.gateway.nacos"),
             Map.entry("chaos-job", "com.chaos.job"),
             Map.entry("chaos-storage", "com.chaos.storage"),
+            Map.entry("chaos-storage-document", "com.chaos.storage.document"),
             Map.entry("chaos-storage-minio", "com.chaos.storage.minio"),
             Map.entry("chaos-storage-oss", "com.chaos.storage.oss"),
             Map.entry("chaos-autoconfigure", "com.chaos.autoconfigure"),

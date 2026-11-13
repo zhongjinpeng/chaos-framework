@@ -78,3 +78,11 @@ throw new BizException(CommonErrorCode.BAD_REQUEST, "invalid input");
 
 - 本模块不得依赖 Spring、Servlet 或任何基础设施 SDK（架构测试强制）。
 - 新增公共 API 后同步更新本手册和 architecture.md。
+
+## 有界 I/O 与导入结果
+
+`BoundedStreams.read(input, maxBytes, exceeded)` 最多读取上限加一个探测字节，超限抛出调用方提供的运行时异常；不关闭调用方的流，空内容合法。上限限定在可分配字节数组范围内，I/O 错误原样传播。
+
+`ZipArchives.inspect` 校验解压总量、条目数和压缩比；Path 输入由方法打开并关闭，byte[] 输入暂存为临时 ZIP 并清理。路径检查使用 ZIP 中心目录，以兼容 ZIP64。限额逐调用传入，不修改 JVM 全局 POI 设置。
+
+`ImportOutcome.allSucceeded(total)` 与 `rolledBack(result)` 表达最终导入结果。后者成功数为 0，保留实际错误行数和错误文件；调用方必须自行标记或执行事务回滚，工厂方法没有事务副作用。

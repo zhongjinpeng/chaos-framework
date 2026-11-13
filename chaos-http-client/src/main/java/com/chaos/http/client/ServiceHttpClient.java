@@ -165,8 +165,9 @@ public class ServiceHttpClient {
                         uri,
                         method,
                         client.httpEntityCallback(new HttpEntity<>(request, headers)),
-                        r -> r.getBody().readNBytes(maxResponseBytes + 1));
-                if (response == null || response.length > maxResponseBytes) {
+                        r -> com.chaos.core.io.BoundedStreams.read(r.getBody(), maxResponseBytes,
+                                () -> new IllegalStateException("服务响应超过上限")));
+                if (response == null) {
                     throw new IllegalStateException("服务响应超过上限");
                 }
                 var tree = json.readTree(response);

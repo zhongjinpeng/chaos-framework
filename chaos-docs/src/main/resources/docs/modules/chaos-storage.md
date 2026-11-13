@@ -87,3 +87,13 @@ URL url = objectStorageClient.presignedGetUrl("user-files", key, Duration.ofMinu
   自定义 Bean 若需要上传限制，需自行包装。
 - 同一应用需要多存储路由时，由业务注册自己的组合 `ObjectStorageClient` 实现。
 - 新增存储产品时放到 `chaos-storage/{adapter}` 下，并补充对应的自动装配条件。
+
+## 本地卷与可选文档检查
+
+`com.chaos.storage.local.LocalObjectStorage` 提供有约束的相对键、原子写入、流式大小和 SHA-256；调用方拥有输入流并负责授权。根目录内部拒绝符号链接，宿主必须禁止非可信进程并发修改卷。
+
+`LocalObjectStorageClient` 实现已有 `ObjectStorageClient` 的 put/get/delete，bucket 为独立子目录，大小返回实际写入值。显式构造使用，不新增默认 Bean；`presignedGetUrl` 抛出 `UnsupportedOperationException`，由应用提供鉴权下载。
+
+显式依赖 `chaos-storage-document` 可使用 `FileSignatures` 与 `OfficeDocuments`。前者仅识别 PDF/图片/OLE/OOXML 签名，不代表安全或完全可解析；后者严格检查 Office 主内容类型、宏和加密，抛出携带技术 Reason 的 `Rejected`，由业务映射错误。此模块依赖 POI，不包含在默认 storage starter 中。
+
+两个 Office 路径均由调用方传入 `ZipArchives.Limits`；JDK ZIP 检查使用中心目录，支持 ZIP64，内存输入会临时落盘并清理。业务允许的格式、上传大小、租户路径、文件确认及删除时机由调用方持有。

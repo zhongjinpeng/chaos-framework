@@ -268,3 +268,7 @@ curl -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' \
 `chaos.web.safe-long-serialization=true` 将绝对值超过 JavaScript 安全整数边界 9007199254740991 的 Long 序列化为十进制字符串（包括 Long.MIN_VALUE/Long.MAX_VALUE）。范围内计数及其他数值类型保持数字，null 不变。默认关闭，避免隐式改变已有项目契约。
 
 使用雪花 ID 的浏览器客户端必须把 ID 视为不透明字符串，兼容历史小 ID 的数字值，不执行 Number/parseInt 或算术。该选项是响应精度保护，不会恢复已经被浏览器舍入的请求数字；客户端应传原始字符串。
+
+## 安全 XML 输出
+
+`SecureXmlDocuments.serialize(document)` 将可信 DOM 输出为 UTF-8 XML，每次创建独立 Transformer，禁止外部 DTD 和 stylesheet 访问。与 `parse` 配合使用，业务错误由调用方映射；不执行模板业务校验。

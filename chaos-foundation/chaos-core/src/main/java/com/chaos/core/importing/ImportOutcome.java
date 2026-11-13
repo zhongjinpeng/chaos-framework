@@ -15,7 +15,7 @@ import com.chaos.core.file.AttachmentFile;
  */
 public record ImportOutcome(
         long totalRows, long successRows, long failedRows, AttachmentFile errorFile)
-    implements ImportResultView {
+        implements ImportResultView {
 
     /**
      * 校验行数统计不出现负数。
@@ -24,6 +24,29 @@ public record ImportOutcome(
         if (totalRows < 0 || successRows < 0 || failedRows < 0) {
             throw new IllegalArgumentException("导入行数统计不能为负数");
         }
+    }
+
+    /**
+     * Describes a completed import with every data row persisted.
+     * @param totalRows number of data rows, excluding headers
+     * @return successful outcome without an error file
+     */
+    public static ImportOutcome allSucceeded(long totalRows) {
+        return new ImportOutcome(totalRows, totalRows, 0, null);
+    }
+
+    /**
+     * Describes an import whose business transaction is being rolled back by the caller.
+     * This factory does not start, commit or mark a transaction.
+     * @param result parsing result containing at least one failed row
+     * @return zero successful rows, preserving actual failures and the error attachment
+     */
+    public static ImportOutcome rolledBack(ImportResult result) {
+        java.util.Objects.requireNonNull(result, "result");
+        if (!result.hasErrors()) {
+            throw new IllegalArgumentException("A rolled-back import must contain row errors");
+        }
+        return new ImportOutcome(result.totalRows(), 0, result.failedRows(), result.errorFile());
     }
 
     /**

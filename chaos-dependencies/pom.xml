@@ -352,6 +352,11 @@
             </dependency>
             <dependency>
                 <groupId>com.chaos</groupId>
+                <artifactId>chaos-storage-document</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.chaos</groupId>
                 <artifactId>chaos-storage-minio</artifactId>
                 <version>${revision}</version>
             </dependency>

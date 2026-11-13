@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.chaos</groupId><artifactId>chaos-parent</artifactId>
+        <version>${revision}</version><relativePath>../../pom.xml</relativePath>
+    </parent>
+    <artifactId>chaos-storage-document</artifactId>
+    <name>chaos-storage-document</name>
+    <description>Opt-in file signatures and Office container inspection.</description>
+    <dependencies>
+        <dependency><groupId>com.chaos</groupId><artifactId>chaos-core</artifactId></dependency>
+        <dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>
