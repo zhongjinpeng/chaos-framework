@@ -25,6 +25,7 @@ public final class ChaosFeatureCatalog {
                     "trusted-proxies", count(context, "chaos.web.forwarding.trusted-proxies"),
                     "trust-identity-headers", value(context, "chaos.web.forwarding.trust-identity-headers", "false"),
                     "xss-enabled", value(context, "chaos.web.xss-enabled", "false"))),
+            entry("excel", "excel.ChaosExcelAutoConfiguration", context -> Map.of()),
             entry("application", "service.ChaosServiceAutoConfiguration", context -> Map.of()),
             entry("tenant", "tenant.ChaosTenantAutoConfiguration", context -> settings(
                     "servlet-filter", value(context, "chaos.tenant.servlet-filter.enabled", "false"))),

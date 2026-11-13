@@ -16,6 +16,16 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "chaos.web")
 public class ChaosWebProperties {
+    /** 是否把超过 JavaScript 安全整数范围的 Long 序列化为字符串；默认关闭以保持现有 JSON 契约。 */
+    private boolean safeLongSerialization = false;
+
+    public boolean isSafeLongSerialization() {
+        return safeLongSerialization;
+    }
+
+    public void setSafeLongSerialization(boolean safeLongSerialization) {
+        this.safeLongSerialization = safeLongSerialization;
+    }
 
     /**
      * 是否启用统一响应包装。

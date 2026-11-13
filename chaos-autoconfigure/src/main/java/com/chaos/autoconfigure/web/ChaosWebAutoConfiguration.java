@@ -14,6 +14,7 @@ import com.chaos.web.advice.ResultResponseBodyAdvice;
 import com.chaos.web.config.ChaosWebMvcConfigurer;
 import com.chaos.web.config.ChaosWebProperties;
 import com.chaos.web.config.JacksonCustomizer;
+import com.chaos.web.config.SafeLongSerializer;
 import com.chaos.web.exception.ErrorCodeHttpStatusMapper;
 import com.chaos.web.exception.GlobalExceptionHandler;
 import com.chaos.web.filter.AccessLogFilter;
@@ -56,6 +57,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -120,6 +122,18 @@ public class ChaosWebAutoConfiguration {
     @ConditionalOnProperty(prefix = "chaos.web", name = "response-wrap-enabled", havingValue = "true", matchIfMissing = true)
     public ResultResponseBodyAdvice resultResponseBodyAdvice() {
         return new ResultResponseBodyAdvice();
+    }
+
+    /** 可选的大整数 JSON 精度保护，不改变普通数量及计数。 */
+    @Bean
+    @ConditionalOnMissingBean(name = "chaosSafeLongCustomizer")
+    public Jackson2ObjectMapperBuilderCustomizer chaosSafeLongCustomizer(ChaosWebProperties properties) {
+        return builder -> {
+            if (properties.isSafeLongSerialization()) {
+                var serializer = new SafeLongSerializer();
+                builder.serializerByType(Long.class, serializer).serializerByType(Long.TYPE, serializer);
+            }
+        };
     }
 
     /**

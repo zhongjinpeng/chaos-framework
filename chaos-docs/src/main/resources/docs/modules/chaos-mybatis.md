@@ -248,3 +248,24 @@ chaos:
 - domain 层不要依赖 MyBatis Plus 注解，持久化实体应放在 infrastructure/persistence。
 - 复杂 SQL、跨库查询或非标准字段建议通过 `ignoreTables` 忽略后在业务 mapper 中显式控制。
 - MySQL 集成测试位于 `src/integration-test/java`，只在 `chaos-integration-test` profile 下运行。
+
+
+## 统一应用主键与 Repository 基类
+
+`com.chaos.core.id.IdGenerator` 提供 `long nextId()`，不依赖 Spring 或 ORM。默认的 `SnowflakeIdGenerator` 同时实现该接口和 MyBatis-Plus 的 `IdentifierGenerator`，应用写入和 `ASSIGN_ID` 共用一个线程安全实例。算法与时钟回拨策略复用 MyBatis-Plus，不保证无间隙或跨节点严格顺序。
+
+可以提供自定义 `IdGenerator` Bean，框架将其适配到 `ASSIGN_ID`；已有自定义 `IdentifierGenerator` Bean 也会适配为应用接口。不要创建多个使用同一节点配置的雪花实例，也不要在运行中调用静态 `IdWorker.setIdentifierGenerator` 切换全局状态。
+
+生产部署须显式配置 `chaos.mybatis.id-generator.worker-id` 与 `datacenter-id`（各 0–31），组合在所有并行写入实例间唯一。框架只能校验本地配置，不能检测远端重复节点；自动推断仅适用于开发。时钟回拨时保持 MyBatis-Plus 的等待或抛错行为，不能降级生成随机 ID。
+
+需要在自定义 SQL 前分配主键的仓储可以继承 `com.chaos.mybatis.support.BaseRepository`：
+
+```java
+@Repository
+public class OrderRepositoryImpl extends BaseRepository implements OrderRepository {
+    // 使用项目已有的 Mapper 构造器注入。
+    // 写入前：po.setId(nextId()); 然后 mapper.insert(po)。
+}
+```
+
+父类通过继承的 Spring 注入方法接收统一生成器；子类无需重复声明字段或构造参数。普通 BaseMapper.insert 仍使用 ASSIGN_ID。批量数据应在 Java 中准备每行 ID，XML 只绑定参数，不调用 OGNL 静态发号。测试手动 new 仓储时调用 `setIdGenerator` 提供确定性策略，未注入时调用 nextId 立即失败。

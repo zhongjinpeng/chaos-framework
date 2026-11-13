@@ -9,6 +9,9 @@ import com.chaos.autoconfigure.audit.AuditPublishers;
 import com.chaos.autoconfigure.audit.ChaosAuditAutoConfiguration;
 import com.chaos.autoconfigure.audit.ChaosAuditProperties;
 import com.chaos.core.metrics.ChaosMetrics;
+import com.chaos.core.id.IdGenerator;
+import com.chaos.core.diagnostic.ChaosDiagnostic;
+import com.chaos.core.diagnostic.ChaosDiagnosticException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -68,7 +71,14 @@ public class ChaosAuditJdbcAutoConfiguration {
             ChaosAuditJdbcProperties properties,
             ChaosAuditProperties auditProperties,
             ObjectProvider<PlatformTransactionManager> transactionManagerProvider,
-            ObjectProvider<ChaosMetrics> metricsProvider) {
+            ObjectProvider<ChaosMetrics> metricsProvider,
+            ObjectProvider<IdGenerator> idGeneratorProvider) {
+        IdGenerator idGenerator = properties.isApplicationGeneratedId() ? idGeneratorProvider.getIfAvailable() : null;
+        if (properties.isApplicationGeneratedId() && idGenerator == null) {
+            throw new ChaosDiagnosticException(ChaosDiagnostic.of(
+                    "审计应用主键生成器缺失", "chaos.audit.jdbc.application-generated-id=true，但没有 IdGenerator Bean",
+                    "提供统一 IdGenerator Bean，或关闭 application-generated-id 并使用数据库生成主键"));
+        }
         TransactionTemplate transactionTemplate = null;
         PlatformTransactionManager transactionManager = transactionManagerProvider.getIfUnique();
         if (properties.isIndependentTransaction() && transactionManager != null) {
@@ -83,7 +93,8 @@ public class ChaosAuditJdbcAutoConfiguration {
                         properties.getTableName(),
                         properties.isFailFast(),
                         attributeSanitizer,
-                        transactionTemplate),
+                        transactionTemplate,
+                        idGenerator),
                 auditProperties,
                 metricsProvider.getIfAvailable()
         );

@@ -27,6 +27,28 @@ import org.springframework.jdbc.datasource.init.ScriptUtils;
  */
 class JdbcAuditEventPublisherTest {
 
+    @Test
+    void applicationIdsWorkWithoutIdentityColumnsAndAuditSurvivesBusinessRollback() {
+        var source = new DriverManagerDataSource("jdbc:h2:mem:snowflake-audit;DB_CLOSE_DELAY=-1", "sa", "");
+        var jdbc = new JdbcTemplate(source);
+        jdbc.execute("CREATE TABLE events (id BIGINT PRIMARY KEY, action VARCHAR(128), outcome VARCHAR(32), "
+                + "principal_id VARCHAR(128), tenant_id VARCHAR(128), client_id VARCHAR(128), trace_id VARCHAR(128), "
+                + "ip VARCHAR(64), uri VARCHAR(512), reason VARCHAR(512), occurred_at TIMESTAMP, attributes VARCHAR(4000))");
+        var manager = new DataSourceTransactionManager(source);
+        var independent = new TransactionTemplate(manager);
+        independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        var ids = new java.util.concurrent.atomic.AtomicLong(9007199254740993L);
+        var publisher = new JdbcAuditEventPublisher(jdbc, new ObjectMapper(), "events", true,
+                new DefaultAuditAttributeSanitizer(), independent, ids::getAndIncrement);
+        new TransactionTemplate(manager).executeWithoutResult(status -> {
+            publisher.publish(AuditEvent.builder(AuditAction.AUTH_LOGIN_SUCCESS, AuditOutcome.SUCCESS)
+                    .attributes(Map.of("password", "synthetic-secret")).build());
+            status.setRollbackOnly();
+        });
+        assertThat(jdbc.queryForObject("SELECT id FROM events", Long.class)).isEqualTo(9007199254740993L);
+        assertThat(jdbc.queryForObject("SELECT attributes FROM events", String.class)).doesNotContain("synthetic-secret");
+    }
+
     /**
      * 审计事件应完整写入表，并在落库前脱敏敏感扩展属性。
      */

@@ -14,7 +14,7 @@ python3 scripts/generate-configuration-reference.py
 
 ## 目录
 
-- [`chaos.audit`](#chaosaudit)（9 项）
+- [`chaos.audit`](#chaosaudit)（10 项）
 - [`chaos.authorization`](#chaosauthorization)（55 项）
 - [`chaos.diagnostics`](#chaosdiagnostics)（6 项）
 - [`chaos.gateway`](#chaosgateway)（56 项）
@@ -31,7 +31,7 @@ python3 scripts/generate-configuration-reference.py
 - [`chaos.storage`](#chaosstorage)（9 项）
 - [`chaos.tenant`](#chaostenant)（4 项）
 - [`chaos.time`](#chaostime)（1 项）
-- [`chaos.web`](#chaosweb)（18 项）
+- [`chaos.web`](#chaosweb)（19 项）
 
 ## chaos.audit
 
@@ -40,6 +40,7 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.audit.async.enabled` | `Boolean` | `false` | 是否异步发布审计事件。 默认关闭，保持同步写入的既有行为。 配合 `chaos-audit-jdbc` 时强烈建议开启 ： 同步模式下每次登录、每次权限拒绝都是请求线程内的一次数据库写入，扫描器批量打未授权接口 会把审计写入变成可被外部触发的放大点。 |  | `chaos-autoconfigure` |
 | `chaos.audit.async.queue-capacity` | `Integer` | `10000` | 待发布事件队列容量。 队列满时丢弃新事件并计入 `chaos.audit.events{outcome="dropped"`}，绝不阻塞业务线程： 队列满说明下游已经跟不上，此时阻塞业务只会把下游故障放大成全站故障。 合规要求零丢失时应关闭异步，或改用 MQ 实现。 |  | `chaos-autoconfigure` |
 | `chaos.audit.enabled` | `Boolean` | `true` | 是否启用审计事件发布；关闭后注册 Noop 发布器。 |  | `chaos-autoconfigure` |
+| `chaos.audit.jdbc.application-generated-id` | `Boolean` | `false` | 是否使用 IdGenerator 分配审计主键；默认 false 保留数据库生成主键的行为。启用后必须提供 IdGenerator Bean 和 BIGINT id 列。 |  | `chaos-autoconfigure` |
 | `chaos.audit.jdbc.enabled` | `Boolean` | `false` | 是否启用 JDBC 审计持久化。 |  | `chaos-autoconfigure` |
 | `chaos.audit.jdbc.fail-fast` | `Boolean` | `false` | 落库失败时是否直接抛出异常。 |  | `chaos-autoconfigure` |
 | `chaos.audit.jdbc.independent-transaction` | `Boolean` | `true` | 是否在 REQUIRES_NEW 独立事务中写入审计。 默认 `true`：避免业务回滚时审计丢失，以及 PostgreSQL 上审计 SQL 失败导致外层事务进入 aborted 状态。 |  | `chaos-autoconfigure` |
@@ -357,6 +358,7 @@ python3 scripts/generate-configuration-reference.py
 | `chaos.web.rate-limit.max-local-keys` | `Integer` | `10000` | 默认内存限流器最多保留的 key 数。 |  | `chaos-web` |
 | `chaos.web.request-timing-enabled` | `Boolean` | `true` | 是否输出请求耗时日志。 |  | `chaos-web` |
 | `chaos.web.response-wrap-enabled` | `Boolean` | `true` | 是否启用统一响应包装。 |  | `chaos-web` |
+| `chaos.web.safe-long-serialization` | `Boolean` | `false` | 是否把超过 JavaScript 安全整数范围的 Long 序列化为字符串；默认关闭以保持现有 JSON 契约。 |  | `chaos-web` |
 | `chaos.web.trace-enabled` | `Boolean` | `true` | 是否启用 trace 过滤器。 |  | `chaos-web` |
 | `chaos.web.xss-enabled` | `Boolean` | `false` | 是否启用基础 XSS 参数转义。 默认关闭：输入端转义会污染入库数据且无法覆盖 JSON 请求体，推荐在输出端按上下文编码。 仅建议在渲染服务端模板且无法改造输出编码的遗留系统中开启。 |  | `chaos-web` |
 | `chaos.web.xss-exclude-paths` | `List<String>` |  | XSS 过滤排除路径（Ant 风格），匹配的路径不做 XSS 转义。 |  | `chaos-web` |

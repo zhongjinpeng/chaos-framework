@@ -38,6 +38,37 @@ class ChaosMybatisAutoConfigurationTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(ChaosMybatisAutoConfiguration.class));
 
+    @Test
+    void applicationAndMybatisShareDefaultGenerator() {
+        contextRunner.withPropertyValues("chaos.mybatis.id-generator.worker-id=7",
+                "chaos.mybatis.id-generator.datacenter-id=3").run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(context).hasSingleBean(com.chaos.core.id.IdGenerator.class);
+            assertThat(context.getBean(com.chaos.core.id.IdGenerator.class))
+                    .isSameAs(context.getBean(IdentifierGenerator.class));
+        });
+    }
+
+    @Test
+    void customApplicationStrategyAlsoDrivesMybatis() {
+        contextRunner.withBean(com.chaos.core.id.IdGenerator.class, () -> () -> 123456L)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(IdentifierGenerator.class);
+                    assertThat(context.getBean(IdentifierGenerator.class).nextId(null)).isEqualTo(123456L);
+                });
+    }
+
+    @Test
+    void legacyCustomMybatisStrategyAlsoDrivesApplicationIds() {
+        contextRunner.withUserConfiguration(CustomIdentifierGeneratorConfiguration.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(com.chaos.core.id.IdGenerator.class);
+                    assertThat(context.getBean(com.chaos.core.id.IdGenerator.class).nextId()).isEqualTo(42L);
+                });
+    }
+
     /**
      * 存在登录用户 SPI 时操作人取自登录用户；否则回退到 RequestContext。持久层不直接依赖 chaos-security。
      */

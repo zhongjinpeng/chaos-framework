@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
 import com.baomidou.mybatisplus.autoconfigure.MybatisPlusPropertiesCustomizer;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import com.baomidou.mybatisplus.core.incrementer.DefaultIdentifierGenerator;
 import com.baomidou.mybatisplus.core.incrementer.IdentifierGenerator;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.DataPermissionInterceptor;
@@ -26,7 +25,10 @@ import com.chaos.mybatis.tenant.ChaosTenantLineHandler;
 import com.chaos.mybatis.tenant.RequestContextTenantIdProvider;
 import com.chaos.mybatis.tenant.TenantIdProvider;
 import com.chaos.security.api.auth.LoginUserProvider;
-import java.net.InetAddress;
+import com.chaos.core.id.IdGenerator;
+import com.chaos.mybatis.id.SnowflakeIdGenerator;
+import com.chaos.mybatis.id.MybatisIdentifierGeneratorAdapter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import java.util.Map;
 import org.apache.ibatis.plugin.Interceptor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -129,19 +131,36 @@ public class ChaosMybatisAutoConfiguration {
      * 注册默认雪花 ID 生成器。
      */
     @Bean
-    @ConditionalOnMissingBean
-    public IdentifierGenerator identifierGenerator(ChaosMybatisProperties properties) {
+    @ConditionalOnMissingBean({IdentifierGenerator.class, IdGenerator.class})
+    public SnowflakeIdGenerator identifierGenerator(ChaosMybatisProperties properties) {
         ChaosMybatisProperties.IdGenerator idGenerator = properties.getIdGenerator();
         Long workerId = idGenerator.getWorkerId();
         Long datacenterId = idGenerator.getDatacenterId();
         if (workerId == null && datacenterId == null) {
-            return new DefaultIdentifierGenerator((InetAddress) null);
+            return new SnowflakeIdGenerator();
         }
         if (workerId == null || datacenterId == null) {
             throw new IllegalStateException(
                     "chaos.mybatis.id-generator.worker-id and datacenter-id must be configured together");
         }
-        return new DefaultIdentifierGenerator(workerId, datacenterId);
+        return new SnowflakeIdGenerator(workerId, datacenterId);
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class CustomIdAdapters {
+        @Bean
+        @ConditionalOnBean(IdGenerator.class)
+        @ConditionalOnMissingBean(IdentifierGenerator.class)
+        IdentifierGenerator mybatisIdentifierGeneratorAdapter(IdGenerator generator) {
+            return new MybatisIdentifierGeneratorAdapter(generator);
+        }
+
+        @Bean
+        @ConditionalOnBean(IdentifierGenerator.class)
+        @ConditionalOnMissingBean(IdGenerator.class)
+        IdGenerator applicationIdGeneratorAdapter(IdentifierGenerator generator) {
+            return () -> generator.nextId(null).longValue();
+        }
     }
 
     /**

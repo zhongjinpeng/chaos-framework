@@ -7,6 +7,9 @@ import com.chaos.audit.AuditEvent;
 import com.chaos.audit.AuditEventPublisher;
 import com.chaos.audit.DefaultAuditAttributeSanitizer;
 import java.sql.Timestamp;
+import com.chaos.core.id.IdGenerator;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -64,6 +67,8 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
 
     private final TransactionOperations transactionOperations;
 
+    private final IdGenerator idGenerator;
+
     /**
      * 使用默认表名和非 fail-fast 模式创建发布器。
      */
@@ -107,12 +112,28 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
             boolean failFast,
             AuditAttributeSanitizer attributeSanitizer,
             TransactionOperations transactionOperations) {
+        this(jdbcOperations, objectMapper, tableName, failFast, attributeSanitizer, transactionOperations, null);
+    }
+
+    /**
+     * 显式指定应用主键生成器；为 null 时保留数据库生成 ID 的兼容行为。
+     * 应用主键模式要求表存在 BIGINT id 列，框架不自动更改数据库结构。
+     */
+    public JdbcAuditEventPublisher(
+            JdbcOperations jdbcOperations,
+            ObjectMapper objectMapper,
+            String tableName,
+            boolean failFast,
+            AuditAttributeSanitizer attributeSanitizer,
+            TransactionOperations transactionOperations,
+            IdGenerator idGenerator) {
+        this.idGenerator = idGenerator;
         this.jdbcOperations = Objects.requireNonNull(jdbcOperations, "jdbcOperations must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.attributeSanitizer = Objects.requireNonNull(attributeSanitizer, "attributeSanitizer must not be null");
         this.failFast = failFast;
         this.tableName = normalizeTableName(tableName);
-        this.insertSql = buildInsertSql(this.tableName);
+        this.insertSql = buildInsertSql(this.tableName, idGenerator != null);
         this.transactionOperations = transactionOperations;
     }
 
@@ -141,8 +162,11 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
     }
 
     private void insert(AuditEvent event) {
-        jdbcOperations.update(
-                insertSql,
+        var arguments = new ArrayList<Object>();
+        if (idGenerator != null) {
+            arguments.add(idGenerator.nextId());
+        }
+        arguments.addAll(Arrays.asList(
                 truncate(event.action(), ACTION_LENGTH),
                 truncate(event.outcome().name(), OUTCOME_LENGTH),
                 truncate(event.principalId(), IDENTIFIER_LENGTH),
@@ -154,7 +178,8 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
                 truncate(event.reason(), REASON_LENGTH),
                 Timestamp.from(event.occurredAt()),
                 toJson(attributeSanitizer.sanitize(event.attributes()))
-        );
+        ));
+        jdbcOperations.update(insertSql, arguments.toArray());
     }
 
     /**
@@ -198,10 +223,10 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
         );
     }
 
-    private static String buildInsertSql(String tableName) {
+    private static String buildInsertSql(String tableName, boolean applicationId) {
         return """
                 INSERT INTO %s (
-                    action,
+                    %saction,
                     outcome,
                     principal_id,
                     tenant_id,
@@ -212,8 +237,8 @@ public class JdbcAuditEventPublisher implements AuditEventPublisher {
                     reason,
                     occurred_at,
                     attributes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.formatted(tableName).replaceAll("\\s+", " ").trim();
+                ) VALUES (%s?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """.formatted(tableName, applicationId ? "id, " : "", applicationId ? "?, " : "").replaceAll("\\s+", " ").trim();
     }
 
     private static String normalizeTableName(String tableName) {

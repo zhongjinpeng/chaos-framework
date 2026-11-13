@@ -126,3 +126,10 @@ chaos:
 - 单条事件写入失败不会让工作线程退出，计入 `outcome="failed"`。
 - 容器关闭时排空队列，避免优雅停机丢掉最后一批审计。
 - **合规要求零丢失时不要开启异步**：改用同步写入，或把审计投递到 MQ。
+
+
+## JDBC 应用主键
+
+`chaos.audit.jdbc.application-generated-id` 默认 `false`，保持数据库生成主键的兼容行为。设为 `true` 时必须存在 `com.chaos.core.id.IdGenerator` Bean，审计 INSERT 显式写入 `id`；表须提供 BIGINT id 列，框架不会自动迁移数据库。缺少生成器时启动失败并提示修复配置。
+
+此模式仍使用同一个 `JdbcAuditEventPublisher`，保留脱敏、长度裁剪、JSON 编码、失败策略、REQUIRES_NEW 事务及异步/指标包装。直接构造发布器时可用新增的七参数构造器传入 IdGenerator，原构造器行为不变。

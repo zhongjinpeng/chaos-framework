@@ -20,6 +20,18 @@ public class ChaosAuditJdbcProperties {
      */
     private boolean enabled = false;
 
+    /** 是否使用 IdGenerator 分配审计主键；默认 false 保留数据库生成主键的行为。启用后必须提供 IdGenerator Bean 和 BIGINT id 列。 */
+    private boolean applicationGeneratedId = false;
+
+    public boolean isApplicationGeneratedId() {
+        return applicationGeneratedId;
+    }
+
+    public void setApplicationGeneratedId(boolean applicationGeneratedId) {
+        this.applicationGeneratedId = applicationGeneratedId;
+    }
+
+
     /**
      * 审计事件表名，支持 `table` 或 `schema.table` 格式。
      */
