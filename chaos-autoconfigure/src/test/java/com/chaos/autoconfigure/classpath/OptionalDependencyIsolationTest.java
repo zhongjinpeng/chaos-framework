@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -41,8 +41,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  * {@code @ConditionalOnClass} 保护（或没有放进受保护的嵌套配置类），应用在缺少该依赖时会以
  * {@code NoClassDefFoundError} 启动失败。</p>
  *
- * <p>本测试为每个场景构造一个以平台类加载器为父的 {@link URLClassLoader}，从测试类路径中物理移除一组 jar
- * （以及以非 optional compile 依赖引用它们的 chaos 模块），然后在该加载器内按真实应用的方式
+ * <p>本测试为每个场景创建独立 JVM，从测试类路径中物理移除一组 jar
+ * （以及以非 optional compile 依赖引用它们的 chaos 模块），然后在子进程内按真实应用的方式
  * （类名导入 + ASM 条件过滤）导入全部 chaos 自动装配与 Spring Boot 基础自动装配并刷新上下文。</p>
  */
 @Timeout(value = 120, unit = TimeUnit.SECONDS)
@@ -231,14 +231,36 @@ class OptionalDependencyIsolationTest {
                 urls.add(entry.path().toUri().toURL());
             }
         }
+        // Only inspect resources in the parent process; framework classes and global library
+        // caches belong to the child JVM and are reclaimed after each scenario.
         try (URLClassLoader loader = new URLClassLoader(urls.toArray(URL[]::new), ClassLoader.getPlatformClassLoader())) {
             writeProbeImports(loader);
-            Class<?> probe = Class.forName(ClasspathIsolationProbe.class.getName(), true, loader);
-            Method run = probe.getMethod("run", String.class, String[].class);
-            String failure = (String) run.invoke(null, webType, PROPERTIES);
-            assertThat(failure)
-                    .as("excluded=%s, webType=%s", excluded.stream().sorted().toList(), webType)
-                    .isNull();
+        }
+        String classpath = urls.stream().map(url -> {
+            try {
+                return Path.of(url.toURI()).toString();
+            } catch (java.net.URISyntaxException ex) {
+                throw new IllegalArgumentException("Invalid test classpath URL", ex);
+            }
+        }).collect(Collectors.joining(File.pathSeparator));
+        List<String> command = new ArrayList<>(List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-Xmx512m", "-XX:MaxMetaspaceSize=256m", "-cp", classpath,
+                ClasspathIsolationProbe.class.getName(), webType));
+        command.addAll(List.of(PROPERTIES));
+        Path output = probeResources.resolve("probe.log");
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(output.toFile()).start();
+        try {
+            assertThat(process.waitFor(100, TimeUnit.SECONDS))
+                    .as("isolated JVM timed out: excluded=%s, webType=%s", excluded, webType).isTrue();
+            assertThat(process.exitValue())
+                    .as("excluded=%s, webType=%s%n%s", excluded.stream().sorted().toList(), webType,
+                            Files.readString(output)).isZero();
+        } finally {
+            if (process.isAlive()) {
+                process.destroyForcibly();
+                process.waitFor(5, TimeUnit.SECONDS);
+            }
         }
     }
 

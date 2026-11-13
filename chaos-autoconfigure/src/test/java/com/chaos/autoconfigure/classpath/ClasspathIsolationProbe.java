@@ -1,6 +1,7 @@
 package com.chaos.autoconfigure.classpath;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.test.context.assertj.ApplicationContextAssertProvider;
 import org.springframework.boot.test.context.runner.AbstractApplicationContextRunner;
@@ -10,9 +11,9 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 在隔离类加载器内部执行的探针。
+ * 在独立 JVM 的隔离类路径中执行的探针。
  *
- * <p>本类及 Spring、chaos 自动装配类都由隔离的 {@link java.net.URLClassLoader} 定义，被排除的 jar 在该加载器中
+ * <p>本类及 Spring、chaos 自动装配类只从传入的隔离类路径加载，被排除的 jar 在该加载器中
  * 物理不存在，因此能暴露真实的 {@code NoClassDefFoundError}。{@code FilteredClassLoader} 只影响条件判断，
  * 父加载器仍能解析被“隐藏”的类，无法发现这类问题。</p>
  *
@@ -21,6 +22,19 @@ import org.springframework.context.annotation.Configuration;
 public final class ClasspathIsolationProbe {
 
     private ClasspathIsolationProbe() {
+    }
+
+    /**
+     * 执行单个场景并退出进程，确保三方库全局线程和缓存不会保留到后续场景。
+     *
+     * @param args 首项为应用类型，其余为 Spring 环境属性
+     */
+    public static void main(String[] args) {
+        String failure = run(args[0], Arrays.copyOfRange(args, 1, args.length));
+        if (failure != null) {
+            System.getLogger(ClasspathIsolationProbe.class.getName()).log(System.Logger.Level.ERROR, failure);
+        }
+        System.exit(failure == null ? 0 : 1);
     }
 
     /**
