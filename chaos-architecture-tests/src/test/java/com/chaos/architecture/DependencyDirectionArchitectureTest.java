@@ -90,6 +90,8 @@ class DependencyDirectionArchitectureTest {
             Map.entry("chaos-security-redis", "com.chaos.security.redis"),
             Map.entry("chaos-authorization", "com.chaos.authorization"),
             Map.entry("chaos-web", "com.chaos.web"),
+            Map.entry("chaos-http-client", "com.chaos.http.client"),
+            Map.entry("chaos-transaction", "com.chaos.transaction"),
             Map.entry("chaos-service", "com.chaos.service"),
             Map.entry("chaos-mybatis", "com.chaos.mybatis"),
             Map.entry("chaos-redis", "com.chaos.redis"),

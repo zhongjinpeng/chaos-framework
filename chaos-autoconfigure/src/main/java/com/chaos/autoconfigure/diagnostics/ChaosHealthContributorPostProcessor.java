@@ -13,7 +13,7 @@ import org.springframework.core.env.Environment;
  * <p>部分健康指标的自动配置条件早于普通自动装配执行，无法只靠 Chaos 提供的低优先级属性阻止 Bean 创建。
  * 因此在健康注册表初始化完成后按同一组配置移除指标；业务配置显式设为 {@code true} 时仍会保留。</p>
  */
-final class ChaosHealthContributorFilter implements BeanPostProcessor {
+final class ChaosHealthContributorPostProcessor implements BeanPostProcessor {
 
     private static final Map<String, String> CONTRIBUTOR_PROPERTIES = Map.of(
             "discoveryComposite", "spring.cloud.discovery.client.composite-indicator.enabled",
@@ -24,7 +24,7 @@ final class ChaosHealthContributorFilter implements BeanPostProcessor {
 
     private final Environment environment;
 
-    ChaosHealthContributorFilter(Environment environment) {
+    ChaosHealthContributorPostProcessor(Environment environment) {
         this.environment = environment;
     }
 

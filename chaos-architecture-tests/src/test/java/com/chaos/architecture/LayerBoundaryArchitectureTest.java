@@ -1057,9 +1057,9 @@ class LayerBoundaryArchitectureTest {
                     if (!Objects.equals(annotation, "@Valid") && !annotation.startsWith("@Valid(")) {
                         continue;
                     }
-                    if (i + 2 >= lines.size() || !lines.get(i + 1).contains("@NotNull")) {
+                    if (i + 2 >= lines.size() || !(lines.get(i + 1).contains("@NotNull") || lines.get(i + 1).contains("@NotEmpty"))) {
                         violations.add(projectRoot().relativize(sourceFile) + ":" + (i + 1)
-                                + " -> @Valid 嵌套配置字段必须同时声明 @NotNull");
+                                + " -> @Valid 嵌套配置字段必须声明 @NotNull 或包含非空约束的 @NotEmpty");
                         continue;
                     }
                     String fieldLine = lines.get(i + 2).trim();

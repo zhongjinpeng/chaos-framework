@@ -12,7 +12,7 @@ import org.springframework.mock.env.MockEnvironment;
 /**
  * 低价值健康指标过滤测试。
  */
-class ChaosHealthContributorFilterTest {
+class ChaosHealthContributorPostProcessorTest {
 
     /**
      * Servlet 与 WebFlux 注册表都移除默认关闭项，业务显式开启的指标保持注册。
@@ -21,7 +21,7 @@ class ChaosHealthContributorFilterTest {
     void shouldFilterDisabledContributorsAndKeepExplicitlyEnabledOnes() {
         MockEnvironment environment = new MockEnvironment()
                 .withProperty("management.health.ping.enabled", "true");
-        ChaosHealthContributorFilter filter = new ChaosHealthContributorFilter(environment);
+        ChaosHealthContributorPostProcessor filter = new ChaosHealthContributorPostProcessor(environment);
         HealthContributorRegistry blocking = mock(HealthContributorRegistry.class);
         ReactiveHealthContributorRegistry reactive = mock(ReactiveHealthContributorRegistry.class);
 

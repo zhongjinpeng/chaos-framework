@@ -136,7 +136,7 @@ public class ChaosDiagnosticsAutoConfiguration {
          */
         @Bean
         static BeanPostProcessor chaosHealthContributorFilter(Environment environment) {
-            return new ChaosHealthContributorFilter(environment);
+            return new ChaosHealthContributorPostProcessor(environment);
         }
 
         /**
