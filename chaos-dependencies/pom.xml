@@ -76,7 +76,7 @@
         <!-- nimbus-jose-jwt 与 oauth2-oidc-sdk 必须成对升级，否则 dependencyConvergence 会失败。 -->
         <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
         <oauth2-oidc-sdk.version>11.23.1</oauth2-oidc-sdk.version>
-        <poi.version>5.5.1</poi.version>
+        <poi.version>6.0.0</poi.version>
         <commons-io.version>2.21.0</commons-io.version>
 
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
