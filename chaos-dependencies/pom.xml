@@ -63,7 +63,7 @@
         <spring-boot.version>3.5.16</spring-boot.version>
         <spring-cloud.version>2025.0.3</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
-        <testcontainers.version>1.21.4</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
 
         <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <redisson.version>3.50.0</redisson.version>
