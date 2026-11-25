@@ -80,7 +80,7 @@
         <commons-io.version>2.21.0</commons-io.version>
         <archunit.version>1.4.1</archunit.version>
 
-        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <flatten-maven-plugin.version>1.9.0</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
